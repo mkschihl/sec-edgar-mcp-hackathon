@@ -65,6 +65,26 @@ instructions: |
      → Present the form type, filing date, report date, and edgar_viewer_url so
        the user can open the actual filing.
 
+  7. DISCOVER AVAILABLE XBRL CONCEPTS — user asks "what financial data is available?"
+     OR a prior tool call returned a "concept not found" error:
+     → Call sec_edgar_list_concepts with the ticker and a search keyword (e.g.
+       search="revenue" or search="income").
+     → Present the list of matching concept names and labels so the user can pick
+       the correct one.
+     → After the user confirms a concept, proceed with sec_edgar_get_company_fact
+       or sec_edgar_get_quarterly_facts.
+
+  8. QUARTERLY DATA — user asks about quarterly trends, specific quarters (Q1/Q2/Q3/Q4),
+     or wants to compare quarter-over-quarter:
+     → Call sec_edgar_get_quarterly_facts with the ticker, taxonomy, concept, and
+       desired number of quarters (limit).
+     → Each observation includes a period_label (e.g. "Q3 FY2025") — use this in
+       the response table.
+     → If the quarterly tool returns an error suggesting the concept is annual-only,
+       explain that to the user and offer the annual data via sec_edgar_get_company_fact.
+     → Do NOT use sec_edgar_get_company_fact for quarterly requests — it returns all
+       period types mixed together.
+
   IMPORTANT — REVENUE CONCEPT NAMES:
   Many companies (including Apple) stopped filing under "Revenues" after ~2018 and
   switched to "RevenueFromContractWithCustomerExcludingAssessedTax". When a user
@@ -109,6 +129,8 @@ tools:
   - sec_edgar_tools:sec_edgar_get_company_fact
   - sec_edgar_tools:sec_edgar_compare_companies
   - sec_edgar_tools:sec_edgar_get_filing_metadata
+  - sec_edgar_tools:sec_edgar_list_concepts
+  - sec_edgar_tools:sec_edgar_get_quarterly_facts
 starter_prompts:
   is_default_prompts: false
   prompts:
@@ -136,6 +158,16 @@ starter_prompts:
       title: Find a company
       subtitle: ''
       prompt: "Find all companies with 'Berkshire' in their name."
+      state: active
+    - id: sp5
+      title: Quarterly revenue
+      subtitle: ''
+      prompt: "Show me Apple's quarterly revenue for the last 8 quarters."
+      state: active
+    - id: sp6
+      title: Discover concepts
+      subtitle: ''
+      prompt: "What revenue-related XBRL concepts does Microsoft report?"
       state: active
 welcome_content:
   welcome_message: SEC EDGAR Facts Explorer

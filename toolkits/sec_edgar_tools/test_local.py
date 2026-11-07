@@ -32,7 +32,7 @@ except Exception as exc:
 
 
 # ---------------------------------------------------------------------------
-# 2. Tool discovery — all six sec_edgar_* names must be registered
+# 2. Tool discovery — all eight sec_edgar_* names must be registered
 # ---------------------------------------------------------------------------
 async def check_discovery() -> bool:
     print("\n=== 2. Tool Discovery ===")
@@ -46,12 +46,14 @@ async def check_discovery() -> bool:
         "sec_edgar_get_company_fact",
         "sec_edgar_compare_companies",
         "sec_edgar_get_filing_metadata",
+        "sec_edgar_list_concepts",
+        "sec_edgar_get_quarterly_facts",
     }
     missing = expected - names
     if missing:
         print(f"  [FAIL] Missing tools: {missing}")
         return False
-    print("  [OK] All six sec_edgar_* tools discovered")
+    print("  [OK] All eight sec_edgar_* tools discovered")
     return True
 
 
@@ -217,6 +219,79 @@ async def check_tool_calls() -> bool:
         print(f"  [OK] bad accession returns error dict ✓")
     else:
         print(f"  [SKIP] Could not get a filing accession number to test Tool 6 — skipping metadata test")
+
+    # --- Tool 7: list_concepts ---
+    print("\n  -- sec_edgar_list_concepts(identifier='AAPL', taxonomy='us-gaap', search='revenue') --")
+    result = await server.sec_edgar_list_concepts(
+        identifier="AAPL", taxonomy="us-gaap", search="revenue"
+    )
+    print(f"  result keys: {list(result.keys())}")
+    if "error" in result:
+        print(f"  [WARN] returned error dict: {result}")
+    else:
+        assert "concepts" in result, f"missing concepts: {result}"
+        assert "total_matches" in result, f"missing total_matches: {result}"
+        assert isinstance(result["concepts"], list), f"concepts not a list: {result}"
+        assert result["total_matches"] > 0, f"expected at least one revenue concept: {result}"
+        concept_names = [c["concept"] for c in result["concepts"]]
+        assert any("Revenue" in c or "revenue" in c for c in concept_names), \
+            f"expected at least one Revenue-related concept: {concept_names}"
+        print(f"  [OK] list_concepts returned {result['total_matches']} revenue concepts; "
+              f"first: {result['concepts'][0]['concept']} ✓")
+
+    # --- Tool 7: list_concepts — no filter (broad listing) ---
+    print("\n  -- sec_edgar_list_concepts(identifier='MSFT', taxonomy='us-gaap', search='', limit=10) --")
+    result = await server.sec_edgar_list_concepts(
+        identifier="MSFT", taxonomy="us-gaap", search="", limit=10
+    )
+    if "error" not in result:
+        assert len(result["concepts"]) <= 10, f"limit not honoured: {result}"
+        print(f"  [OK] broad list_concepts returned {result['total_matches']} total concepts, "
+              f"limited to {len(result['concepts'])} ✓")
+
+    # --- Tool 7: list_concepts error path — bad taxonomy ---
+    print("\n  -- sec_edgar_list_concepts with bad taxonomy [should error] --")
+    result = await server.sec_edgar_list_concepts(
+        identifier="AAPL", taxonomy="not-a-real-taxonomy"
+    )
+    assert "error" in result, f"expected error for bad taxonomy: {result}"
+    print(f"  [OK] bad taxonomy returns error dict ✓")
+
+    # --- Tool 8: get_quarterly_facts ---
+    print("\n  -- sec_edgar_get_quarterly_facts(identifier='AAPL', taxonomy='us-gaap', "
+          "concept='RevenueFromContractWithCustomerExcludingAssessedTax', limit=8) --")
+    result = await server.sec_edgar_get_quarterly_facts(
+        identifier="AAPL",
+        taxonomy="us-gaap",
+        concept="RevenueFromContractWithCustomerExcludingAssessedTax",
+        limit=8,
+    )
+    print(f"  result keys: {list(result.keys())}")
+    if "error" in result:
+        print(f"  [WARN] returned error dict: {result}")
+    else:
+        assert "observations" in result, f"missing observations: {result}"
+        assert isinstance(result["observations"], list), f"observations not a list: {result}"
+        assert len(result["observations"]) > 0, f"expected at least one quarterly observation: {result}"
+        first = result["observations"][0]
+        assert "period_label" in first, f"missing period_label in observation: {first}"
+        assert "val" in first, f"missing val in observation: {first}"
+        assert "accn" in first, f"missing accn in observation: {first}"
+        # Verify all returned are quarterly (Q1/Q2/Q3/Q4)
+        for obs in result["observations"]:
+            assert obs.get("fp") in {"Q1", "Q2", "Q3", "Q4"}, \
+                f"non-quarterly observation returned: {obs}"
+        print(f"  [OK] get_quarterly_facts returned {len(result['observations'])} quarterly "
+              f"observations; most recent: {result['observations'][0]['period_label']} "
+              f"(${result['observations'][0]['val']:,.0f}) ✓")
+
+    # --- Tool 8: get_quarterly_facts — error path: annual-only concept ---
+    print("\n  -- sec_edgar_get_quarterly_facts with bad concept [should error] --")
+    result = await server.sec_edgar_get_quarterly_facts(
+        identifier="AAPL", taxonomy="us-gaap", concept="ThisConceptDoesNotExist99999"
+    )
+    assert "error" in result, f"expected error for unknown concept: {result}"
+    print(f"  [OK] unknown concept returns error dict ✓")
 
     return all_passed
 

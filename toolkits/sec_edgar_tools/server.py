@@ -1,12 +1,14 @@
 """SEC EDGAR MCP Toolkit — stdio transport.
 
-Six tools exposed to watsonx Orchestrate:
-  - sec_edgar_search_companies    : search exchange-listed companies by partial name
-  - sec_edgar_resolve_company     : resolve ticker or CIK to canonical company info
-  - sec_edgar_get_recent_filings  : recent filing history with optional form-type filter
-  - sec_edgar_get_company_fact    : XBRL concept time series for one company
-  - sec_edgar_compare_companies   : compare one XBRL concept across multiple companies
-  - sec_edgar_get_filing_metadata : filing doc list and EDGAR URL for an accession number
+Eight tools exposed to watsonx Orchestrate:
+  - sec_edgar_search_companies      : search exchange-listed companies by partial name
+  - sec_edgar_resolve_company       : resolve ticker or CIK to canonical company info
+  - sec_edgar_get_recent_filings    : recent filing history with optional form-type filter
+  - sec_edgar_get_company_fact      : XBRL concept time series for one company
+  - sec_edgar_compare_companies     : compare one XBRL concept across multiple companies
+  - sec_edgar_get_filing_metadata   : filing doc list and EDGAR URL for an accession number
+  - sec_edgar_list_concepts         : discover available XBRL concepts for a company
+  - sec_edgar_get_quarterly_facts   : quarterly XBRL observations (Q1/Q2/Q3/Q4) for one company
 
 Orchestrate starts this file as a subprocess and communicates over stdin/stdout.
 SEC APIs require no API key. Rate limit: 10 req/s per IP.
@@ -38,14 +40,16 @@ _CIK_CACHE: dict[str, dict] = {}
 mcp = FastMCP(
     "sec_edgar_tools",
     instructions=(
-        "SEC EDGAR toolkit with six tools for authoritative SEC filing data.\n\n"
+        "SEC EDGAR toolkit with eight tools for authoritative SEC filing data.\n\n"
         "TOOL SELECTION GUIDE:\n"
         "- Find companies by partial name → sec_edgar_search_companies\n"
         "- Resolve a ticker or CIK to canonical info → sec_edgar_resolve_company\n"
         "- List recent 10-K/10-Q/8-K filings → sec_edgar_get_recent_filings\n"
-        "- Fetch an XBRL financial concept time series → sec_edgar_get_company_fact\n"
+        "- Fetch an XBRL annual concept time series → sec_edgar_get_company_fact\n"
+        "- Fetch quarterly (Q1/Q2/Q3/Q4) observations → sec_edgar_get_quarterly_facts\n"
         "- Compare a concept across multiple companies → sec_edgar_compare_companies\n"
-        "- Look up a specific filing by accession number → sec_edgar_get_filing_metadata\n\n"
+        "- Look up a specific filing by accession number → sec_edgar_get_filing_metadata\n"
+        "- Discover what XBRL concepts a company reports → sec_edgar_list_concepts\n\n"
         "No authentication required. All tools return dicts; errors include "
         "an 'error' key and a 'hint' key with recovery guidance."
     ),
@@ -57,6 +61,21 @@ mcp = FastMCP(
 
 def _make_headers() -> dict[str, str]:
     return {"User-Agent": SEC_USER_AGENT, "Accept": "application/json"}
+
+
+# Lazy process-level HTTP client — created on first use, reused for all
+# subsequent calls within the same MCP server process.  Creating a new
+# AsyncClient for every tool call incurs a fresh TCP/TLS handshake; reusing
+# one client keeps connections warm across consecutive requests.
+_http_client: httpx.AsyncClient | None = None
+
+
+def _get_client() -> httpx.AsyncClient:
+    """Return the process-level shared AsyncClient, creating it if needed."""
+    global _http_client
+    if _http_client is None:
+        _http_client = httpx.AsyncClient(timeout=20.0, follow_redirects=False)
+    return _http_client
 
 
 async def _ensure_ticker_cache(client: httpx.AsyncClient) -> None:
@@ -82,6 +101,48 @@ async def _ensure_ticker_cache(client: httpx.AsyncClient) -> None:
         _CIK_CACHE[padded_cik] = record
 
 
+async def _resolve_identifier(identifier: str) -> tuple[str, str] | dict:
+    """Resolve a ticker or CIK string to (padded_cik, ticker).
+
+    Returns an error dict if the identifier cannot be resolved.
+    The ticker cache is warmed as a side-effect on the first call.
+    """
+    client = _get_client()
+    await _ensure_ticker_cache(client)
+    id_clean = identifier.strip()
+    if id_clean.isdigit():
+        padded_cik = f"{int(id_clean):010d}"
+        record = _CIK_CACHE.get(padded_cik)
+        ticker = record["ticker"] if record else id_clean
+        return padded_cik, ticker
+    record = _TICKER_CACHE.get(id_clean.upper())
+    if record is None:
+        return {
+            "error": f"'{identifier}' not found in the SEC exchange-listed company database.",
+            "hint": "Check the ticker spelling or use sec_edgar_search_companies to find the correct identifier.",
+        }
+    return record["cik_str"], record["ticker"]
+
+
+# Cache for submissions JSON (filing history) keyed by padded CIK.
+# Avoids redundant HTTP round-trips when multiple tools query the same company
+# in the same agent turn (e.g. get_recent_filings then get_filing_metadata).
+_SUBMISSION_CACHE: dict[str, dict] = {}
+
+
+async def _fetch_submission(cik: str) -> dict:
+    """Fetch and cache the submissions JSON for a company by padded CIK."""
+    if cik not in _SUBMISSION_CACHE:
+        client = _get_client()
+        resp = await client.get(
+            f"https://data.sec.gov/submissions/CIK{cik}.json",
+            headers=_make_headers(),
+        )
+        resp.raise_for_status()
+        _SUBMISSION_CACHE[cik] = resp.json()
+    return _SUBMISSION_CACHE[cik]
+
+
 def _normalize_accession(raw: str) -> str:
     """Normalize an accession number to dashed format XXXXXXXXXX-YY-ZZZZZZ."""
     clean = raw.replace("-", "").strip()
@@ -103,6 +164,34 @@ def _days_between(date_str_a: str, date_str_b: str) -> int:
         return abs((a - b).days)
     except ValueError:
         return 0
+
+
+def _check_comparability(results: list[dict], warnings: list[str]) -> None:
+    """Append comparability warnings to the warnings list in-place.
+
+    Checks for unit mismatches and fiscal-year-end misalignment (> 45 days).
+    Extracted into a helper to isolate the logic and keep compare_companies readable.
+    """
+    if len(results) < 2:
+        return
+    units_seen = {r["unit"] for r in results}
+    if len(units_seen) > 1:
+        unit_list = ", ".join(f"{r['ticker']}={r['unit']}" for r in results)
+        warnings.append(
+            f"Unit mismatch — companies report in different units: {unit_list}. "
+            "Values are not directly comparable."
+        )
+    for i in range(len(results)):
+        for j in range(i + 1, len(results)):
+            a, b = results[i], results[j]
+            if a["period_end"] and b["period_end"]:
+                days = _days_between(a["period_end"], b["period_end"])
+                if days > 45:
+                    warnings.append(
+                        f"Fiscal year ends differ: {a['ticker']} ends {a['period_end']}, "
+                        f"{b['ticker']} ends {b['period_end']} "
+                        f"({days} days apart — not calendar-year aligned)."
+                    )
 
 
 # ---------------------------------------------------------------------------
@@ -138,8 +227,7 @@ async def sec_edgar_search_companies(
         return {"error": "query must not be empty.", "hint": "Provide a partial company name such as 'apple' or 'berkshire'."}
     limit = max(1, min(limit, 50))
     try:
-        async with httpx.AsyncClient(timeout=15.0, follow_redirects=False) as client:
-            await _ensure_ticker_cache(client)
+        await _ensure_ticker_cache(_get_client())
         query_lower = query.lower()
         matches = [
             {"ticker": v["ticker"], "cik": v["cik_str"], "name": v["title"]}
@@ -182,35 +270,16 @@ async def sec_edgar_resolve_company(
     if not identifier:
         return {"error": "identifier must not be empty.", "hint": "Provide a ticker like 'AAPL' or a numeric CIK."}
     try:
-        async with httpx.AsyncClient(timeout=15.0, follow_redirects=False) as client:
-            await _ensure_ticker_cache(client)
-
-            # Determine if identifier is a CIK (all digits) or ticker
-            clean_digits = identifier.lstrip("0")
-            if identifier.isdigit() or (identifier.startswith("0") and identifier.isdigit()):
-                padded_cik = f"{int(identifier):010d}"
-                record = _CIK_CACHE.get(padded_cik)
-            else:
-                record = _TICKER_CACHE.get(identifier.upper())
-
-            if record is None:
-                return {
-                    "error": f"'{identifier}' not found in the SEC exchange-listed company database.",
-                    "hint": "Check the ticker spelling or use sec_edgar_search_companies to find the correct identifier.",
-                }
-
-            padded_cik = record["cik_str"]
-            resp = await client.get(
-                f"https://data.sec.gov/submissions/CIK{padded_cik}.json",
-                headers=_make_headers(),
-            )
-            resp.raise_for_status()
-            sub = resp.json()
+        resolved = await _resolve_identifier(identifier)
+        if isinstance(resolved, dict):
+            return resolved
+        padded_cik, ticker = resolved
+        sub = await _fetch_submission(padded_cik)
 
         return {
             "cik": padded_cik,
-            "name": sub.get("name", record["title"]),
-            "ticker": record["ticker"],
+            "name": sub.get("name", identifier),
+            "ticker": ticker,
             "sic": sub.get("sic", ""),
             "sic_description": sub.get("sicDescription", ""),
             "state_of_incorporation": sub.get("stateOfIncorporation", ""),
@@ -251,28 +320,12 @@ async def sec_edgar_get_recent_filings(
     limit = max(1, min(limit, 50))
     form_filter = "" if form_type.strip().lower() in ("", "all") else form_type.strip().upper()
     try:
-        async with httpx.AsyncClient(timeout=15.0, follow_redirects=False) as client:
-            await _ensure_ticker_cache(client)
+        resolved = await _resolve_identifier(identifier)
+        if isinstance(resolved, dict):
+            return resolved
+        padded_cik, _ = resolved
 
-            # Resolve identifier to padded CIK
-            if identifier.strip().isdigit():
-                padded_cik = f"{int(identifier.strip()):010d}"
-            else:
-                record = _TICKER_CACHE.get(identifier.strip().upper())
-                if record is None:
-                    return {
-                        "error": f"'{identifier}' not found in the SEC database.",
-                        "hint": "Use sec_edgar_search_companies to find the correct ticker or CIK.",
-                    }
-                padded_cik = record["cik_str"]
-
-            resp = await client.get(
-                f"https://data.sec.gov/submissions/CIK{padded_cik}.json",
-                headers=_make_headers(),
-            )
-            resp.raise_for_status()
-            sub = resp.json()
-
+        sub = await _fetch_submission(padded_cik)
         company_name = sub.get("name", identifier)
         recent = sub.get("filings", {}).get("recent", {})
         forms = recent.get("form", [])
@@ -282,15 +335,15 @@ async def sec_edgar_get_recent_filings(
         primary_docs = recent.get("primaryDocument", [])
 
         filings = []
-        for i in range(len(forms)):
-            if form_filter and forms[i].upper() != form_filter:
+        for form, fd, rd, acc, pdoc in zip(forms, filing_dates, report_dates, accessions, primary_docs):
+            if form_filter and form.upper() != form_filter:
                 continue
             filings.append({
-                "form": forms[i],
-                "filing_date": filing_dates[i] if i < len(filing_dates) else "",
-                "report_date": report_dates[i] if i < len(report_dates) else "",
-                "accession_number": accessions[i] if i < len(accessions) else "",
-                "primary_document": primary_docs[i] if i < len(primary_docs) else "",
+                "form": form,
+                "filing_date": fd,
+                "report_date": rd,
+                "accession_number": acc,
+                "primary_document": pdoc,
             })
             if len(filings) >= limit:
                 break
@@ -336,26 +389,18 @@ async def sec_edgar_get_company_fact(
     description, units. On failure returns {"error": "...", "hint": "..."}.
     """
     try:
-        async with httpx.AsyncClient(timeout=20.0, follow_redirects=False) as client:
-            await _ensure_ticker_cache(client)
+        resolved = await _resolve_identifier(identifier)
+        if isinstance(resolved, dict):
+            return resolved
+        padded_cik, _ = resolved
 
-            if identifier.strip().isdigit():
-                padded_cik = f"{int(identifier.strip()):010d}"
-            else:
-                record = _TICKER_CACHE.get(identifier.strip().upper())
-                if record is None:
-                    return {
-                        "error": f"'{identifier}' not found in the SEC database.",
-                        "hint": "Use sec_edgar_search_companies to find the correct ticker or CIK.",
-                    }
-                padded_cik = record["cik_str"]
-
-            resp = await client.get(
-                f"https://data.sec.gov/api/xbrl/companyfacts/CIK{padded_cik}.json",
-                headers=_make_headers(),
-            )
-            resp.raise_for_status()
-            facts = resp.json()
+        client = _get_client()
+        resp = await client.get(
+            f"https://data.sec.gov/api/xbrl/companyfacts/CIK{padded_cik}.json",
+            headers=_make_headers(),
+        )
+        resp.raise_for_status()
+        facts = resp.json()
 
         company_name = facts.get("entityName", identifier)
         taxonomy_data = facts.get("facts", {}).get(taxonomy)
@@ -378,12 +423,10 @@ async def sec_edgar_get_company_fact(
         description = concept_data.get("description", "")
         raw_units = concept_data.get("units", {})
 
-        units_out: dict[str, list] = {}
-        for unit_label, observations in raw_units.items():
-            obs_list = list(observations)  # observations is already a list of dicts
-            if limit > 0:
-                obs_list = obs_list[-limit:]
-            units_out[unit_label] = obs_list
+        units_out: dict[str, list] = {
+            unit_label: (list(obs)[-limit:] if limit > 0 else list(obs))
+            for unit_label, obs in raw_units.items()
+        }
 
         return {
             "company": company_name,
@@ -436,102 +479,75 @@ async def sec_edgar_compare_companies(
     warnings: list[str] = []
 
     try:
-        async with httpx.AsyncClient(timeout=20.0, follow_redirects=False) as client:
-            await _ensure_ticker_cache(client)
+        client = _get_client()
+        for idx, identifier in enumerate(identifiers):
+            if idx > 0:
+                await asyncio.sleep(0.12)  # respect SEC 10 req/s limit
 
-            for idx, identifier in enumerate(identifiers):
-                if idx > 0:
-                    await asyncio.sleep(0.12)  # respect SEC 10 req/s limit
+            resolved = await _resolve_identifier(identifier)
+            if isinstance(resolved, dict):
+                warnings.append(f"'{identifier}' not found in the SEC database — skipped.")
+                continue
+            padded_cik, ticker = resolved
 
-                # Resolve CIK
-                id_clean = identifier.strip()
-                if id_clean.isdigit():
-                    padded_cik = f"{int(id_clean):010d}"
-                    cache_record = _CIK_CACHE.get(padded_cik)
-                    ticker = cache_record["ticker"] if cache_record else id_clean
-                else:
-                    cache_record = _TICKER_CACHE.get(id_clean.upper())
-                    if cache_record is None:
-                        warnings.append(f"'{identifier}' not found in the SEC database — skipped.")
-                        continue
-                    padded_cik = cache_record["cik_str"]
-                    ticker = cache_record["ticker"]
-
-                try:
-                    resp = await client.get(
-                        f"https://data.sec.gov/api/xbrl/companyfacts/CIK{padded_cik}.json",
-                        headers=_make_headers(),
-                    )
-                    resp.raise_for_status()
-                    facts = resp.json()
-                except (httpx.HTTPStatusError, httpx.RequestError) as exc:
-                    warnings.append(f"Could not fetch facts for '{identifier}': {exc} — skipped.")
-                    continue
-
-                company_name = facts.get("entityName", identifier)
-                concept_data = (
-                    facts.get("facts", {})
-                    .get(taxonomy, {})
-                    .get(concept)
+            try:
+                resp = await client.get(
+                    f"https://data.sec.gov/api/xbrl/companyfacts/CIK{padded_cik}.json",
+                    headers=_make_headers(),
                 )
-                if concept_data is None:
-                    warnings.append(f"{company_name}: concept '{taxonomy}/{concept}' not found — skipped.")
-                    continue
+                resp.raise_for_status()
+                facts = resp.json()
+            except (httpx.HTTPStatusError, httpx.RequestError) as exc:
+                warnings.append(f"Could not fetch facts for '{identifier}': {exc} — skipped.")
+                continue
 
-                raw_units = concept_data.get("units", {})
+            company_name = facts.get("entityName", identifier)
+            concept_data = (
+                facts.get("facts", {})
+                .get(taxonomy, {})
+                .get(concept)
+            )
+            if concept_data is None:
+                warnings.append(f"{company_name}: concept '{taxonomy}/{concept}' not found — skipped.")
+                continue
 
-                # Pick the unit with the most observations
-                best_unit = max(raw_units.keys(), key=lambda u: len(raw_units[u]), default=None)
-                if best_unit is None:
-                    warnings.append(f"{company_name}: no unit data for '{concept}' — skipped.")
-                    continue
+            raw_units = concept_data.get("units", {})
 
-                observations = raw_units[best_unit]
+            # Pick the unit with the most observations
+            best_unit = max(raw_units.keys(), key=lambda u: len(raw_units[u]), default=None)
+            if best_unit is None:
+                warnings.append(f"{company_name}: no unit data for '{concept}' — skipped.")
+                continue
 
-                # Find the most recent full-year (fp == "FY") observation
-                fy_obs = [o for o in observations if o.get("fp") == "FY" and o.get("form", "").startswith("10-")]
-                if not fy_obs:
-                    # Fall back to any FY observation
-                    fy_obs = [o for o in observations if o.get("fp") == "FY"]
-                if not fy_obs:
-                    warnings.append(f"{company_name}: no full-year (FY) observations found for '{concept}' — using most recent available.")
-                    fy_obs = observations
+            observations = raw_units[best_unit]
 
-                latest = fy_obs[-1]
-                results.append({
-                    "company": company_name,
-                    "cik": padded_cik,
-                    "ticker": ticker,
-                    "value": latest.get("val"),
-                    "unit": best_unit,
-                    "period_end": latest.get("end", ""),
-                    "fiscal_year": latest.get("fy"),
-                    "accession_number": latest.get("accn", ""),
-                    "form": latest.get("form", ""),
-                })
+            # Find the most recent full-year (fp == "FY") observation
+            fy_obs = [o for o in observations if o.get("fp") == "FY" and o.get("form", "").startswith("10-")]
+            if not fy_obs:
+                # Fall back to any FY observation
+                fy_obs = [o for o in observations if o.get("fp") == "FY"]
+            if not fy_obs:
+                warnings.append(f"{company_name}: no full-year (FY) observations found for '{concept}' — using most recent available.")
+                fy_obs = observations
+
+            latest = next(reversed(fy_obs))
+            results.append({
+                "company": company_name,
+                "cik": padded_cik,
+                "ticker": ticker,
+                "value": latest.get("val"),
+                "unit": best_unit,
+                "period_end": latest.get("end", ""),
+                "fiscal_year": latest.get("fy"),
+                "accession_number": latest.get("accn", ""),
+                "form": latest.get("form", ""),
+            })
 
     except (httpx.HTTPStatusError, httpx.RequestError) as exc:
         return {"error": str(exc), "hint": "A network error occurred. Check identifiers and try again."}
 
     # --- Post-collection comparability checks ---
-    if len(results) >= 2:
-        # Check unit consistency
-        units_seen = {r["unit"] for r in results}
-        if len(units_seen) > 1:
-            unit_list = ", ".join(f"{r['ticker']}={r['unit']}" for r in results)
-            warnings.append(f"Unit mismatch — companies report in different units: {unit_list}. Values are not directly comparable.")
-
-        # Check fiscal year end alignment (45-day threshold)
-        for i in range(len(results)):
-            for j in range(i + 1, len(results)):
-                a, b = results[i], results[j]
-                if a["period_end"] and b["period_end"]:
-                    days = _days_between(a["period_end"], b["period_end"])
-                    if days > 45:
-                        warnings.append(
-                            f"Fiscal year ends differ: {a['ticker']} ends {a['period_end']}, "
-                            f"{b['ticker']} ends {b['period_end']} ({days} days apart — not calendar-year aligned)."
-                        )
+    _check_comparability(results, warnings)
 
     return {
         "concept": concept,
@@ -571,27 +587,12 @@ async def sec_edgar_get_filing_metadata(
     On failure returns {"error": "...", "hint": "..."}.
     """
     try:
-        async with httpx.AsyncClient(timeout=15.0, follow_redirects=False) as client:
-            await _ensure_ticker_cache(client)
+        resolved = await _resolve_identifier(identifier)
+        if isinstance(resolved, dict):
+            return resolved
+        padded_cik, _ = resolved
 
-            if identifier.strip().isdigit():
-                padded_cik = f"{int(identifier.strip()):010d}"
-            else:
-                record = _TICKER_CACHE.get(identifier.strip().upper())
-                if record is None:
-                    return {
-                        "error": f"'{identifier}' not found in the SEC database.",
-                        "hint": "Use sec_edgar_search_companies to find the correct ticker or CIK.",
-                    }
-                padded_cik = record["cik_str"]
-
-            resp = await client.get(
-                f"https://data.sec.gov/submissions/CIK{padded_cik}.json",
-                headers=_make_headers(),
-            )
-            resp.raise_for_status()
-            sub = resp.json()
-
+        sub = await _fetch_submission(padded_cik)
         company_name = sub.get("name", identifier)
         accession_dashed = _normalize_accession(accession_number.strip())
         accession_path = _accession_to_path(accession_dashed)
@@ -599,12 +600,11 @@ async def sec_edgar_get_filing_metadata(
         recent = sub.get("filings", {}).get("recent", {})
         accessions = recent.get("accessionNumber", [])
 
-        idx = None
-        for i, acc in enumerate(accessions):
-            # Normalize stored value for comparison
-            if _normalize_accession(acc) == accession_dashed:
-                idx = i
-                break
+        # Build a dict for O(1) lookup: normalised accession → list index
+        accession_index = {
+            _normalize_accession(acc): i for i, acc in enumerate(accessions)
+        }
+        idx = accession_index.get(accession_dashed)
 
         if idx is None:
             return {
@@ -642,6 +642,225 @@ async def sec_edgar_get_filing_metadata(
         }
     except (httpx.HTTPStatusError, httpx.RequestError) as exc:
         return {"error": str(exc), "hint": "Check the identifier and accession number and try again."}
+
+
+# ---------------------------------------------------------------------------
+# Tool 7 — Discover available XBRL concepts for a company
+# ---------------------------------------------------------------------------
+
+@mcp.tool(
+    name="sec_edgar_list_concepts",
+    annotations={
+        "title": "List XBRL Concepts for a Company",
+        "readOnlyHint": True,
+        "destructiveHint": False,
+        "idempotentHint": True,
+        "openWorldHint": True,
+    },
+)
+async def sec_edgar_list_concepts(
+    identifier: Annotated[str, "Ticker symbol or CIK."],
+    taxonomy: Annotated[str, "XBRL taxonomy to search. Default 'us-gaap'. Also common: 'dei'."] = "us-gaap",
+    search: Annotated[str, "Optional substring filter on concept name or label, e.g. 'revenue', 'income', 'asset'. Case-insensitive. Leave empty to list all."] = "",
+    limit: Annotated[int, "Maximum number of concepts to return. Default 50, max 200."] = 50,
+) -> dict:
+    """Discover what XBRL financial concepts a company reports under a given taxonomy.
+
+    Fetches all available concept tags and their human-readable labels from the
+    SEC companyfacts endpoint. Use the optional search parameter to filter by
+    keyword (e.g. 'revenue' finds all revenue-related concepts). Results are
+    sorted alphabetically by concept name.
+
+    This tool is essential when a concept name is unknown or a prior tool call
+    returned a 'concept not found' error — use it to find the correct XBRL tag.
+
+    Returns a dict with keys: company, cik, taxonomy, search, total_matches,
+    concepts (list of {concept, label}). On failure returns {"error": "...", "hint": "..."}.
+    """
+    limit = max(1, min(limit, 200))
+    try:
+        resolved = await _resolve_identifier(identifier)
+        if isinstance(resolved, dict):
+            return resolved
+        padded_cik, _ = resolved
+
+        client = _get_client()
+        resp = await client.get(
+            f"https://data.sec.gov/api/xbrl/companyfacts/CIK{padded_cik}.json",
+            headers=_make_headers(),
+        )
+        resp.raise_for_status()
+        facts = resp.json()
+
+        company_name = facts.get("entityName", identifier)
+        taxonomy_data = facts.get("facts", {}).get(taxonomy)
+        if taxonomy_data is None:
+            available = list(facts.get("facts", {}).keys())
+            return {
+                "error": f"Taxonomy '{taxonomy}' not found for {company_name}.",
+                "hint": f"Available taxonomies: {available}. Common values: 'us-gaap', 'dei'.",
+            }
+
+        search_lower = search.strip().lower()
+        concepts = []
+        for concept_name, concept_data in taxonomy_data.items():
+            # Some SEC entries have null labels — fall back to concept name
+            label = concept_data.get("label") or concept_name
+            if search_lower and (
+                search_lower not in concept_name.lower()
+                and search_lower not in label.lower()
+            ):
+                continue
+            concepts.append({"concept": concept_name, "label": label})
+
+        concepts.sort(key=lambda c: c["concept"])
+        total_matches = len(concepts)
+        concepts = concepts[:limit]
+
+        return {
+            "company": company_name,
+            "cik": padded_cik,
+            "taxonomy": taxonomy,
+            "search": search.strip(),
+            "total_matches": total_matches,
+            "concepts": concepts,
+        }
+    except (httpx.HTTPStatusError, httpx.RequestError) as exc:
+        return {"error": str(exc), "hint": "Check the identifier and try again."}
+
+
+# ---------------------------------------------------------------------------
+# Tool 8 — Quarterly XBRL observations (Q1/Q2/Q3/Q4)
+# ---------------------------------------------------------------------------
+
+@mcp.tool(
+    name="sec_edgar_get_quarterly_facts",
+    annotations={
+        "title": "Get Quarterly XBRL Facts",
+        "readOnlyHint": True,
+        "destructiveHint": False,
+        "idempotentHint": True,
+        "openWorldHint": True,
+    },
+)
+async def sec_edgar_get_quarterly_facts(
+    identifier: Annotated[str, "Ticker symbol or CIK."],
+    taxonomy: Annotated[str, "XBRL taxonomy, e.g. 'us-gaap'."],
+    concept: Annotated[str, "XBRL concept tag, e.g. 'Revenues', 'NetIncomeLoss'."],
+    limit: Annotated[int, "Number of quarterly observations to return, most recent first. Default 8, max 40."] = 8,
+) -> dict:
+    """Return quarterly (Q1/Q2/Q3/Q4) XBRL observations for a single concept and company.
+
+    Filters to observations where the fiscal period (fp) is Q1, Q2, Q3, or Q4
+    and the source form is a 10-Q filing. Results are returned most-recent-first.
+    Each observation includes a human-readable period_label (e.g. 'Q3 FY2025').
+
+    Use this tool when the user asks about quarterly trends, specific quarters,
+    or wants to compare quarters. For annual (full-year) data, use
+    sec_edgar_get_company_fact instead.
+
+    Returns a dict with keys: company, cik, taxonomy, concept, unit, label,
+    observations (list), note. On failure returns {"error": "...", "hint": "..."}.
+    """
+    limit = max(1, min(limit, 40))
+    try:
+        resolved = await _resolve_identifier(identifier)
+        if isinstance(resolved, dict):
+            return resolved
+        padded_cik, _ = resolved
+
+        client = _get_client()
+        resp = await client.get(
+            f"https://data.sec.gov/api/xbrl/companyfacts/CIK{padded_cik}.json",
+            headers=_make_headers(),
+        )
+        resp.raise_for_status()
+        facts = resp.json()
+
+        company_name = facts.get("entityName", identifier)
+        taxonomy_data = facts.get("facts", {}).get(taxonomy)
+        if taxonomy_data is None:
+            available = list(facts.get("facts", {}).keys())
+            return {
+                "error": f"Taxonomy '{taxonomy}' not found for {company_name}.",
+                "hint": f"Available taxonomies: {available}.",
+            }
+
+        concept_data = taxonomy_data.get(concept)
+        if concept_data is None:
+            sample = list(taxonomy_data.keys())[:10]
+            return {
+                "error": f"Concept '{concept}' not found in taxonomy '{taxonomy}' for {company_name}.",
+                "hint": f"Sample available concepts (first 10): {sample}. Use sec_edgar_list_concepts to search.",
+            }
+
+        label = concept_data.get("label", concept)
+        raw_units = concept_data.get("units", {})
+
+        # Pick the unit with the most observations (same logic as compare_companies)
+        best_unit = max(raw_units.keys(), key=lambda u: len(raw_units[u]), default=None)
+        if best_unit is None:
+            return {
+                "error": f"No unit data found for concept '{concept}' for {company_name}.",
+                "hint": "The concept may exist but have no numeric observations.",
+            }
+
+        all_obs = raw_units[best_unit]
+
+        # Filter to quarterly observations from 10-Q filings
+        quarterly_fps = {"Q1", "Q2", "Q3", "Q4"}
+        quarterly_obs = [
+            o for o in all_obs
+            if o.get("fp") in quarterly_fps and o.get("form", "").startswith("10-Q")
+        ]
+
+        # Sort most-recent first by period end date
+        quarterly_obs.sort(key=lambda o: o.get("end", ""), reverse=True)
+
+        note = ""
+        if len(quarterly_obs) == 0:
+            # Fall back to any quarterly fp even if not from 10-Q
+            quarterly_obs = [o for o in all_obs if o.get("fp") in quarterly_fps]
+            quarterly_obs.sort(key=lambda o: o.get("end", ""), reverse=True)
+            if quarterly_obs:
+                note = "Quarterly data sourced from non-10-Q filings (e.g. 10-K restated quarters)."
+            else:
+                return {
+                    "error": f"No quarterly (Q1/Q2/Q3/Q4) observations found for '{concept}' for {company_name}.",
+                    "hint": "This concept may only be reported annually. Use sec_edgar_get_company_fact for annual data.",
+                }
+        elif len(quarterly_obs) < limit:
+            note = f"Only {len(quarterly_obs)} quarterly observations available; fewer than the requested {limit}."
+
+        # Slice and annotate with human-readable period label
+        sliced = quarterly_obs[:limit]
+        observations = []
+        for o in sliced:
+            fp = o.get("fp", "")
+            fy = o.get("fy")
+            period_label = f"{fp} FY{fy}" if fp and fy else fp
+            observations.append({
+                "period_label": period_label,
+                "end": o.get("end", ""),
+                "val": o.get("val"),
+                "form": o.get("form", ""),
+                "accn": o.get("accn", ""),
+                "fy": fy,
+                "fp": fp,
+            })
+
+        return {
+            "company": company_name,
+            "cik": padded_cik,
+            "taxonomy": taxonomy,
+            "concept": concept,
+            "unit": best_unit,
+            "label": label,
+            "observations": observations,
+            "note": note,
+        }
+    except (httpx.HTTPStatusError, httpx.RequestError) as exc:
+        return {"error": str(exc), "hint": "Check the identifier and concept, and try again."}
 
 
 if __name__ == "__main__":

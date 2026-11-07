@@ -67,6 +67,14 @@ def _make_headers() -> dict[str, str]:
 # subsequent calls within the same MCP server process.  Creating a new
 # AsyncClient for every tool call incurs a fresh TCP/TLS handshake; reusing
 # one client keeps connections warm across consecutive requests.
+#
+# trust_env=False: prevents httpx from picking up HTTP_PROXY / HTTPS_PROXY
+# environment variables injected by container runtimes (e.g. Code Engine,
+# corporate proxies).  The SEC public APIs require direct outbound access;
+# routing through a proxy breaks them.
+#
+# follow_redirects=True: SEC APIs occasionally redirect http:// → https://
+# or move endpoints; following silently is correct here.
 _http_client: httpx.AsyncClient | None = None
 
 
@@ -74,7 +82,11 @@ def _get_client() -> httpx.AsyncClient:
     """Return the process-level shared AsyncClient, creating it if needed."""
     global _http_client
     if _http_client is None:
-        _http_client = httpx.AsyncClient(timeout=20.0, follow_redirects=False)
+        _http_client = httpx.AsyncClient(
+            timeout=20.0,
+            follow_redirects=True,
+            trust_env=False,
+        )
     return _http_client
 
 

@@ -1,0 +1,11 @@
+datasets:
+  sec-edgar-eval-0:
+    csv_path: datasets/sec-edgar-eval-0/examples/sec-edgar-eval-0.csv
+    input_keys:
+      - query
+    output_keys:
+      - responses
+    description: >
+      20 questions across 10 scenario categories covering all 8 SEC EDGAR tools.
+      Includes easy (single-tool), medium (two-tool chains), and hard (multi-step,
+      cross-company comparison, source attribution) questions.

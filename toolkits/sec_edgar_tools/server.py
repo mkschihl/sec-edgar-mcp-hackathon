@@ -819,11 +819,28 @@ async def sec_edgar_get_quarterly_facts(
 
         all_obs = raw_units[best_unit]
 
-        # Filter to quarterly observations from 10-Q filings
+        # Filter to single-quarter observations from 10-Q filings.
+        #
+        # XBRL stores BOTH three-month and year-to-date (YTD) values under the same
+        # fp label (e.g. fp=Q3 covers both "three months ended Sep 30" AND "nine months
+        # ended Sep 30"). We distinguish them by duration: a genuine single quarter
+        # spans ~59–104 days; a YTD period is longer. Filter to duration ≤ 104 days so
+        # we never surface a 6- or 9-month cumulative as a quarterly figure.
         quarterly_fps = {"Q1", "Q2", "Q3", "Q4"}
+
+        def _is_single_quarter(obs: dict) -> bool:
+            start = obs.get("start", "")
+            end = obs.get("end", "")
+            if not start or not end:
+                return True  # can't determine — keep it
+            days = _days_between(start, end)
+            return days <= 104  # ~3.5 months max for a true single quarter
+
         quarterly_obs = [
             o for o in all_obs
-            if o.get("fp") in quarterly_fps and o.get("form", "").startswith("10-Q")
+            if o.get("fp") in quarterly_fps
+            and o.get("form", "").startswith("10-Q")
+            and _is_single_quarter(o)
         ]
 
         # Sort most-recent first by period end date
@@ -831,18 +848,43 @@ async def sec_edgar_get_quarterly_facts(
 
         note = ""
         if len(quarterly_obs) == 0:
-            # Fall back to any quarterly fp even if not from 10-Q
-            quarterly_obs = [o for o in all_obs if o.get("fp") in quarterly_fps]
+            # Fall back to any single-quarter fp even if not from 10-Q (e.g. 10-K amended)
+            quarterly_obs = [
+                o for o in all_obs
+                if o.get("fp") in quarterly_fps and _is_single_quarter(o)
+            ]
             quarterly_obs.sort(key=lambda o: o.get("end", ""), reverse=True)
             if quarterly_obs:
-                note = "Quarterly data sourced from non-10-Q filings (e.g. 10-K restated quarters)."
+                note = "Quarterly data sourced from non-10-Q filings (e.g. restated quarters in 10-K/8-K)."
             else:
                 return {
-                    "error": f"No quarterly (Q1/Q2/Q3/Q4) observations found for '{concept}' for {company_name}.",
-                    "hint": "This concept may only be reported annually. Use sec_edgar_get_company_fact for annual data.",
+                    "error": f"No single-quarter (Q1/Q2/Q3/Q4) observations found for '{concept}' for {company_name}.",
+                    "hint": (
+                        "This concept may only be reported annually. Use sec_edgar_get_company_fact for annual data. "
+                        "Note: Q4 figures are not in 10-Qs — they appear in 10-K or 8-K earnings releases."
+                    ),
                 }
-        elif len(quarterly_obs) < limit:
-            note = f"Only {len(quarterly_obs)} quarterly observations available; fewer than the requested {limit}."
+        note_parts = []
+        if len(quarterly_obs) < limit:
+            note_parts.append(
+                f"Only {len(quarterly_obs)} single-quarter observations available "
+                f"(requested {limit}). Q4 figures are not filed in 10-Qs — they appear "
+                "in the annual 10-K or earnings 8-K, which are not included here."
+            )
+        if note:
+            note_parts.append(note)
+        note = " ".join(note_parts)
+
+        # Deduplicate: keep only the observation with the latest accession per (fp, fy) pair
+        # (same period may appear in multiple filings; prefer the most-recently-filed one)
+        seen: dict[tuple, dict] = {}
+        for o in quarterly_obs:  # already sorted most-recent end date first
+            key = (o.get("fp"), o.get("fy"))
+            if key not in seen:
+                seen[key] = o
+        quarterly_obs = list(seen.values())
+        # Re-sort after dedup
+        quarterly_obs.sort(key=lambda o: o.get("end", ""), reverse=True)
 
         # Slice and annotate with human-readable period label
         sliced = quarterly_obs[:limit]

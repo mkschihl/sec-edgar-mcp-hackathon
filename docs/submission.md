@@ -150,7 +150,7 @@ five response quality issues. All high-severity issues have been addressed.
 | Wrong entity for multi-registrant corps (ExxonMobil shell vs. operating entity) | High | Search returned first alphabetical result | Agent instructions updated: prefer ticker-matching entity; retry if no 10-K found |
 | YTD values returned as quarterly figures (Apple Q3 ~$364B instead of ~$109B) | High | XBRL stores 3-month and 9-month values under the same `fp=Q3` label | Server fix: filter observations to ≤104-day duration; deduplicate per `(fp, fy)` |
 | Q4 missing without explanation | Medium | No instruction covering the 10-Q gap | Agent instructions updated: explicitly disclose Q4/10-Q limitation; offer annual proxy |
-| Annual fact precision (~$3B off for Apple FY2024) | Medium | `get_company_fact` returns all observations including comparative-period restated entries | Identified; fix planned (filter to latest-filed observation per FY end date) |
+| Annual fact precision (~$3B off for Apple FY2024) | Medium | `get_company_fact` returns all observations including comparative-period restated entries | Server fix deployed: deduplicate FY observations by fiscal year end date, keeping the latest-filed entry per year |
 | Concept synonym gaps (revenue/debt tags not matching keywords) | Medium | Substring search misses tags like `PremiumsEarnedNet` | Agent instructions updated: run synonym searches; XBRL concept table expanded |
 
 ### Layer 3 — LLM-as-Judge (Phoenix, pending USAI credentials)

@@ -1,0 +1,254 @@
+
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SEC EDGAR Project — What You Built</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, "Segoe UI", system-ui, sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    color: #1f2328;
+    background: #ffffff;
+    padding: 32px 16px 48px;
+  }
+  .page { max-width: 760px; margin: 0 auto; }
+  h1 { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+  .subtitle { color: #57606a; font-size: 13px; margin-bottom: 32px; }
+  h2 {
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #57606a;
+    border-bottom: 1px solid #e5e7eb;
+    padding-bottom: 6px;
+    margin: 32px 0 14px;
+  }
+  h3 { font-size: 15px; font-weight: 600; margin: 20px 0 6px; }
+  p { margin-bottom: 10px; }
+  ul { padding-left: 20px; margin-bottom: 10px; }
+  li { margin-bottom: 5px; }
+  .card {
+    background: #f7f8fa;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 16px 18px;
+    margin-bottom: 14px;
+  }
+  .card-title { font-weight: 600; font-size: 15px; margin-bottom: 8px; }
+  .card-sub { font-size: 12px; color: #57606a; margin-bottom: 8px; font-style: italic; }
+  .layer {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    margin-bottom: 14px;
+  }
+  .layer-num {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #3b82d4;
+    color: #fff;
+    font-weight: 700;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 2px;
+  }
+  .layer-body { flex: 1; }
+  .layer-title { font-weight: 600; margin-bottom: 4px; }
+  table { width: 100%; border-collapse: collapse; margin-bottom: 14px; font-size: 13px; }
+  th { background: #f7f8fa; border: 1px solid #e5e7eb; padding: 7px 10px; text-align: left; font-weight: 600; }
+  td { border: 1px solid #e5e7eb; padding: 7px 10px; vertical-align: top; }
+  .tag {
+    display: inline-block; font-size: 11px; font-weight: 600;
+    padding: 1px 7px; border-radius: 10px; margin-right: 4px;
+  }
+  .tag-blue  { background: #dbeafe; color: #1e40af; }
+  .tag-green { background: #dcfce7; color: #166534; }
+  .tag-orange { background: #fff7ed; color: #9a3412; border: 1px solid #fed7aa; }
+  .arrow { text-align: center; font-size: 20px; color: #57606a; margin: 4px 0; }
+  .box {
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-bottom: 8px;
+    text-align: center;
+  }
+  .box-blue { border-color: #93c5fd; background: #eff6ff; }
+  .box-green { border-color: #86efac; background: #f0fdf4; }
+  .box-purple { border-color: #c4b5fd; background: #f5f3ff; }
+  .box-label { font-weight: 700; font-size: 13px; margin-bottom: 2px; }
+  .box-desc { font-size: 12px; color: #57606a; }
+  .milestone { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 10px; }
+  .m-dot { flex-shrink: 0; width: 10px; height: 10px; border-radius: 50%; background: #22c55e; margin-top: 5px; }
+  .m-body { flex: 1; }
+  code {
+    font-family: ui-monospace, "SFMono-Regular", Consolas, monospace;
+    font-size: 12px;
+    background: #f7f8fa;
+    border: 1px solid #e5e7eb;
+    border-radius: 3px;
+    padding: 1px 5px;
+  }
+  footer {
+    margin-top: 40px;
+    padding-top: 14px;
+    border-top: 1px solid #e5e7eb;
+    text-align: center;
+    font-size: 12px;
+    color: #57606a;
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <h1>SEC EDGAR Facts Explorer</h1>
+  <p class="subtitle">What you built — a plain-language guide to the full hackathon project</p>
+
+  <h2>The Big Picture</h2>
+  <p>You built a system that lets an AI assistant answer questions about public company SEC filings — things like "What was Apple's revenue last quarter?" or "Which filing first reported Microsoft's most recent net income?" — by going directly to the SEC's official database, not by guessing from training data.</p>
+  <p>The system has three layers, built in order:</p>
+
+  <div class="box box-blue" style="margin-top:16px">
+    <div class="box-label">Layer 1 — The Tools (MCP Server)</div>
+    <div class="box-desc">8 functions that know how to talk to the SEC's APIs</div>
+  </div>
+  <div class="arrow">↓</div>
+  <div class="box box-green">
+    <div class="box-label">Layer 2 — The Agent</div>
+    <div class="box-desc">An AI that decides which tools to call and how to explain the results</div>
+  </div>
+  <div class="arrow">↓</div>
+  <div class="box box-purple">
+    <div class="box-label">Layer 3 — The Evaluation</div>
+    <div class="box-desc">A test suite that measures whether the agent gives correct, useful answers</div>
+  </div>
+
+  <h2>Layer 1 — The MCP Server (sec_edgar_tools)</h2>
+
+  <p>Yes — <strong>the toolkit is the MCP server.</strong> MCP stands for "Model Context Protocol," which is an open standard for giving AI models access to external tools. Think of it like a power strip: you plug in functions, and any AI that speaks MCP can use them.</p>
+
+  <p>You built 8 tools, each of which wraps one type of SEC EDGAR API call:</p>
+
+  <table>
+    <tr><th>#</th><th>Tool name</th><th>What it does (plain English)</th></tr>
+    <tr><td>1</td><td><code>search_companies</code></td><td>Find companies by partial name ("Berkshire" → returns BRK-A, BRK-B)</td></tr>
+    <tr><td>2</td><td><code>resolve_company</code></td><td>Look up a company by ticker or CIK — returns full details (SIC code, state of incorporation, etc.)</td></tr>
+    <tr><td>3</td><td><code>get_recent_filings</code></td><td>List the most recent 10-K, 10-Q, or 8-K filings for a company</td></tr>
+    <tr><td>4</td><td><code>get_company_fact</code></td><td>Get a time-series of annual financial data — e.g. "Apple's net income for each of the last 8 fiscal years"</td></tr>
+    <tr><td>5</td><td><code>get_quarterly_facts</code></td><td>Same as above but for individual quarters (Q1/Q2/Q3/Q4 only, not year-to-date)</td></tr>
+    <tr><td>6</td><td><code>compare_companies</code></td><td>Compare the same financial metric across multiple companies side-by-side</td></tr>
+    <tr><td>7</td><td><code>get_filing_metadata</code></td><td>Look up a specific filing by its accession number — returns form type, date, and a direct link to the SEC website</td></tr>
+    <tr><td>8</td><td><code>list_concepts</code></td><td>Discover what financial data tags (XBRL concepts) a company reports, so you can find the right one to query</td></tr>
+  </table>
+
+  <p>The server runs as a containerised web service on <strong>IBM Code Engine</strong> (IBM's serverless container platform) and is always available at a public URL. It calls the SEC's public APIs — no login required, all public data.</p>
+
+  <div class="card">
+    <div class="card-title">What is XBRL?</div>
+    <p style="margin-bottom:0">XBRL (eXtensible Business Reporting Language) is a standardised tagging system the SEC requires public companies to use in their financial filings. Instead of just a PDF number, each figure like "net income" gets a machine-readable tag like <code>NetIncomeLoss</code>. This is what makes it possible to programmatically retrieve Apple's revenue without scraping a PDF.</p>
+  </div>
+
+  <h2>Layer 2 — The Agent (sec_edgar_agent)</h2>
+
+  <p>The agent is an <strong>AI that sits in front of the tools</strong> and handles the conversation with the user. Here is what it does that the tools alone cannot:</p>
+
+  <div class="layer">
+    <div class="layer-num">1</div>
+    <div class="layer-body">
+      <div class="layer-title">Understands natural language</div>
+      A user says "Show me Apple's quarterly revenue." The agent figures out that means: call <code>get_quarterly_facts</code> with AAPL, us-gaap, RevenueFromContractWithCustomerExcludingAssessedTax. The user doesn't know (or care) what XBRL tag Apple uses.
+    </div>
+  </div>
+  <div class="layer">
+    <div class="layer-num">2</div>
+    <div class="layer-body">
+      <div class="layer-title">Chains multiple tools together</div>
+      "I don't know the ticker — find companies with 'Pfizer' in the name, then show me their last 4 annual revenues." That requires <em>two</em> tool calls in sequence: search first, then retrieve. The agent handles this automatically.
+    </div>
+  </div>
+  <div class="layer">
+    <div class="layer-num">3</div>
+    <div class="layer-body">
+      <div class="layer-title">Formats and explains the results</div>
+      Raw SEC data is numbers and accession codes. The agent turns "$94,000,000,000" into "$94.0 billion", adds fiscal year labels, presents comparison tables, and flags fiscal year misalignments ("Apple's year ends in September; Microsoft's ends in June — these figures may not be directly comparable").
+    </div>
+  </div>
+  <div class="layer">
+    <div class="layer-num">4</div>
+    <div class="layer-body">
+      <div class="layer-title">Recovers from errors gracefully</div>
+      If a concept name fails, the agent tries an alternate name or calls <code>list_concepts</code> to find the right one — rather than just saying "I couldn't find that."
+    </div>
+  </div>
+
+  <p>The agent lives inside <strong>IBM watsonx Orchestrate</strong> (IBM's AI agent platform). It is accessible via the watsonx Orchestrate chat UI, via the REST API, or via the CLI. Any of those interfaces can send a question and get back an answer.</p>
+
+  <div class="card">
+    <div class="card-title">Could other agents or tools use sec_edgar_agent?</div>
+    <p style="margin-bottom:0">Yes. Because the agent is registered in watsonx Orchestrate, it can be used as a <em>collaborator</em> by other agents. A higher-level "financial research" agent could delegate SEC-related questions to <code>sec_edgar_agent</code> automatically. The MCP server can also be connected directly to any MCP-compatible AI client (Claude Desktop, other orchestration platforms, etc.) without the watsonx Orchestrate layer at all.</p>
+  </div>
+
+  <h2>Layer 3 — The Evaluation Harness</h2>
+
+  <p>A <strong>harness</strong> is a testing framework — the word comes from physical test harnesses in engineering (the cables and fixtures that hold a component in place while you measure it). A software test harness is the scaffolding that runs your system under controlled conditions and measures the results.</p>
+
+  <p>You built <em>two</em> evaluation harnesses, one after the other:</p>
+
+  <h3>Harness 1 — REST-based tool-routing evaluator (<code>evaluation/run_evaluation.py</code>)</h3>
+  <p>This one sends 20 carefully designed questions to the live agent via the watsonx Orchestrate REST API and checks: <strong>did the right tools fire?</strong> It doesn't judge the quality of the answer — only whether the correct SEC API calls were made. Result: 20/20 pass on 2026-11-07.</p>
+
+  <h3>Harness 2 — Phoenix LLM-as-judge evaluator (<code>eval/phoenix/</code>)</h3>
+  <p>This one measures actual <em>answer quality</em> — not just which tools fired, but whether the numbers are correct and whether the response is in-scope. It uses a second, independent AI model (a "judge") to read each response and score it. This is called "LLM-as-judge."</p>
+
+  <div class="card">
+    <div class="card-title">Why use an AI to judge an AI?</div>
+    <p style="margin-bottom:0">Human review of 20 questions is feasible. But if you wanted to test 500 questions, or re-run the test every time you make a change, human review doesn't scale. An LLM judge can evaluate a response in seconds and apply a consistent rubric. The key is using a <em>different</em> model as the judge than the one being tested — this reduces "self-preference bias" (a model tends to think its own answers are correct).</p>
+  </div>
+
+  <p><strong>Status:</strong> The Phoenix harness is fully built and import-tested. It is waiting on one thing: the USAI model gateway credentials from the GSA hackathon lab portal, which provide access to the AI model the harness uses as a judge.</p>
+
+  <h2>What the Human Audit Found</h2>
+  <p>Between the two automated harnesses, you read all 20 agent responses yourself and found real issues the automated scorer missed. The most important ones, now fixed:</p>
+  <ul>
+    <li><strong>YTD values returned as quarterly figures</strong> — Apple's "Q3 revenue" was showing $364B (nine months) instead of $109B (three months). Fixed in the server by filtering on observation duration.</li>
+    <li><strong>Wrong company selected for ExxonMobil</strong> — the search returned a holding-company shell with no filings instead of the main operating entity. Fixed in the agent instructions.</li>
+    <li><strong>Concept synonyms missing</strong> — "revenue" searches missed many revenue-related XBRL tags that don't contain the word "revenue." Fixed in the agent instructions.</li>
+  </ul>
+
+  <h2>How Everything Fits Together</h2>
+  <table>
+    <tr><th>Component</th><th>Lives where</th><th>Role</th></tr>
+    <tr><td><code>sec_edgar_tools</code> (MCP server)</td><td>IBM Code Engine (always-on container)</td><td>Makes the actual SEC API calls; returns structured data</td></tr>
+    <tr><td><code>sec_edgar_agent</code></td><td>IBM watsonx Orchestrate</td><td>Understands user questions; chooses and chains tools; formats answers</td></tr>
+    <tr><td>REST evaluator</td><td>Your workstation (runs on demand)</td><td>Checks tool routing — did the agent call the right tools?</td></tr>
+    <tr><td>Phoenix harness</td><td>Your workstation + Phoenix server</td><td>Checks answer quality — are the numbers right? Is the response helpful?</td></tr>
+    <tr><td>Human audit</td><td>Your brain</td><td>Catches what automated scorers miss; grounds the numbers in real SEC data</td></tr>
+  </table>
+
+  <h2>Milestone Summary</h2>
+
+  <div class="milestone">
+    <div class="m-dot"></div>
+    <div class="m-body"><strong>M1 — MCP Server built and deployed.</strong> 8 tools, deployed to IBM Code Engine as a public HTTPS endpoint. The server queries the SEC's EDGAR APIs and returns structured JSON.</div>
+  </div>
+  <div class="milestone">
+    <div class="m-dot"></div>
+    <div class="m-body"><strong>M2 — Agent deployed and toolkit wired up.</strong> <code>sec_edgar_agent</code> live in watsonx Orchestrate with detailed routing instructions for all 8 tools. Toolkit re-imported using the more reliable remote HTTP transport (no subprocess).</div>
+  </div>
+  <div class="milestone">
+    <div class="m-dot" style="background:#f59e0b"></div>
+    <div class="m-body"><strong>M3 — Evaluation: mostly complete.</strong> 20-question dataset, REST eval run (20/20 pass), human audit (5 issues found and fixed), Phoenix harness built. Final step — LLM-as-judge run — waiting on USAI credentials.</div>
+  </div>
+
+  <footer>Made with IBM Bob</footer>
+</div>
+</body>
+</html>

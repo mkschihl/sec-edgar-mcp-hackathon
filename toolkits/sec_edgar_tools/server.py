@@ -397,6 +397,12 @@ async def sec_edgar_get_company_fact(
     a 'units' dict (e.g. {'USD': [...], 'shares': [...]}). When limit > 0,
     each list is trimmed to the last N entries (most recent last).
 
+    For full-year (FY) observations, deduplicates by fiscal year end date,
+    keeping only the entry with the latest 'filed' date.  This removes
+    comparative-period restated values that the SEC API stores alongside
+    the original filing (e.g. a 10-K amendment that restates FY2023 figures
+    inside the FY2024 filing), which previously caused ~$1-3B inaccuracies.
+
     Returns a dict with keys: company, cik, taxonomy, concept, label,
     description, units. On failure returns {"error": "...", "hint": "..."}.
     """
@@ -435,10 +441,31 @@ async def sec_edgar_get_company_fact(
         description = concept_data.get("description", "")
         raw_units = concept_data.get("units", {})
 
-        units_out: dict[str, list] = {
-            unit_label: (list(obs)[-limit:] if limit > 0 else list(obs))
-            for unit_label, obs in raw_units.items()
-        }
+        def _dedup_fy(obs_list: list) -> list:
+            """For FY-labelled observations, keep only the latest-filed entry per
+            fiscal year end date.  This removes comparative-period restated values
+            that the SEC API stores alongside the original filing's figure (e.g. a
+            10-K amendment that restates FY2023 net income inside the FY2024 filing).
+            Non-FY observations (Q1/Q2/Q3/Q4, etc.) are returned unchanged."""
+            # Separate FY from non-FY; deduplicate FY by (end date → latest filed)
+            best: dict[str, dict] = {}  # end_date → observation with max filed
+            non_fy: list = []
+            for o in obs_list:
+                if o.get("fp") == "FY":
+                    end = o.get("end", "")
+                    filed = o.get("filed", "")
+                    if end not in best or filed > best[end].get("filed", ""):
+                        best[end] = o
+                else:
+                    non_fy.append(o)
+            # Merge back; preserve original chronological order (sort by end date)
+            deduped_fy = sorted(best.values(), key=lambda o: o.get("end", ""))
+            return non_fy + deduped_fy
+
+        units_out: dict[str, list] = {}
+        for unit_label, obs in raw_units.items():
+            cleaned = _dedup_fy(list(obs))
+            units_out[unit_label] = cleaned[-limit:] if limit > 0 else cleaned
 
         return {
             "company": company_name,

@@ -69,6 +69,18 @@ compaction_settings:             # 2.11+ — prevents context overflow in long c
   large_message_chunk_size: 30000
   large_message_target_summary: 10000
   large_message_detect_structured: true
+escalation:                      # hand off to a live agent via an escalation workflow
+  enabled: true                  # default false
+  escalation_tool: customer_care_escalation_flow   # workflow name (flow with is_customercare_escalation=True);
+                                 # import it first; also list it in `tools`
+  conditions:                    # when to escalate; condition_id is passed to the workflow
+    - name: Human request
+      escalation_condition: The user directly requests to talk to a human agent.
+      condition_id: human_request   # unique; letters, digits, '_' and '-' only
+  escalation_prompt_override: null  # danger zone: optional raw prompt replacing the one composed from conditions;
+                                 # must name the workflow and condition_ids itself.
+                                 # `orchestrate agents escalation-prompt -n <agent> --default` prints the composed one
+                                 # Overriding this prompt might break agent behavior. Proceed at your own risk.
 chat_with_docs:                  # let end users upload docs in-chat (RAG over user-uploaded files)
   enabled: true
   supports_full_document: true
@@ -95,6 +107,9 @@ welcome_content:
 - `planner` style: at most one of `custom_join_tool` / `structured_output`.
 - `experimental_customer_care` style: requires `groq/openai/gpt-oss-120b`; does NOT support `tools`, `knowledge_base`, `collaborators`, `guidelines`, `chat_with_docs.enabled`.
 - `toolkits` rejected for non-customer-care styles (except the `scheduling_tools` schedulable-agent exception).
+- `escalation.enabled: true` requires `escalation_tool` and style `default`, `react`, `react_core` or `react_intrinsic` (other styles ignore escalation at runtime, so they are rejected). `condition_id`s must be unique.
+- Re-importing a YAML without an `escalation` block removes the agent's escalation, including one configured in the UI.
+- Escalation workflows are hidden from `orchestrate tools list`; add `--include-escalation` to see them.
 
 ### External agent (`kind: external`)
 A2A / external chat. Key fields: `api_url` (required), `auth_scheme` (`BEARER_TOKEN | API_KEY | NONE`),
@@ -659,6 +674,9 @@ Source: [`examples/flow_builder/triage_workflow_agent_swarm`](https://github.com
     output_schema=MyOutput,
     private_schema=MyPrivate,
     suppress_agent_summarization=True,  # prevents the agent from re-interpreting/reformatting the flow's final output; the last node's result is surfaced verbatim to the user
+    is_customercare_escalation=True,     # marks the flow as an escalation workflow for an agent's `escalation.escalation_tool`;
+                                         # use input_schema=CustomerCareEscalationInput and end with a Transfer End node
+                                         # (see examples/flow_builder/customer_care_escalation/)
 )
 def build_my_flow(aflow: Flow) -> Flow:
     ...

@@ -206,6 +206,21 @@ starter_prompts:
       subtitle: ''
       prompt: "What revenue-related XBRL concepts does Microsoft report?"
       state: active
+    - id: sp7
+      title: Quarterly earnings per share
+      subtitle: ''
+      prompt: "Show me Apple's quarterly earnings per share for the last 6 quarters."
+      state: active
+    - id: sp8
+      title: Debt concepts for a company
+      subtitle: ''
+      prompt: "What debt-related XBRL concepts does Tesla report in us-gaap?"
+      state: active
+    - id: sp9
+      title: Company identity lookup
+      subtitle: ''
+      prompt: "What is the SEC CIK, SIC code, and state of incorporation for Amazon?"
+      state: active
 welcome_content:
   welcome_message: SEC EDGAR Facts Explorer
   description: >

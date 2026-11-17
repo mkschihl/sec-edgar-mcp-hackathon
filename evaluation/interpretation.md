@@ -186,12 +186,10 @@ measurement gap that LLM-as-judge scoring is designed to close.
 - ✅ Agent instructions updated: entity disambiguation, Q4 caveat, concept synonyms
 - Redeploy both to `gsa-hackathon` once WXO token is refreshed
 
-**Pending USAI model gateway credentials:**
-- Run `eval/phoenix/run_experiment.py --dataset-name sec-edgar-eval-0` with prompt v1
-- Run same experiment with `--system-prompt-version v2` (scope-bounded prompt)
-- Compare `correctness` scores between v1 and v2 runs in Phoenix UI
-- Expected improvement areas: BQ-09, BQ-10, BQ-18, BQ-20 (the server fix and
-  instruction changes address the root causes found in the human audit)
+**Phoenix LLM-as-judge — completed 2026-11-17 (see Section 6 below):**
+- ✅ Experiment 2 (prompt v1): 17/20 correctness, 20/20 scope
+- ✅ Experiment 3 (prompt v2): 18/20 correctness, 20/20 scope
+- Root causes of remaining 2 failures identified and fixed in agent instructions
 
 **Future improvements (out of current scope):**
 - Filter `get_company_fact` to the latest-filed observation per fiscal year end
@@ -202,5 +200,89 @@ measurement gap that LLM-as-judge scoring is designed to close.
 
 ---
 
-*Human audit: Michael Schihl, 2026-11-11*  
-*Report generated: 2026-11-11*
+## 6. LLM-as-Judge results (Layer 3, Phoenix, 2026-11-17)
+
+Two experiments were run against the `sec-edgar-eval-0` dataset using
+`meta-llama/llama-3-3-70b-instruct` as both the agent and judge model.
+
+### 6a. Scores
+
+| Experiment | System Prompt | Correctness | Scope |
+|---|---|---|---|
+| Experiment 2 | v1 (baseline) | **17 / 20 = 85%** | **20 / 20 = 100%** |
+| Experiment 3 | v2 (scope-bounded) | **18 / 20 = 90%** | **20 / 20 = 100%** |
+
+The 100% scope score confirms the agent never fabricated answers for questions
+it could not handle with its tools.
+
+### 6b. Remaining incorrect responses — root cause analysis
+
+**Failure 1 — Apple quarterly revenue (both v1 and v2)**
+
+- **Question:** "Show me Apple's quarterly revenue for the last 8 quarters."
+- **Agent response:** Returned an error because `sec_edgar_get_quarterly_facts`
+  found no data for concept `Revenues`, then gave up.
+- **Root cause:** Apple switched from `Revenues` to
+  `RevenueFromContractWithCustomerExcludingAssessedTax` in 2018. The agent's
+  revenue retry rule was written only for `sec_edgar_get_company_fact` (Rule 4);
+  Rule 8 (quarterly) did not include the same retry logic.
+- **Fix applied:** Rule 8 in `agents/sec_edgar_agent.yaml` now explicitly
+  instructs the agent to retry with
+  `RevenueFromContractWithCustomerExcludingAssessedTax` before returning an error,
+  and to fall back to `sec_edgar_list_concepts` if both concept names fail.
+
+**Failure 2 — Exxon entity disambiguation (both v1 and v2)**
+
+- **Question:** "Search for companies with 'Exxon' in their name, resolve the
+  main one, then list its 5 most recent 10-K filings."
+- **Agent response:** Resolved to ExxonMobil Holdings Corp (CIK 0002115436), a
+  holding company that files no 10-K reports. Correctly reported zero 10-K
+  filings — but that is the wrong entity.
+- **Root cause:** The existing Rule 1 said "search again with a broader or more
+  specific name variant" but did not give a concrete recovery path. The agent
+  interpreted "ExxonMobil Holdings Corp" with ticker XOM as the ticker match.
+- **Fix applied:** Rule 1 now explicitly says: if the resolved entity has no
+  recent 10-K, do NOT report "no filings available" — immediately search again
+  using the full legal operating company name (e.g. "Exxon Mobil Corp") and
+  select the registrant with the most recent 10-K history.
+
+**Failure 3 — JPM vs BAC total assets (v1 only, resolved in v2)**
+
+- **Question:** "Which company has more total assets — JPMorgan Chase (JPM) or
+  Bank of America (BAC)? Use the most recent annual figures."
+- **Agent response (v1):** Returned correct asset values and the correct answer,
+  but omitted fiscal year end dates from the comparison table.
+- **Judge explanation:** The reference criteria required fiscal year end dates
+  to verify the figures are from the same period.
+- **Status:** This question was scored correct in Experiment 3 (v2). The v2
+  prompt's more explicit table format instructions appear to have been sufficient
+  to include the missing date column.
+
+### 6c. Consistency with human audit
+
+The LLM-as-judge results closely match the Layer 2 human audit:
+
+- Both methods identified the entity disambiguation (Exxon) issue as a failure.
+- The YTD-vs-quarterly fix (server-side, BQ-09, BQ-10) worked: none of those
+  questions were scored incorrect by the judge.
+- The annual fact accuracy issue (BQ-07, Apple net income precision) was **not**
+  flagged as incorrect by the judge — the values were within rounding tolerance
+  of the reference answer, or the judge did not catch the $1–3B discrepancy.
+  This is a known gap in the judge's reference criteria.
+
+### 6d. Next steps (post-experiment)
+
+- **Re-import agent:** `agents/sec_edgar_agent.yaml` has been updated with both
+  fixes. Re-import with `orchestrate agents import -f agents/sec_edgar_agent.yaml`
+  once the WXO API key is refreshed.
+- **Re-run Experiment 4 (prompt v1 + fixes):** To measure the improvement from
+  the Rule 1 and Rule 8 fixes, run a third experiment with the updated agent.
+  Expected outcome: the two remaining failures are resolved → 20/20 correctness.
+- **Future:** Add an 8-K earnings release tool to surface Q4 figures; expand
+  concept discovery with taxonomy-tree traversal.
+
+---
+
+*Human audit: Michael Schihl, 2026-11-11*
+*Phoenix evaluation: 2026-11-17*
+*Report updated: 2026-11-17*

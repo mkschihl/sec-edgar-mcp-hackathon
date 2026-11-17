@@ -153,17 +153,29 @@ five response quality issues. All high-severity issues have been addressed.
 | Annual fact precision (~$3B off for Apple FY2024) | Medium | `get_company_fact` returns all observations including comparative-period restated entries | Server fix deployed: deduplicate FY observations by fiscal year end date, keeping the latest-filed entry per year |
 | Concept synonym gaps (revenue/debt tags not matching keywords) | Medium | Substring search misses tags like `PremiumsEarnedNet` | Agent instructions updated: run synonym searches; XBRL concept table expanded |
 
-### Layer 3 — LLM-as-Judge (Phoenix, pending USAI credentials)
+### Layer 3 — LLM-as-Judge (Phoenix, `meta-llama/llama-3-3-70b-instruct`)
 
-The Phoenix harness is fully built (`eval/phoenix/`). It includes:
-- 20-question dataset CSV covering all 8 tools
-- Two LLM-as-judge evaluators: `match_expected_response` (correctness) and
-  `check_answer_scope` (scope compliance)
-- Two system prompt versions for A/B comparison (baseline vs. scope-bounded)
-- Direct MCP connection to the Code Engine endpoint (no subprocess overhead)
+Two experiments were run on 2026-11-17 using `meta-llama/llama-3-3-70b-instruct`
+as both the agent model and the judge model. The harness connects directly to the
+Code Engine MCP endpoint and scores each response against a written reference answer.
 
-Expected improvement areas once the run completes: BQ-09, BQ-10 (quarterly
-YTD fix), BQ-18 (entity disambiguation fix), BQ-20 (EPS quarterly data).
+**Results:**
+
+| Experiment | System Prompt | Correctness | Scope |
+|---|---|---|---|
+| Experiment 2 | v1 (baseline) | **17 / 20 = 85%** | **20 / 20 = 100%** |
+| Experiment 3 | v2 (scope-bounded) | **18 / 20 = 90%** | **20 / 20 = 100%** |
+
+Prompt v2 improved correctness by 1 question. Both versions scored 100% on scope —
+the agent never answered questions outside its defined domain.
+
+**Root causes of the 3 remaining incorrect responses (v1):**
+
+| Question | Root cause | Status |
+|---|---|---|
+| Apple quarterly revenue (8 quarters) | Agent got error on `Revenues` concept and did not retry with `RevenueFromContractWithCustomerExcludingAssessedTax` for the quarterly tool | Fixed in agent instructions (Rule 8) |
+| JPM vs BAC total assets | Correct values returned but fiscal year end dates omitted — judge failed on completeness | Fixed in v2 (v2 passes this question) |
+| Exxon search → resolve → 10-K filings | Agent resolved to ExxonMobil Holdings Corp (a shell with no 10-K filings) instead of the operating entity Exxon Mobil Corp | Fixed in agent instructions (Rule 1) |
 
 ---
 
@@ -194,20 +206,22 @@ number is valid.
 
 ---
 
-## What the Phoenix Experiment Will Add
+## Phoenix Experiment — Summary
 
-Once USAI credentials are available, the LLM-as-judge run will provide:
+The LLM-as-judge run confirmed and extended the human audit findings:
 
-1. **A numerical correctness baseline** for the current agent (prompt v1)
-2. **An A/B comparison** against prompt v2 (scope-bounded, more explicit
-   about tool selection rules) on the same 20 questions
-3. **Per-question trace inspection** in the Phoenix UI — full reasoning chains,
-   tool call inputs/outputs, and judge scores for each response
-4. **Reproducibility** — the experiment is committed and version-controlled;
-   re-running it after any agent or server change produces comparable scores
+1. **Correctness baseline (prompt v1):** 17/20 (85%) — matching the human audit's
+   identification of three answerable questions where the agent fell short.
+2. **A/B comparison (prompt v2):** 18/20 (90%) — the scope-bounded prompt fixed the
+   JPM/BAC fiscal year end date omission; two questions remain incorrect in both versions.
+3. **Per-question traces** are viewable in the Phoenix UI
+   (http://localhost:6006) — Datasets → `sec-edgar-eval-0` → Experiments 2 & 3.
+4. **Scope: 20/20 (100%)** in both runs — the agent never answered out-of-scope
+   questions from training data.
 
-The existing human audit provides the ground truth that the LLM-as-judge scores
-can be validated against.
+The two remaining failures (Apple quarterly revenue concept retry, Exxon entity
+disambiguation) have been addressed in the agent instruction fixes committed
+alongside this document.
 
 ---
 
@@ -239,7 +253,7 @@ What revenue-related XBRL concepts does Apple report?
 |-----------|--------|
 | M1 — 8-tool MCP server built and deployed to Code Engine | ✅ Complete |
 | M2 — Agent deployed to WXO; toolkit re-imported as remote streamable-HTTP | ✅ Complete |
-| M3 — Evaluation: REST run (20/20), human audit, Phoenix harness built | ✅ Mostly complete — LLM-as-judge run pending USAI credentials |
+| M3 — Evaluation: REST run (20/20), human audit, Phoenix LLM-as-judge (17/20 v1, 18/20 v2) | ✅ Complete |
 
 ---
 

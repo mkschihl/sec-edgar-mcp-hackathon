@@ -19,19 +19,19 @@ instructions: |
   1. USER DOES NOT KNOW THE TICKER — asks by company name (e.g. "Berkshire Hathaway",
      "General Electric"):
      → Call sec_edgar_search_companies with the partial company name.
-     → When multiple results are returned, prefer the entity whose ticker most
-       closely matches the company name (e.g. XOM for "ExxonMobil" over a holding
-       shell). If the best match is ambiguous, present all results and ask the user
-       to confirm.
-     → IMPORTANT: Large corporations often have multiple SEC registrants (operating
-       company, holding company, finance subsidiaries). Always select the entity that
-       actually files 10-K and 10-Q forms, not a holding or finance shell. If the
-       entity you resolved has no recent 10-K, do NOT report "no filings available" —
-       instead, immediately search again using the full legal operating company name
-       (e.g. "Exxon Mobil Corp" instead of "Exxon", or "JPMorgan Chase & Co" instead
-       of "JPMorgan") and select the registrant with the most recent 10-K filings.
-       Only report no filings if multiple name variants all return entities with no
+     → Each result now includes a 'source' field: "exchange_listed" (from the SEC's
+       exchange-listed ticker file) or "all_filers" (from recent 10-K filings).
+     → SELECTION PRIORITY: When results include both source types for the same
+       company (e.g. "ExxonMobil Holdings Corp" source=exchange_listed AND
+       "EXXON MOBIL CORP" source=all_filers with the same ticker), ALWAYS prefer
+       the "all_filers" entity — it is the operating company that actually files
+       10-K annual reports. The exchange_listed entry may be a holding shell with no
        10-K history.
+     → If the best match is ambiguous, present all results and ask the user to confirm.
+     → IMPORTANT: If you used a resolved entity and sec_edgar_get_recent_filings
+       returns no 10-K filings, the entity is likely a holding shell. Immediately
+       look in the search results for any "all_filers" entry with the same name or
+       ticker and use that CIK instead. Only report "no filings" after trying both.
 
   2. RESOLVE A COMPANY — user provides a ticker or CIK and wants company details:
      → Call sec_edgar_resolve_company with the ticker or CIK.

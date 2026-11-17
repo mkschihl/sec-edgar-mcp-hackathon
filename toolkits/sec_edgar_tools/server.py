@@ -1,7 +1,7 @@
 """SEC EDGAR MCP Toolkit — stdio transport.
 
 Eight tools exposed to watsonx Orchestrate:
-  - sec_edgar_search_companies      : search exchange-listed companies by partial name
+  - sec_edgar_search_companies      : search all SEC-registered companies by partial name
   - sec_edgar_resolve_company       : resolve ticker or CIK to canonical company info
   - sec_edgar_get_recent_filings    : recent filing history with optional form-type filter
   - sec_edgar_get_company_fact      : XBRL concept time series for one company
@@ -17,8 +17,10 @@ SEC APIs require no API key. Rate limit: 10 req/s per IP.
 from __future__ import annotations
 
 import asyncio
+import re
 from datetime import date, datetime
 from typing import Annotated
+from urllib.parse import quote as _url_quote
 
 import httpx
 from fastmcp import FastMCP
@@ -111,6 +113,79 @@ async def _ensure_ticker_cache(client: httpx.AsyncClient) -> None:
         }
         _TICKER_CACHE[ticker] = record
         _CIK_CACHE[padded_cik] = record
+
+
+# ---------------------------------------------------------------------------
+# EFTS all-filers name search
+# ---------------------------------------------------------------------------
+
+_DISPLAY_NAME_PATTERN = re.compile(
+    r"^(.*?)\s*(?:\(([^()]+)\)\s+)?\(CIK\s+(\d+)\)\s*$"
+)
+
+
+def _parse_display_name(raw: str) -> dict | None:
+    """Parse an EFTS display_name string into {name, ticker, cik}.
+
+    Display names look like:
+        "EXXON MOBIL CORP  (XOM)  (CIK 0000034088)"
+        "UNITED PETROLEUM CORP  (CIK 0000082925)"
+        "GLOBAL PARTNERS LP  (GLP, GLP-PB)  (CIK 0001323468)"
+    """
+    m = _DISPLAY_NAME_PATTERN.match(raw.strip())
+    if not m:
+        return None
+    name = m.group(1).strip()
+    tickers_raw = m.group(2) or ""
+    # Keep only plain ticker tokens (letters/digits/hyphens, no spaces)
+    tickers = [t.strip() for t in tickers_raw.split(",") if re.match(r"^[A-Z0-9\-]+$", t.strip())]
+    primary_ticker = tickers[0] if tickers else ""
+    cik = f"{int(m.group(3)):010d}"
+    return {"name": name, "ticker": primary_ticker, "cik": cik}
+
+
+async def _search_all_filers(query: str, limit: int, client: httpx.AsyncClient) -> list[dict]:
+    """Search ALL SEC-registered filers by company name using the EDGAR full-text
+    search index, filtered to entities that have filed a 10-K in the last 2 years.
+
+    This covers companies like EXXON MOBIL CORP whose operating entity is not
+    in company_tickers.json (exchange-listed only) because the ticker is registered
+    to a holding company shell.
+
+    Returns a list of {name, ticker, cik, source} dicts.
+    """
+    encoded = _url_quote(f'"{query}"')
+    url = (
+        f"https://efts.sec.gov/LATEST/search-index"
+        f"?q={encoded}&forms=10-K&dateRange=custom&startdt=2024-01-01"
+    )
+    try:
+        resp = await client.get(url, headers=_make_headers(), timeout=10.0)
+        resp.raise_for_status()
+    except (httpx.HTTPStatusError, httpx.RequestError):
+        return []
+
+    hits = resp.json().get("hits", {}).get("hits", [])
+    seen: dict[str, dict] = {}
+    query_lower = query.lower()
+    for hit in hits:
+        src = hit.get("_source", {})
+        for cik, raw_name in zip(src.get("ciks", []), src.get("display_names", [])):
+            if cik in seen:
+                continue
+            parsed = _parse_display_name(raw_name)
+            if parsed is None:
+                continue
+            # Only keep names that contain the query as a substring
+            if query_lower not in parsed["name"].lower():
+                continue
+            seen[cik] = {**parsed, "source": "all_filers"}
+            if len(seen) >= limit:
+                break
+        if len(seen) >= limit:
+            break
+
+    return list(seen.values())
 
 
 async def _resolve_identifier(identifier: str) -> tuple[str, str] | dict:
@@ -217,36 +292,55 @@ def _check_comparability(results: list[dict], warnings: list[str]) -> None:
         "readOnlyHint": True,
         "destructiveHint": False,
         "idempotentHint": True,
-        "openWorldHint": False,
+        "openWorldHint": True,
     },
 )
 async def sec_edgar_search_companies(
     query: Annotated[str, "Partial company name to search for, e.g. 'apple', 'berkshire', 'general electric'. Case-insensitive substring match."],
     limit: Annotated[int, "Maximum number of matches to return. Default 10, max 50."] = 10,
 ) -> dict:
-    """Search SEC-registered exchange-listed companies by partial name.
+    """Search SEC-registered companies by partial name.
 
-    Searches the SEC's company_tickers.json (covers ~10,000 exchange-listed
-    companies). Performs a case-insensitive substring match on the company
-    title. The ticker cache is populated on the first call and reused for
-    all subsequent calls in the same process.
+    Two-pass search:
+    1. Primary: searches company_tickers.json (~10,000 exchange-listed companies).
+       Fast, no extra HTTP call.
+    2. Fallback: if the primary pass returns fewer than `limit` results (or zero),
+       also queries the EDGAR full-text search index filtered to recent 10-K filers.
+       This covers operating entities whose ticker is held by a holding-company shell
+       and are therefore absent from the exchange-listed file (e.g. EXXON MOBIL CORP).
+
+    Each match includes a 'source' field: "exchange_listed" for primary matches,
+    "all_filers" for fallback matches. Prefer entities with source="all_filers" that
+    also have recent 10-K filings when exchange_listed results show no 10-K history.
 
     Returns a dict with keys: query, match_count, matches (list of
-    ticker/cik/name). On failure returns {"error": "...", "hint": "..."}.
+    ticker/cik/name/source). On failure returns {"error": "...", "hint": "..."}.
     """
     query = query.strip()
     if not query:
         return {"error": "query must not be empty.", "hint": "Provide a partial company name such as 'apple' or 'berkshire'."}
     limit = max(1, min(limit, 50))
+    client = _get_client()
     try:
-        await _ensure_ticker_cache(_get_client())
+        await _ensure_ticker_cache(client)
         query_lower = query.lower()
-        matches = [
-            {"ticker": v["ticker"], "cik": v["cik_str"], "name": v["title"]}
+        primary = [
+            {"ticker": v["ticker"], "cik": v["cik_str"], "name": v["title"], "source": "exchange_listed"}
             for v in _TICKER_CACHE.values()
             if query_lower in v["title"].lower()
         ]
-        matches = matches[:limit]
+        primary = primary[:limit]
+
+        # Run the all-filers fallback in parallel with the primary pass.
+        # We always run it so that operating entities hidden behind holding shells
+        # (e.g. Exxon Mobil Corp vs ExxonMobil Holdings Corp) are surfaced.
+        fallback = await _search_all_filers(query, limit, client)
+
+        # Merge: primary first, then fallback entries not already in primary
+        primary_ciks = {m["cik"] for m in primary}
+        extra = [m for m in fallback if m["cik"] not in primary_ciks]
+
+        matches = (primary + extra)[:limit]
         return {"query": query, "match_count": len(matches), "matches": matches}
     except (httpx.HTTPStatusError, httpx.RequestError) as exc:
         return {"error": str(exc), "hint": "Could not fetch company list from SEC. Try again shortly."}
@@ -794,6 +888,12 @@ async def sec_edgar_get_quarterly_facts(
     and the source form is a 10-Q filing. Results are returned most-recent-first.
     Each observation includes a human-readable period_label (e.g. 'Q3 FY2025').
 
+    Revenue concept auto-retry: if concept='Revenues' returns zero quarterly
+    observations, the tool automatically retries with
+    'RevenueFromContractWithCustomerExcludingAssessedTax' (the concept Apple and
+    many other companies switched to after 2018). The result includes a 'concept'
+    field showing which concept name was actually used.
+
     Use this tool when the user asks about quarterly trends, specific quarters,
     or wants to compare quarters. For annual (full-year) data, use
     sec_edgar_get_company_fact instead.
@@ -801,6 +901,14 @@ async def sec_edgar_get_quarterly_facts(
     Returns a dict with keys: company, cik, taxonomy, concept, unit, label,
     observations (list), note. On failure returns {"error": "...", "hint": "..."}.
     """
+    # Revenue concept that many companies (Apple, etc.) switched to after ~2018.
+    _REVENUE_ALT = "RevenueFromContractWithCustomerExcludingAssessedTax"
+    # Concepts where we auto-retry with an alternate if the primary returns nothing.
+    _REVENUE_RETRY_MAP: dict[str, str] = {
+        "Revenues": _REVENUE_ALT,
+        "revenues": _REVENUE_ALT,
+    }
+
     limit = max(1, min(limit, 40))
     try:
         resolved = await _resolve_identifier(identifier)
@@ -825,22 +933,31 @@ async def sec_edgar_get_quarterly_facts(
                 "hint": f"Available taxonomies: {available}.",
             }
 
+        # Resolve concept, with automatic retry for revenue aliases.
+        # If the requested concept is not found or yields zero quarterly obs,
+        # try the alternate name before returning an error.
+        effective_concept = concept
         concept_data = taxonomy_data.get(concept)
         if concept_data is None:
-            sample = list(taxonomy_data.keys())[:10]
-            return {
-                "error": f"Concept '{concept}' not found in taxonomy '{taxonomy}' for {company_name}.",
-                "hint": f"Sample available concepts (first 10): {sample}. Use sec_edgar_list_concepts to search.",
-            }
+            alt = _REVENUE_RETRY_MAP.get(concept)
+            if alt and taxonomy_data.get(alt) is not None:
+                effective_concept = alt
+                concept_data = taxonomy_data[alt]
+            else:
+                sample = list(taxonomy_data.keys())[:10]
+                return {
+                    "error": f"Concept '{concept}' not found in taxonomy '{taxonomy}' for {company_name}.",
+                    "hint": f"Sample available concepts (first 10): {sample}. Use sec_edgar_list_concepts to search.",
+                }
 
-        label = concept_data.get("label", concept)
+        label = concept_data.get("label", effective_concept)
         raw_units = concept_data.get("units", {})
 
         # Pick the unit with the most observations (same logic as compare_companies)
         best_unit = max(raw_units.keys(), key=lambda u: len(raw_units[u]), default=None)
         if best_unit is None:
             return {
-                "error": f"No unit data found for concept '{concept}' for {company_name}.",
+                "error": f"No unit data found for concept '{effective_concept}' for {company_name}.",
                 "hint": "The concept may exist but have no numeric observations.",
             }
 
@@ -875,6 +992,30 @@ async def sec_edgar_get_quarterly_facts(
 
         note = ""
         if len(quarterly_obs) == 0:
+            # Before giving up: if original concept had an alternate, retry now
+            # (handles cases where concept exists but has no quarterly 10-Q data
+            # under the primary name, e.g. Revenues having only annual entries).
+            alt = _REVENUE_RETRY_MAP.get(concept)
+            if alt and alt != effective_concept and taxonomy_data.get(alt) is not None:
+                alt_data = taxonomy_data[alt]
+                alt_units = alt_data.get("units", {})
+                alt_unit = max(alt_units.keys(), key=lambda u: len(alt_units[u]), default=None)
+                if alt_unit:
+                    alt_obs = [
+                        o for o in alt_units[alt_unit]
+                        if o.get("fp") in quarterly_fps
+                        and o.get("form", "").startswith("10-Q")
+                        and _is_single_quarter(o)
+                    ]
+                    if alt_obs:
+                        effective_concept = alt
+                        label = alt_data.get("label", alt)
+                        best_unit = alt_unit
+                        quarterly_obs = alt_obs
+                        quarterly_obs.sort(key=lambda o: o.get("end", ""), reverse=True)
+                        note = f"Concept '{concept}' had no quarterly data; using '{alt}' instead."
+
+        if len(quarterly_obs) == 0:
             # Fall back to any single-quarter fp even if not from 10-Q (e.g. 10-K amended)
             quarterly_obs = [
                 o for o in all_obs
@@ -885,7 +1026,7 @@ async def sec_edgar_get_quarterly_facts(
                 note = "Quarterly data sourced from non-10-Q filings (e.g. restated quarters in 10-K/8-K)."
             else:
                 return {
-                    "error": f"No single-quarter (Q1/Q2/Q3/Q4) observations found for '{concept}' for {company_name}.",
+                    "error": f"No single-quarter (Q1/Q2/Q3/Q4) observations found for '{effective_concept}' for {company_name}.",
                     "hint": (
                         "This concept may only be reported annually. Use sec_edgar_get_company_fact for annual data. "
                         "Note: Q4 figures are not in 10-Qs — they appear in 10-K or 8-K earnings releases."
@@ -934,7 +1075,7 @@ async def sec_edgar_get_quarterly_facts(
             "company": company_name,
             "cik": padded_cik,
             "taxonomy": taxonomy,
-            "concept": concept,
+            "concept": effective_concept,
             "unit": best_unit,
             "label": label,
             "observations": observations,

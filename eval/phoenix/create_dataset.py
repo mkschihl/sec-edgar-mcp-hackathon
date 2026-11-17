@@ -90,13 +90,13 @@ def upload_dataset(
 
     from phoenix.client import Client
 
-    client = Client(endpoint=phoenix_endpoint)
-    client.datasets.upload(
+    client = Client(base_url=phoenix_endpoint)
+    client.datasets.create_dataset(
+        name=px_name,
         dataframe=df,
-        dataset_name=px_name,
         input_keys=input_keys,
         output_keys=output_keys,
-        metadata={"description": description.strip()},
+        dataset_description=description.strip(),
     )
     print(f"\nDataset '{px_name}' uploaded to Phoenix at {phoenix_endpoint}.")
 

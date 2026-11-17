@@ -15,7 +15,7 @@ The experiment:
   5. Logs all traces and scores to Phoenix (http://localhost:6006 by default).
 
 Required .env variables:
-    USAI_API_KEY, USAI_BASE_URL, AGENT_MODEL, JUDGE_MODEL
+    WATSONX_URL, WATSONX_API_KEY, WATSONX_PROJECT_ID, AGENT_MODEL, JUDGE_MODEL
 """
 
 from __future__ import annotations
@@ -38,7 +38,7 @@ PROMPT_VERSIONS = ["v1", "v2"]
 
 def validate_env() -> list[str]:
     """Check required env vars. Return list of missing ones."""
-    required = ["USAI_API_KEY", "USAI_BASE_URL", "AGENT_MODEL"]
+    required = ["WATSONX_URL", "WATSONX_API_KEY", "WATSONX_PROJECT_ID", "AGENT_MODEL"]
     return [k for k in required if not os.getenv(k)]
 
 
@@ -103,7 +103,7 @@ def main() -> None:
     print(f"  Project          : {args.project_name}")
     print(f"  Phoenix endpoint : {args.phoenix_endpoint}")
     print(f"  Agent model      : {os.getenv('AGENT_MODEL', '(not set)')}")
-    print(f"  Judge model      : {os.getenv('JUDGE_MODEL', 'claude_4_6_sonnet')}")
+    print(f"  Judge model      : {os.getenv('JUDGE_MODEL', 'meta-llama/llama-3-3-70b-instruct')}")
     print()
 
     # --- Late imports (require venv) ---
@@ -114,9 +114,9 @@ def main() -> None:
 
     # --- Load Phoenix dataset ---
     phoenix_url = args.phoenix_endpoint
-    client = Client(endpoint=phoenix_url)
+    client = Client(base_url=phoenix_url)
 
-    dataset_kwargs: dict = {"dataset_name": args.dataset_name}
+    dataset_kwargs: dict = {"dataset": args.dataset_name}
     if args.dataset_version_id:
         dataset_kwargs["version_id"] = args.dataset_version_id
 

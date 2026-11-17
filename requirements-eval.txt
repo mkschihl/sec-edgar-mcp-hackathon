@@ -12,11 +12,14 @@ arize-phoenix-client==3.7.0
 arize-phoenix-evals==3.9.5
 arize-phoenix-otel==0.17.3
 
-# LangChain + LangGraph — ReAct agent and OpenAI-compatible LLM client
+# LangChain + LangGraph — ReAct agent backed by watsonx.ai
 langchain==1.4.9
 langchain-core==1.7.6
-langchain-openai==1.7.4
+langchain-ibm>=1.1.2
 langgraph==1.2.20
+
+# LiteLLM — required by Phoenix evals' LiteLLM adapter (watsonx/ provider for judges)
+litellm>=1.0.0
 
 # OpenInference / OpenTelemetry — LangChain tracing to Phoenix
 openinference-instrumentation-langchain==0.1.82

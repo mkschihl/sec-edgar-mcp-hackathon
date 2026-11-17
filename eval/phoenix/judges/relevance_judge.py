@@ -68,11 +68,11 @@ def check_answer_scope() -> object:
 
     Returns the evaluator object — pass it directly to run_experiment(evaluators=[...]).
     """
+    judge_model = os.getenv("JUDGE_MODEL", "meta-llama/llama-3-3-70b-instruct")
     llm = LLM(
-        provider="openai",
-        model=os.getenv("JUDGE_MODEL", "claude_4_6_sonnet"),
-        api_key=os.getenv("USAI_API_KEY", ""),
-        base_url=os.getenv("USAI_BASE_URL", "") + "/api/v1",
+        provider="litellm",
+        model=f"watsonx/{judge_model}",
+        # WATSONX_URL / WATSONX_API_KEY / WATSONX_PROJECT_ID are read from env by LiteLLM
         temperature=0.0,
     )
     return create_classifier(

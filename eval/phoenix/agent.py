@@ -13,9 +13,11 @@ Usage (smoke test):
     python agent.py
 
 Environment variables (from .env at repo root):
-    USAI_API_KEY       — model gateway API key
-    USAI_BASE_URL      — model gateway base URL (code appends /api/v1)
-    AGENT_MODEL        — model name for the agent-under-test
+    WATSONX_URL        — watsonx.ai regional endpoint, e.g. https://ca-tor.ml.cloud.ibm.com
+    WATSONX_API_KEY    — IBM Cloud API key (SDK exchanges for IAM token automatically)
+    WATSONX_PROJECT_ID — watsonx.ai project ID (project > Manage > General > Details)
+    AGENT_MODEL        — watsonx.ai model ID for the agent-under-test (must support tool calling)
+                         default: meta-llama/llama-3-3-70b-instruct
     MCP_ENDPOINT       — Code Engine /mcp URL (default: https://sec-edgar-tools-mks.2flzosib5d1z.ca-tor.codeengine.appdomain.cloud/mcp)
     PHOENIX_ENDPOINT   — Phoenix OTLP endpoint (default: http://localhost:4317)
     PHOENIX_PROJECT    — Phoenix project name (default: sec-edgar-eval)
@@ -187,14 +189,13 @@ class SECEdgarAgent:
         lc_tools = [_make_langchain_tool(t, self._session) for t in tools_result.tools]
 
         # Build the ReAct agent
-        from langchain_openai import ChatOpenAI
+        from langchain_ibm import ChatWatsonx
         from langgraph.prebuilt import create_react_agent
 
-        llm = ChatOpenAI(
-            model=os.getenv("AGENT_MODEL", "ibm/granite-3-3-8b-instruct"),
-            base_url=os.getenv("USAI_BASE_URL", "") + "/api/v1",
-            api_key=os.getenv("USAI_API_KEY", ""),
+        llm = ChatWatsonx(
+            model_id=os.getenv("AGENT_MODEL", "meta-llama/llama-3-3-70b-instruct"),
             temperature=0,
+            # WATSONX_URL / WATSONX_API_KEY / WATSONX_PROJECT_ID are read from env
         )
 
         system_prompt = self._load_system_prompt()

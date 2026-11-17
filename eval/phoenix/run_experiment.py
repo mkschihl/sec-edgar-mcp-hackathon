@@ -126,7 +126,7 @@ def main() -> None:
     # --- Build the agent task ---
     agent = SECEdgarAgent(
         system_prompt_version=args.system_prompt_version,
-        phoenix_endpoint=args.phoenix_endpoint.replace(":6006", ":4317"),  # OTLP port
+        phoenix_otlp_endpoint=args.phoenix_endpoint.replace(":6006", ":4317"),  # OTLP port
         project_name=args.project_name,
     )
     task = agent.create_experiment_task()

@@ -535,6 +535,12 @@ async def sec_edgar_resolve_company(
                 "Call sec_edgar_search_companies with the full legal company name and "
                 "use the CIK of the match where has_recent_10k is true."
             )
+        elif latest_10k is None and latest_10q is not None and latest_10q >= cutoff:
+            result["warning"] = (
+                "This entity files quarterly reports but has no 10-K yet (possibly a "
+                "newly formed holding company). For annual reports, check search results "
+                "for a related entity where has_recent_10k is true."
+            )
         return result
     except (httpx.HTTPStatusError, httpx.RequestError) as exc:
         return {"error": str(exc), "hint": "Check the identifier and try again. The SEC API may be temporarily unavailable."}

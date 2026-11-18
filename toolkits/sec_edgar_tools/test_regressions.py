@@ -227,17 +227,40 @@ async def test_exxon_search():
 
 
 async def test_holding_shell_resolve():
-    # CIK 0000101830 = SPRINT LLC — last 10-K 2019, last 10-Q 2020; well past 730 days.
-    print("\n[8] resolve_company('0000101830') — inactive filer has is_active_filer=False + warning")
-    result = await sec_edgar_resolve_company("0000101830")
+    # CIK 0002115436 = ExxonMobil Holdings Corp — files 10-Qs but has no 10-K.
+    print("\n[8] resolve_company('0002115436') — 10-Q only filer: is_active=True, no 10-K, new warning")
+    result = await sec_edgar_resolve_company("0002115436")
     if "error" in result:
         check("no error", False, result["error"])
         return
 
-    check("is_active_filer == False", result.get("is_active_filer") is False,
+    check("is_active_filer == True", result.get("is_active_filer") is True,
           f"got {result.get('is_active_filer')!r}")
+    check("latest_10k_date is None", result.get("latest_10k_date") is None,
+          f"got {result.get('latest_10k_date')!r}")
     check("warning present", "warning" in result,
           "no 'warning' key in result")
+    if "warning" in result:
+        check("warning mentions 'quarterly reports'",
+              "quarterly reports" in result["warning"],
+              f"got: {result['warning']!r}")
+
+    # Also keep the inactive-entity case as a separate assertion block.
+    # CIK 0000101830 = SPRINT LLC — last 10-K 2019, last 10-Q 2020.
+    print("\n[8b] resolve_company('0000101830') — inactive filer: is_active=False + holding-shell warning")
+    result2 = await sec_edgar_resolve_company("0000101830")
+    if "error" in result2:
+        check("no error (sprint)", False, result2["error"])
+        return
+
+    check("sprint is_active_filer == False", result2.get("is_active_filer") is False,
+          f"got {result2.get('is_active_filer')!r}")
+    check("sprint warning present", "warning" in result2,
+          "no 'warning' key in sprint result")
+    if "warning" in result2:
+        check("sprint warning mentions 'holding shell'",
+              "holding shell" in result2["warning"],
+              f"got: {result2['warning']!r}")
 
 
 async def test_exxon_10k_filings():

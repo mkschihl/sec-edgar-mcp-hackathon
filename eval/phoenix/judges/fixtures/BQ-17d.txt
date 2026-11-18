@@ -1,0 +1,18 @@
+**Company identified:** PFIZER INC (ticker PFE, CIK 0000078003) – the primary operating company with recent 10‑K filings.
+
+**Revenue data source:** XBRL concept **RevenueFromContractWithCustomerExcludingAssessedTax** (us‑gaap taxonomy).  
+
+| Fiscal Year | Period End | Revenue (USD) | Form | Accession Number | Note |
+|------------|------------|----------------|------|------------------|------|
+| 2020 | 2020‑12‑31 | $41.65 billion | 10‑K | 0000078003-22-000027 | Recast; originally filed $41.91 billion |
+| 2021 | 2021‑12‑31 | $73.64 billion | 10‑K | 0000078003-24-000039 | Recast; originally filed $81.29 billion |
+| 2022 | 2022‑12‑31 | $91.79 billion | 10‑K | 0000078003-24-000039 | – |
+| 2023 | 2023‑12‑31 | $50.91 billion | 10‑K | 0000078003-24-000039 | – |
+
+**Explanation**
+
+- The SEC filings show that Pfizer's revenue reporting switched to the “Revenue from Contract with Customer, Excluding Assessed Tax” concept after 2018.  
+- For 2020 and 2021 the values were *recast* in later filings; the original amounts are shown in the “as_originally_filed” field.  
+- The most recent four fiscal‑year observations (2020–2023) are presented above, sorted by fiscal year.  
+
+If you need the underlying filings or want to view a different revenue concept (e.g., “Revenues”), let me know and I can retrieve that information as well.

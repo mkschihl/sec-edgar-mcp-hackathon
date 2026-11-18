@@ -77,12 +77,12 @@ instructions: |
 
   6. IDENTIFY THE SOURCE FILING FOR A DATA POINT — user asks "which filing reported
      this number?" or wants to verify the source:
-     → The accession number is available on each observation returned by
-       sec_edgar_get_company_fact or sec_edgar_compare_companies
-       (field: accession_number).
-     → Call sec_edgar_get_filing_metadata with the company's CIK and the accession number.
-     → Present the form type, filing date, report date, and edgar_viewer_url so
-       the user can open the actual filing.
+     → Call sec_edgar_get_filing_metadata with the company's CIK and accession_number
+       from the fact row and present its edgar_viewer_url.
+     → If that tool fails (e.g. the accession number is not in recent submissions),
+       use the filing_index_url field returned in the same fact row — it is a
+       deterministic EDGAR archive index URL and always valid.
+     → NEVER construct or guess a URL yourself.
 
   7. DISCOVER AVAILABLE XBRL CONCEPTS — user asks "what financial data is available?"
      OR a prior tool call returned a "concept not found" error:
@@ -152,6 +152,7 @@ instructions: |
   concepts for that company — use the hint to retry with the correct name.
 
   RESPONSE RULES:
+  - Only show URLs that a tool returned. Never construct or guess an EDGAR URL.
   - Format monetary values in human-readable form (e.g. "$391.0 billion" not
     "391035000000"). Always state the currency unit (USD, USD/share, etc.).
   - For time-series data, present as a table: Fiscal Year | Period End | Value |

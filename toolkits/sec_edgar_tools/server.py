@@ -677,6 +677,10 @@ async def sec_edgar_get_company_fact(
     and must NOT be used as the period label.  If recast is true, the value was
     revised in a later filing; as_originally_filed shows the first value.
 
+    Each row also includes filing_index_url — the deterministic EDGAR archive
+    index page for that filing (no extra HTTP call needed):
+      https://www.sec.gov/Archives/edgar/data/<cik>/<accession_no_dashes>/
+
     Non-FY observations (Q1/Q2/Q3) are excluded; use sec_edgar_get_quarterly_facts
     for quarterly data.
 
@@ -768,6 +772,7 @@ async def sec_edgar_get_company_fact(
                     fy = _fiscal_year_for(end, fye_mmdd)
                 except Exception:
                     fy = o.get("fy") or datetime.strptime(end, "%Y-%m-%d").year
+                accn = o.get("accn", "")
                 rows.append({
                     "fiscal_year": fy,
                     "fiscal_year_end": end,
@@ -777,7 +782,12 @@ async def sec_edgar_get_company_fact(
                     "recast": winner_val != orig_val,
                     "form": o.get("form", ""),
                     "filed": o.get("filed", ""),
-                    "accession_number": o.get("accn", ""),
+                    "accession_number": accn,
+                    "filing_index_url": (
+                        f"https://www.sec.gov/Archives/edgar/data/"
+                        f"{int(padded_cik)}/{accn.replace('-', '')}/"
+                        if accn else ""
+                    ),
                     "filing_fiscal_year": o.get("fy"),
                 })
             return rows
@@ -874,9 +884,14 @@ async def sec_edgar_compare_companies(
     Companies are fetched sequentially with a small delay to respect the SEC
     10 req/s rate limit.
 
+    Each result row includes filing_index_url — the deterministic EDGAR archive
+    index page for that filing (no extra HTTP call needed):
+      https://www.sec.gov/Archives/edgar/data/<cik>/<accession_no_dashes>/
+
     Returns a dict with keys: concept, taxonomy, results (list), warnings (list).
-    Each result has: company, cik, ticker, value, unit, period_end, fiscal_year,
-    accession_number, form. On failure returns {"error": "...", "hint": "..."}.
+    Each result has: company, cik, ticker, concept, value, unit, period_end,
+    fiscal_year, accession_number, filing_index_url, form.
+    On failure returns {"error": "...", "hint": "..."}.
     """
     if not identifiers:
         return {"error": "identifiers must be a non-empty list.", "hint": "Provide at least one ticker or CIK."}
@@ -1005,6 +1020,7 @@ async def sec_edgar_compare_companies(
                 except ValueError:
                     pass
 
+            accn_cc = best.get("accn", "")
             row: dict = {
                 "company": company_name,
                 "cik": padded_cik,
@@ -1015,7 +1031,12 @@ async def sec_edgar_compare_companies(
                 "period_end": period_end,
                 "fiscal_year": fiscal_year,
                 "filing_fiscal_year": best.get("fy"),
-                "accession_number": best.get("accn", ""),
+                "accession_number": accn_cc,
+                "filing_index_url": (
+                    f"https://www.sec.gov/Archives/edgar/data/"
+                    f"{int(padded_cik)}/{accn_cc.replace('-', '')}/"
+                    if accn_cc else ""
+                ),
                 "form": best.get("form", ""),
             }
             if concept_note_cc:
@@ -1106,10 +1127,14 @@ async def sec_edgar_get_filing_metadata(
 
         # Numeric CIK (no leading zeros) is used in the EDGAR archive path
         numeric_cik = str(int(padded_cik))
+        filing_index_url = (
+            f"https://www.sec.gov/Archives/edgar/data/{numeric_cik}"
+            f"/{accession_dashed.replace('-', '')}/"
+        )
         edgar_url = (
             f"https://www.sec.gov/Archives/edgar/data/{numeric_cik}/{accession_path}/{primary_doc}"
             if primary_doc else
-            f"https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&CIK={padded_cik}&type={form}"
+            filing_index_url
         )
 
         return {

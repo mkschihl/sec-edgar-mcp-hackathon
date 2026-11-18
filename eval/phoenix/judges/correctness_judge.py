@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import os
 import sys
+import time
 
 from dotenv import load_dotenv
 
@@ -119,18 +120,31 @@ def match_expected_response():
             reference.get("responses", "") if isinstance(reference, dict) else str(reference)
         )
         eval_input = {"input": query, "output": result, "reference": ref_text}
-        result_list = classifier.evaluate(eval_input, input_mapping={
+        input_mapping = {
             "input":     lambda ex: ex.get("input", ""),
             "output":    lambda ex: ex.get("output", ""),
             "reference": lambda ex: ex.get("reference", ""),
-        })
-        if not result_list:
-            return {"label": "incorrect", "score": 0, "explanation": ""}
-        item = result_list[0]
+        }
+        last_exc: Exception | None = None
+        for attempt in range(1, 4):
+            try:
+                result_list = classifier.evaluate(eval_input, input_mapping=input_mapping)
+                if not result_list:
+                    return {"label": "incorrect", "score": 0, "explanation": ""}
+                item = result_list[0]
+                return {
+                    "label": getattr(item, "label", "incorrect"),
+                    "score": getattr(item, "score", 0),
+                    "explanation": getattr(item, "explanation", ""),
+                }
+            except Exception as exc:  # noqa: BLE001
+                last_exc = exc
+                if attempt < 3:
+                    time.sleep(2 ** attempt)  # 2s, 4s back-off
         return {
-            "label": getattr(item, "label", "incorrect"),
-            "score": getattr(item, "score", 0),
-            "explanation": getattr(item, "explanation", ""),
+            "label": "judge_error",
+            "score": None,
+            "explanation": f"classifier.evaluate failed after 3 attempts: {last_exc}",
         }
 
     return _judge

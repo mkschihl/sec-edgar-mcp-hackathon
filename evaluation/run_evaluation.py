@@ -587,9 +587,28 @@ def main() -> None:
 
     elapsed = time.time() - start
 
-    # Save raw JSON
-    RAW_PATH.write_text(json.dumps(results, indent=2))
-    print(f"\nRaw results → {RAW_PATH}")
+    # Save raw JSON — when --ids is used, merge into the existing file by id
+    # so a partial re-run does not wipe results for questions that weren't re-run.
+    if args.ids and RAW_PATH.exists():
+        try:
+            existing: list[dict] = json.loads(RAW_PATH.read_text())
+        except (json.JSONDecodeError, OSError):
+            existing = []
+        # Build a dict keyed by id from the existing results, then overwrite
+        # with fresh results for the ids that were just run.
+        by_id: dict[str, dict] = {r["id"]: r for r in existing}
+        for r in results:
+            by_id[r["id"]] = r
+        # Preserve the ordering from BENCHMARK_QUESTIONS
+        from evaluation.benchmark_questions import BENCHMARK_QUESTIONS as _BQS
+        id_order = [q["id"] for q in _BQS]
+        merged = [by_id[bid] for bid in id_order if bid in by_id]
+        RAW_PATH.write_text(json.dumps(merged, indent=2))
+        print(f"\nRaw results (merged {len(results)} into {len(merged)} total) → {RAW_PATH}")
+        results = merged   # use merged list for the report / summary
+    else:
+        RAW_PATH.write_text(json.dumps(results, indent=2))
+        print(f"\nRaw results → {RAW_PATH}")
     print(f"Traces      → {TRACES_DIR}/")
 
     # Generate and save report

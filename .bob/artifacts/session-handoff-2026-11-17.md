@@ -33,7 +33,7 @@ SEC filings and XBRL financial data for any publicly traded company.
 | Phoenix run command | `source .env && export WATSONX_URL WATSONX_API_KEY WATSONX_PROJECT_ID AGENT_MODEL JUDGE_MODEL && venv/bin/python eval/phoenix/run_experiment.py --dataset-name sec-edgar-eval-0` |
 | Git remote | `github.com:mkschihl/wxo-agentic-workflow.git` |
 | Active branch | `fixes-round2` (not yet pushed / merged to main) |
-| Last commit | `8f49e68` — "feat(eval): implement items A–E ✅" |
+| Last commit | `8f49e68` — "feat(eval): implement items A–E ✅" (uncommitted changes on top) |
 | .env setup | `source .env && export IBMCLOUD_API_KEY WXO_API_KEY WATSONX_URL WATSONX_API_KEY WATSONX_PROJECT_ID AGENT_MODEL JUDGE_MODEL` |
 
 ---
@@ -46,6 +46,45 @@ SEC filings and XBRL financial data for any publicly traded company.
 | M2 — Toolkit re-imported as remote HTTP | ✅ Complete | `sec_edgar_tools` using streamable_http in WXO |
 | M3 — Evaluation harness | ✅ Complete | Phoenix run complete — 17/20 correctness, 20/20 scope (eval-0) |
 | M4 — Eval code improvements (items A–E) | ✅ Complete | All eval code updated; `sec-edgar-eval-1` dataset created (23 Qs) |
+| M4b — Judge robustness + BQ-17 alignment | ✅ Complete | Retry wrapper, judge_error, BQ-17 numeric_checks updated, 7/7 sanity cases pass |
+
+---
+
+## Session summary: 2026-11-18 (M4b — judge robustness + BQ-17 alignment)
+
+**Trigger instruction:**
+> "sanity_check.py crashed on case BQ-09e with json.decoder.JSONDecodeError inside classifier.evaluate"
+
+### Changes made (all uncommitted — on top of `8f49e68`)
+
+**1 — `eval/phoenix/judges/correctness_judge.py`:**
+- Added `import time`
+- Extracted `input_mapping` dict before the call (avoids recreating lambda per retry)
+- Wrapped `classifier.evaluate(...)` in `for attempt in range(1, 4)` with `try/except Exception`
+- On retry: `time.sleep(2 ** attempt)` back-off (2s, 4s)
+- After 3 failures: returns `{"label": "judge_error", "score": None, "explanation": "classifier.evaluate failed after 3 attempts: <exc>"}` — **never raises**
+
+**2 — `eval/phoenix/judges/relevance_judge.py`:**
+- Identical retry wrapper applied to `check_answer_scope()._judge`
+
+**3 — `evaluation/benchmark_questions.py` BQ-17 updated:**
+- `pass_criteria`: now references `Revenues` concept, specific period-end dates, FY2024 ≈$63.6B, FY2023 ≈$62.6B (recast from $58.5B → $59.6B), FY2022 ≈$100.3B; explicitly says `RevenueFromContractWithCustomer...` values are incorrect
+- `numeric_checks`: old list-of-dicts replaced with `{"must_include": [62.579e9, 63.627e9, 59.553e9], "rel_tol": 0.005, "max_value": None}`
+
+**4 — `eval/phoenix/judges/sanity_check.py` rewritten:**
+- Judge now called through `match_expected_response()` (same code path as Phoenix experiments) — exercises retry wrapper
+- `_run_correctness()` calls `judge_fn(input=..., output=..., reference=...)` with keyword args
+- Added `_BQ17_OLD_RESPONSE` — verbatim BQ-17 response from `evaluation/raw_results.json` (used `RevenueFromContractWithCustomer...`, reported $50.91B for FY2023)
+- Added two new BQ-17 cases:
+  - `BQ-17d`: old raw_results response — expected `incorrect` + numeric `< 1.0` ✅
+  - `BQ-17e`: shifted values ($62.579→$60.0, $63.627→$61.5) — expected `incorrect` + numeric `< 1.0` ✅
+- `judge_error` label → `FAIL ❌ (judge_error — LLM returned malformed JSON after 3 attempts)`
+- Fallback string in `main()` default changed from `mistral-small-3-1-24b-instruct-2503` to `meta-llama/llama-3-3-70b-instruct` to match `.env` default
+
+**Sanity check result (JUDGE_MODEL=`mistralai/mistral-small-3-1-24b-instruct-2503` from `.env`):**
+```
+7/7 cases: ALL CASES PASSED ✅
+```
 
 ---
 
@@ -178,14 +217,15 @@ eval/phoenix/build_dataset.py                            ← NEW: generates sec-
 eval/phoenix/datasets.yaml                               ← updated: sec-edgar-eval-1 with metadata_keys
 eval/phoenix/create_dataset.py                           ← updated: metadata_keys + validation
 eval/phoenix/judges/__init__.py                          ← updated: exports check_numeric_accuracy
-eval/phoenix/judges/correctness_judge.py                 ← updated: @create_evaluator wrapper, 3 rules, model warning
-eval/phoenix/judges/relevance_judge.py                   ← updated: @create_evaluator wrapper
-eval/phoenix/judges/numeric_judge.py                     ← NEW: check_numeric_accuracy() with numeric_checks
+eval/phoenix/judges/correctness_judge.py                 ← updated: @create_evaluator wrapper, 3-attempt retry, judge_error return
+eval/phoenix/judges/relevance_judge.py                   ← updated: @create_evaluator wrapper, 3-attempt retry, judge_error return
+eval/phoenix/judges/numeric_judge.py                     ← deterministic: check_numeric_accuracy() with numeric_checks
+eval/phoenix/judges/sanity_check.py                      ← 7 cases (BQ-07×2, BQ-09×3, BQ-17×2); uses match_expected_response() code path
 eval/phoenix/datasets/sec-edgar-eval-1/examples/         ← NEW: 23-row CSV
 eval/phoenix/prompts/system_prompt_v1.txt                ← unchanged
 eval/phoenix/prompts/system_prompt_v2.txt                ← unchanged
 evaluation/run_evaluation.py                             ← updated: SSE fixes, scoring, traces, timeout
-evaluation/benchmark_questions.py                        ← updated: 23 Qs, numeric_checks, out_of_scope BQ-21/22/23
+evaluation/benchmark_questions.py                        ← updated: 23 Qs, numeric_checks, out_of_scope BQ-21/22/23; BQ-17 rewritten with Revenues concept values
 evaluation/raw_results.json                              ← output from last run_evaluation.py run
 evaluation/EVAL_REPORT.md                                ← output from last run_evaluation.py run
 evaluation/traces/                                       ← DOES NOT EXIST YET (auto-created on first run)

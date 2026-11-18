@@ -10,6 +10,8 @@ import asyncio
 import sys
 from datetime import date, datetime
 
+import httpx
+
 sys.path.insert(0, "toolkits/sec_edgar_tools")
 from server import (
     sec_edgar_get_company_fact,
@@ -18,6 +20,7 @@ from server import (
     sec_edgar_search_companies,
     sec_edgar_resolve_company,
     sec_edgar_get_recent_filings,
+    SEC_USER_AGENT,
 )
 
 PASS = "\033[32mPASS\033[0m"
@@ -64,6 +67,33 @@ async def test_aapl_net_income():
     has_fy_key = any("fy" in r for r in rows)
     check("no row contains key 'fy'", not has_fy_key,
           "at least one row contains 'fy' key")
+
+    # Every row must have filing_index_url starting with the AAPL EDGAR archive prefix
+    _AAPL_PREFIX = "https://www.sec.gov/Archives/edgar/data/320193/"
+    for r in rows:
+        url = r.get("filing_index_url", "")
+        check(
+            f"filing_index_url starts with AAPL prefix for FY{r.get('fiscal_year')}",
+            url.startswith(_AAPL_PREFIX),
+            f"got {url!r}",
+        )
+
+    # Pick the most recent row and verify its filing_index_url returns HTTP 200
+    if rows:
+        most_recent = rows[-1]
+        index_url = most_recent.get("filing_index_url", "")
+        if index_url:
+            async with httpx.AsyncClient(
+                headers={"User-Agent": SEC_USER_AGENT},
+                follow_redirects=True,
+                timeout=30,
+            ) as client:
+                resp = await client.get(index_url)
+            check(
+                f"filing_index_url HTTP 200 for FY{most_recent.get('fiscal_year')} ({index_url})",
+                resp.status_code == 200,
+                f"got HTTP {resp.status_code}",
+            )
 
 
 # check() returns None; patch it to also return the bool so callers can early-exit.

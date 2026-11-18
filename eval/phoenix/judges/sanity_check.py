@@ -1,8 +1,16 @@
 """Sanity-check script for correctness_judge and numeric_judge.
 
-Runs both judges directly (no Phoenix experiment) on five hand-crafted cases
-derived from BQ-07 and BQ-09.  Reference text and numeric_checks are loaded
-directly from evaluation/benchmark_questions.py — nothing is hardcoded here.
+Runs both judges directly (no Phoenix experiment) on hand-crafted cases
+derived from BQ-07, BQ-09, and BQ-17.  Reference text and numeric_checks are
+loaded directly from evaluation/benchmark_questions.py — nothing is hardcoded here.
+
+Captured agent responses are stored as plain-text fixtures under
+eval/phoenix/judges/fixtures/ so this script has no dependency on
+evaluation/raw_results.json (which is overwritten by every run_evaluation.py run).
+
+The correctness judge is called through match_expected_response() (the same code
+path used in Phoenix experiments), so the 3-attempt retry and judge_error return
+value are exercised here too.  judge_error is treated as FAIL.
 
 Usage:
     source .env && export WATSONX_URL WATSONX_API_KEY WATSONX_PROJECT_ID JUDGE_MODEL
@@ -20,8 +28,9 @@ from pathlib import Path
 # ---------------------------------------------------------------------------
 # Path setup — allow running from any working directory
 # ---------------------------------------------------------------------------
-_REPO_ROOT = Path(__file__).resolve().parents[3]
-_EVAL_DIR  = Path(__file__).resolve().parents[2]  # eval/phoenix/
+_REPO_ROOT   = Path(__file__).resolve().parents[3]
+_EVAL_DIR    = Path(__file__).resolve().parents[2]  # eval/phoenix/
+_FIXTURES_DIR = Path(__file__).resolve().parent / "fixtures"
 sys.path.insert(0, str(_REPO_ROOT))
 sys.path.insert(0, str(_EVAL_DIR))
 
@@ -41,30 +50,31 @@ def _get_bq(bq_id: str) -> dict:
 
 BQ07 = _get_bq("BQ-07")
 BQ09 = _get_bq("BQ-09")
+BQ17 = _get_bq("BQ-17")
 
 # ---------------------------------------------------------------------------
-# BQ-09 actual response from evaluation/raw_results.json (case e)
+# Captured agent responses — loaded from fixtures/, NOT from raw_results.json.
+# raw_results.json is overwritten by every run_evaluation.py run; fixtures are
+# static and version-controlled.
 # ---------------------------------------------------------------------------
-_BQ09_ACTUAL_RESPONSE = (
-    "**Apple\u202fInc. \u2013 Quarterly Revenue (last\u202f8 quarters)**  \n"
-    "*XBRL concept used: **RevenueFromContractWithCustomerExcludingAssessedTax** (us\u2011gaap)*  \n\n"
-    "| Fiscal Quarter | Fiscal Year | Period End | Revenue (USD) | Form | Accession Number |\n"
-    "|----------------|------------|------------|----------------|------|-------------------|\n"
-    "| Q3 | 2026 | 2026\u201106\u201127 | $109.4\u202fbillion | 10\u2011Q | 0000320193\u201126\u2011000020 |\n"
-    "| Q2 | 2026 | 2026\u201103\u201128 | $111.2\u202fbillion | 10\u2011Q | 0000320193\u201126\u2011000013 |\n"
-    "| Q1 | 2026 | 2025\u201112\u201127 | $143.8\u202fbillion | 10\u2011Q | 0000320193\u201126\u2011000006 |\n"
-    "| Q3 | 2025 | 2025\u201106\u201128 | $94.0\u202fbillion | 10\u2011Q | 0000320193\u201126\u2011000020 |\n"
-    "| Q2 | 2025 | 2025\u201103\u201129 | $95.4\u202fbillion | 10\u2011Q | 0000320193\u201126\u2011000013 |\n"
-    "| Q1 | 2025 | 2024\u201112\u201128 | $124.3\u202fbillion | 10\u2011Q | 0000320193\u201126\u2011000006 |\n"
-    "| Q3 | 2024 | 2024\u201106\u201129 | $85.8\u202fbillion | 10\u2011Q | 0000320193\u201125\u2011000073 |\n"
-    "| Q2 | 2024 | 2024\u201103\u201130 | $90.8\u202fbillion | 10\u2011Q | 0000320193\u201125\u2011000057 |\n\n"
-    "**Notes**\n\n"
-    "* The data come from Apple\u2019s 10\u2011Q filings (quarterly reports).  \n"
-    "* Q4 figures are not included in the quarterly\u2011facts endpoint because they are "
-    "reported in the annual 10\u2011K (or occasional 8\u2011K), not in a separate 10\u2011Q. "
-    "If you need the Q4 (full\u2011year) revenue, let me know and I can retrieve the "
-    "annual figure via the company\u2011fact call."
-)
+
+def _load_fixture(name: str) -> str:
+    """Load a response fixture from eval/phoenix/judges/fixtures/<name>.txt."""
+    path = _FIXTURES_DIR / name
+    if not path.exists():
+        raise FileNotFoundError(
+            f"Fixture {name!r} not found at {path}. "
+            "Run the agent once and save its response to that file."
+        )
+    return path.read_text(encoding="utf-8")
+
+_BQ09_ACTUAL_RESPONSE = _load_fixture("BQ-09e.txt")
+# BQ-09 actual response (Apple quarterly revenue, 8 quarters).
+# Holiday Q1 FY2026=$143.8B is legitimate; $109.4B and $111.2B are present.
+
+_BQ17_OLD_RESPONSE = _load_fixture("BQ-17d.txt")
+# BQ-17 old response (Pfizer revenue, wrong concept RevenueFromContractWithCustomer...).
+# Reports $50.91B for FY2023 — expect incorrect + numeric < 1.0 after REVENUE_CANDIDATES fix.
 
 # ---------------------------------------------------------------------------
 # Test cases
@@ -149,40 +159,59 @@ CASES = [
         "expect_correctness": "correct",
         "expect_numeric": ("==", 1.0),
     },
+    # --- BQ-17 cases ---
+    {
+        "id": "BQ-17d",
+        "label": "BQ-17 ACTUAL raw_results.json — old response with $50.91B (wrong concept) — expect incorrect + numeric < 1.0",
+        "bq_id": "BQ-17",
+        "question": BQ17["question"],
+        "response": _BQ17_OLD_RESPONSE,
+        # Old response used RevenueFromContractWithCustomer... concept.
+        # None of $62.579B / $63.627B / $59.553B appear → numeric < 1.0.
+        # pass_criteria explicitly says values should NOT be from that concept → incorrect.
+        "expect_correctness": "incorrect",
+        "expect_numeric": ("<", 1.0),
+    },
+    {
+        "id": "BQ-17e",
+        "label": "BQ-17 WRONG — shifted values (62.579→60.0, 63.627→61.5)",
+        "bq_id": "BQ-17",
+        "question": BQ17["question"],
+        "response": (
+            "PFIZER INC (PFE, CIK 0000078003) annual revenue (concept: Revenues):\n"
+            "- FY2024 (ended 2024-12-31): $61.5B\n"
+            "- FY2023 (ended 2023-12-31): $60.0B\n"
+            "- FY2022 (ended 2022-12-31): $100.3B\n"
+            "- FY2021 (ended 2021-12-31): $81.3B\n"
+        ),
+        "expect_correctness": "incorrect",
+        # $62.579B ± 0.5% = [62.26B, 62.89B]; $60.0B outside → miss
+        # $63.627B ± 0.5% = [63.31B, 63.94B]; $61.5B outside → miss
+        "expect_numeric": ("<", 1.0),
+    },
 ]
 
 # ---------------------------------------------------------------------------
-# Judge invocation helpers
+# Judge invocation helpers — call through the same code path as experiments
 # ---------------------------------------------------------------------------
 
 def _run_correctness(question: str, response: str, reference: str) -> dict:
-    """Call the correctness judge directly (bypasses Phoenix experiment context)."""
-    from phoenix.evals import LLM, create_classifier  # noqa: PLC0415
-    from eval.phoenix.judges.correctness_judge import _TEMPLATE  # noqa: PLC0415
+    """Call the correctness judge through match_expected_response().
 
-    judge_model = os.getenv("JUDGE_MODEL", "mistralai/mistral-small-3-1-24b-instruct-2503")
-    llm = LLM(provider="litellm", model=f"watsonx/{judge_model}", temperature=0.0)
-    classifier = create_classifier(
-        name="correctness",
-        prompt_template=_TEMPLATE,
-        llm=llm,
-        choices={"correct": 1, "incorrect": 0},
-        direction="maximize",
+    This exercises the 3-attempt retry wrapper and the judge_error return path,
+    exactly as it will run during a Phoenix experiment.
+    """
+    from eval.phoenix.judges.correctness_judge import match_expected_response  # noqa: PLC0415
+
+    judge_fn = match_expected_response()
+    # judge_fn is a @create_evaluator-wrapped function.
+    # When called outside Phoenix, we pass plain strings — the wrapper converts
+    # them via isinstance checks (str → str, dict → dict.get(...)).
+    return judge_fn(
+        input={"query": question},
+        output={"result": response},
+        reference={"responses": reference},
     )
-    eval_input = {"input": question, "output": response, "reference": reference}
-    results = classifier.evaluate(eval_input, input_mapping={
-        "input":     lambda ex: ex.get("input", ""),
-        "output":    lambda ex: ex.get("output", ""),
-        "reference": lambda ex: ex.get("reference", ""),
-    })
-    if not results:
-        return {"label": "incorrect", "score": 0, "explanation": "(no result)"}
-    item = results[0]
-    return {
-        "label": getattr(item, "label", "incorrect"),
-        "score": getattr(item, "score", 0),
-        "explanation": getattr(item, "explanation", ""),
-    }
 
 
 def _run_numeric(response: str, numeric_checks) -> dict:
@@ -199,7 +228,7 @@ def _run_numeric(response: str, numeric_checks) -> dict:
 # ---------------------------------------------------------------------------
 
 def main() -> None:
-    judge_model = os.getenv("JUDGE_MODEL", "mistralai/mistral-small-3-1-24b-instruct-2503")
+    judge_model = os.getenv("JUDGE_MODEL", "meta-llama/llama-3-3-70b-instruct")
     print(f"\n{'='*70}")
     print("Sanity check — correctness judge (LLM) + numeric judge (deterministic)")
     print(f"JUDGE_MODEL = {judge_model}")
@@ -231,14 +260,22 @@ def main() -> None:
         print("Running correctness judge (LLM) …")
         c = _run_correctness(case["question"], case["response"], reference)
         exp_c = case["expect_correctness"]
-        pass_c = c["label"] == exp_c
+
+        # judge_error is always a FAIL
+        if c["label"] == "judge_error":
+            pass_c = False
+            status_c = "FAIL ❌  (judge_error — LLM returned malformed JSON after 3 attempts)"
+        else:
+            pass_c = c["label"] == exp_c
+            status_c = "PASS ✅" if pass_c else "FAIL ❌"
+
         all_pass = all_pass and pass_c
-        status_c = "PASS ✅" if pass_c else "FAIL ❌"
         print(f"  label       : {c['label']}")
         print(f"  score       : {c['score']}")
         print(f"  expected    : {exp_c}")
         print(f"  result      : {status_c}")
-        print(f"  explanation : {textwrap.shorten(c['explanation'], width=200, placeholder='…')}")
+        expl = c.get("explanation") or ""
+        print(f"  explanation : {textwrap.shorten(str(expl), width=200, placeholder='…')}")
         print()
 
         # --- Numeric judge ---

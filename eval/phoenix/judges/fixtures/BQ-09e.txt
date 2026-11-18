@@ -1,0 +1,18 @@
+**Apple Inc. – Quarterly Revenue (last 8 quarters)**  
+*XBRL concept used: **RevenueFromContractWithCustomerExcludingAssessedTax** (us‑gaap)*  
+
+| Fiscal Quarter | Fiscal Year | Period End | Revenue (USD) | Form | Accession Number |
+|----------------|------------|------------|----------------|------|-------------------|
+| Q3 | 2026 | 2026‑06‑27 | $109.4 billion | 10‑Q | 0000320193‑26‑000020 |
+| Q2 | 2026 | 2026‑03‑28 | $111.2 billion | 10‑Q | 0000320193‑26‑000013 |
+| Q1 | 2026 | 2025‑12‑27 | $143.8 billion | 10‑Q | 0000320193‑26‑000006 |
+| Q3 | 2025 | 2025‑06‑28 | $94.0 billion | 10‑Q | 0000320193‑26‑000020 |
+| Q2 | 2025 | 2025‑03‑29 | $95.4 billion | 10‑Q | 0000320193‑26‑000013 |
+| Q1 | 2025 | 2024‑12‑28 | $124.3 billion | 10‑Q | 0000320193‑26‑000006 |
+| Q3 | 2024 | 2024‑06‑29 | $85.8 billion | 10‑Q | 0000320193‑25‑000073 |
+| Q2 | 2024 | 2024‑03‑30 | $90.8 billion | 10‑Q | 0000320193‑25‑000057 |
+
+**Notes**
+
+* The data come from Apple’s 10‑Q filings (quarterly reports).  
+* Q4 figures are not included in the quarterly‑facts endpoint because they are reported in the annual 10‑K (or occasional 8‑K), not in a separate 10‑Q. If you need the Q4 (full‑year) revenue, let me know and I can retrieve the annual figure via the company‑fact call.

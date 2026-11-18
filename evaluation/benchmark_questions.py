@@ -272,13 +272,22 @@ BENCHMARK_QUESTIONS = [
         "expected_tools": ["sec_edgar_search_companies", "sec_edgar_get_company_fact"],
         "pass_criteria": (
             "Agent first searches for 'Pfizer' and identifies PFE; "
-            "then retrieves at least 3 annual revenue figures for Pfizer; "
+            "then retrieves at least 3 annual revenue figures for Pfizer (concept: Revenues); "
             "values in USD with fiscal years; "
-            "FY2023 revenue is approximately $58.5B USD (±10%)."
+            "FY2024 (ended 2024-12-31) revenue is approximately $63.6B; "
+            "FY2023 (ended 2023-12-31) revenue is approximately $62.6B; "
+            "FY2023 may show a recast note — the ORIGINAL filing reported $58.5B, "
+            "but the recast value is $59.6B; either value is acceptable provided it is "
+            "labelled as FY2023. "
+            "FY2022 (ended 2022-12-31) revenue is approximately $100.3B. "
+            "Values should not be from the RevenueFromContractWithCustomer... concept, "
+            "which reports different (incorrect) figures."
         ),
-        "numeric_checks": [
-            {"description": "Pfizer FY2023 annual revenue ~$58.5B USD", "threshold_pct": 10},
-        ],
+        "numeric_checks": {
+            "must_include": [62.579e9, 63.627e9, 59.553e9],
+            "rel_tol": 0.005,
+            "max_value": None,
+        },
     },
     {
         "id": "BQ-18",

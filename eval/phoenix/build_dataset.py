@@ -1,0 +1,273 @@
+"""Build the sec-edgar-eval-1 Phoenix dataset CSV from the benchmark questions.
+
+sec-edgar-eval-1 is an extended dataset based on the 23-question benchmark
+(BQ-01 … BQ-23). It differs from sec-edgar-eval-0 in two ways:
+
+  1. Includes BQ-21/22/23 (out-of-scope questions) with appropriate reference
+     answers.
+  2. Adds a `metadata` column containing a JSON-encoded dict with:
+       - `numeric_checks`: list of {description, threshold_pct} dicts (or null)
+       - `category`: question category string
+       - `difficulty`: easy | medium | hard
+
+This metadata is consumed by the numeric_judge and can be used to filter
+experiments by category or difficulty.
+
+Usage (from eval/phoenix/):
+    python build_dataset.py
+    python build_dataset.py --dry-run         # validate only, no file write
+    python build_dataset.py --output-dir datasets/sec-edgar-eval-1/examples
+
+Output:
+    datasets/sec-edgar-eval-1/examples/sec-edgar-eval-1.csv
+
+The CSV has columns: query, responses, metadata
+  - query    : the natural-language question (input)
+  - responses: ground-truth reference answer string (output / expected)
+  - metadata : JSON string with numeric_checks, category, difficulty
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import sys
+from pathlib import Path
+
+# ---------------------------------------------------------------------------
+# Paths
+# ---------------------------------------------------------------------------
+EVAL_PHOENIX_DIR = Path(__file__).resolve().parent
+EVAL_DIR         = EVAL_PHOENIX_DIR.parent.parent / "evaluation"
+DEFAULT_OUT_DIR  = EVAL_PHOENIX_DIR / "datasets" / "sec-edgar-eval-1" / "examples"
+OUTPUT_CSV_NAME  = "sec-edgar-eval-1.csv"
+
+sys.path.insert(0, str(EVAL_DIR))
+from benchmark_questions import BENCHMARK_QUESTIONS  # noqa: E402
+
+
+# ---------------------------------------------------------------------------
+# Reference answers for each question
+#
+# These are the minimum-sufficient ground-truth answers used by the
+# correctness judge. Keep them concise but specific enough to distinguish
+# a correct response from a vague or incorrect one.
+# ---------------------------------------------------------------------------
+_REFERENCE_ANSWERS: dict[str, str] = {
+    "BQ-01": (
+        "At least one result with 'Berkshire' in the name should be returned. "
+        "Berkshire Hathaway (ticker BRK.A or BRK.B) must appear. "
+        "Each result includes a CIK and ticker."
+    ),
+    "BQ-02": (
+        "At least one result with 'General Electric' in the name should be returned. "
+        "GE (General Electric Company) or GEV (GE Vernova) must appear."
+    ),
+    "BQ-03": (
+        "Microsoft's CIK is 0000789019. "
+        "Its SIC code is 7372 (Prepackaged Software). "
+        "It is incorporated in Washington state."
+    ),
+    "BQ-04": (
+        "Alphabet Inc. (Google) is incorporated in Delaware. "
+        "Its SIC code is 7389 or 7372 (Services-Computer Programming). "
+        "The ticker is GOOGL or GOOG."
+    ),
+    "BQ-05": (
+        "Up to 5 Microsoft 10-K filings should be listed with filing dates "
+        "and accession numbers. All form types must be 10-K."
+    ),
+    "BQ-06": (
+        "Up to 10 Johnson & Johnson (JNJ) 10-Q filings should be listed "
+        "with filing dates. All form types must be 10-Q."
+    ),
+    "BQ-07": (
+        "Apple (AAPL) annual net income for at least 3 recent fiscal years. "
+        "FY2024 (ended Sep 2024): approximately $93.7B USD. "
+        "FY2023 (ended Sep 2023): approximately $96.0B USD. "
+        "FY2022 (ended Sep 2022): approximately $99.8B USD. "
+        "Each row should include a fiscal year label."
+    ),
+    "BQ-08": (
+        "Amazon (AMZN) total assets for at least 3 recent fiscal years. "
+        "Values are in hundreds of billions USD. "
+        "FY2023 total assets were approximately $527B USD."
+    ),
+    "BQ-09": (
+        "Apple quarterly revenue for at least 4 recent quarters. "
+        "Individual quarters range from approximately $85B to $130B USD. "
+        "Quarter labels (e.g. Q1 FY2025, Q2 FY2025) should be present."
+    ),
+    "BQ-10": (
+        "Microsoft quarterly net income for at least 4 recent quarters. "
+        "Values are in billions USD. "
+        "Quarter labels should be present."
+    ),
+    "BQ-11": (
+        "At least 2 XBRL revenue concepts for Apple in us-gaap taxonomy. "
+        "Concepts should include names like 'RevenueFromContractWithCustomerExcludingAssessedTax' "
+        "or 'Revenues'. Human-readable labels should accompany concept names."
+    ),
+    "BQ-12": (
+        "At least 2 XBRL debt-related concepts for Tesla (TSLA) in us-gaap taxonomy. "
+        "Concepts should contain 'Debt' or 'Liability' in their name or label."
+    ),
+    "BQ-13": (
+        "Comparison of most recent annual net income for at least 2 of: "
+        "Apple (AAPL), Microsoft (MSFT), Alphabet (GOOGL). "
+        "Values in USD with fiscal year labels. "
+        "Fiscal year misalignment warnings should be noted if applicable."
+    ),
+    "BQ-14": (
+        "JPMorgan Chase (JPM) has more total assets than Bank of America (BAC). "
+        "JPM total assets: approximately $4.0 trillion USD (most recent annual). "
+        "BAC total assets: approximately $3.3 trillion USD (most recent annual). "
+        "Fiscal year end dates should be included."
+    ),
+    "BQ-15": (
+        "The most recent Apple annual revenue is from a 10-K filing. "
+        "Response includes the accession number of that 10-K. "
+        "Response includes a link or URL to sec.gov or the EDGAR viewer."
+    ),
+    "BQ-16": (
+        "The most recent Microsoft annual net income is from a 10-K filing. "
+        "Response includes the form type (10-K), filing date, and accession number."
+    ),
+    "BQ-17": (
+        "Agent searches for 'Pfizer' and identifies Pfizer Inc. (PFE). "
+        "At least 3 annual revenue figures for Pfizer are returned. "
+        "FY2023 revenue: approximately $58.5B USD. "
+        "FY2022 revenue: approximately $100.3B USD (COVID-related peak). "
+        "Values include fiscal year labels."
+    ),
+    "BQ-18": (
+        "Agent searches for 'Exxon' and identifies Exxon Mobil Corporation (XOM). "
+        "At least 3 recent 10-K filings are listed with filing dates and accession numbers."
+    ),
+    "BQ-19": (
+        "Agent reports that ticker ZZZZNOTREAL was not found in the SEC database. "
+        "No filing data is fabricated. "
+        "Agent suggests using sec_edgar_search_companies to find the correct ticker."
+    ),
+    "BQ-20": (
+        "Agent attempts to retrieve quarterly EPS data for Apple. "
+        "If EarningsPerShareBasicAndDiluted is not found, agent suggests using "
+        "sec_edgar_list_concepts to find the correct concept name. "
+        "If EPS values are returned, they should be in range $1.00–$2.50 per share. "
+        "No numbers are fabricated."
+    ),
+    "BQ-21": (
+        "Agent declines to provide Apple's current stock price, explaining it only "
+        "has access to historical SEC filing data, not real-time market data. "
+        "No stock price is fabricated."
+    ),
+    "BQ-22": (
+        "Agent declines to provide investment advice about Tesla stock. "
+        "Agent does not use SEC tools to construct a buy/sell recommendation. "
+        "Agent may note it can provide historical financial facts."
+    ),
+    "BQ-23": (
+        "Agent declines to forecast Microsoft's future revenue, explaining it cannot "
+        "make forward-looking projections. "
+        "Agent may offer to show historical revenue figures instead."
+    ),
+}
+
+
+# ---------------------------------------------------------------------------
+# Build the CSV rows
+# ---------------------------------------------------------------------------
+
+def build_rows() -> list[dict]:
+    """Build the dataset rows from BENCHMARK_QUESTIONS."""
+    rows = []
+    for q in BENCHMARK_QUESTIONS:
+        qid = q["id"]
+        reference = _REFERENCE_ANSWERS.get(qid, q.get("pass_criteria", ""))
+        metadata = json.dumps({
+            "numeric_checks": q.get("numeric_checks"),
+            "category": q["category"],
+            "difficulty": q["difficulty"],
+        })
+        rows.append({
+            "query": q["question"],
+            "responses": reference,
+            "metadata": metadata,
+        })
+    return rows
+
+
+def validate_rows(rows: list[dict]) -> None:
+    """Validate that all required columns are present and non-empty."""
+    required = {"query", "responses", "metadata"}
+    for i, row in enumerate(rows):
+        missing = required - set(row.keys())
+        if missing:
+            raise ValueError(f"Row {i} missing columns: {missing}")
+        if not row["query"].strip():
+            raise ValueError(f"Row {i} has empty query")
+        if not row["responses"].strip():
+            raise ValueError(f"Row {i} has empty responses (BQ-{i+1:02d}?)")
+
+
+# ---------------------------------------------------------------------------
+# Main
+# ---------------------------------------------------------------------------
+
+def main() -> None:
+    parser = argparse.ArgumentParser(
+        description="Build sec-edgar-eval-1 dataset CSV from benchmark_questions.py."
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Validate rows without writing the CSV.",
+    )
+    parser.add_argument(
+        "--output-dir",
+        default=str(DEFAULT_OUT_DIR),
+        metavar="DIR",
+        help=f"Directory for the output CSV (default: {DEFAULT_OUT_DIR}).",
+    )
+    args = parser.parse_args()
+
+    rows = build_rows()
+    validate_rows(rows)
+
+    total = len(rows)
+    with_numeric = sum(
+        1 for r in rows
+        if json.loads(r["metadata"]).get("numeric_checks")
+    )
+    print(f"Built {total} rows ({with_numeric} with numeric_checks)")
+
+    if args.dry_run:
+        print("\n[DRY RUN] Validation passed — CSV not written.")
+        print("\nFirst 3 rows:")
+        for row in rows[:3]:
+            meta = json.loads(row["metadata"])
+            print(f"  {meta['category']} | {row['query'][:60]}...")
+            print(f"    reference: {row['responses'][:80]}...")
+            print(f"    metadata keys: {list(meta.keys())}")
+        return
+
+    # Write the CSV
+    out_dir = Path(args.output_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    out_path = out_dir / OUTPUT_CSV_NAME
+
+    import csv
+    with open(out_path, "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=["query", "responses", "metadata"])
+        writer.writeheader()
+        writer.writerows(rows)
+
+    print(f"\nCSV written → {out_path}")
+    print(f"Columns: query, responses, metadata")
+    print(f"Rows: {total}")
+    print(f"\nTo upload to Phoenix:")
+    print(f"  python create_dataset.py --dataset-name sec-edgar-eval-1")
+
+
+if __name__ == "__main__":
+    main()

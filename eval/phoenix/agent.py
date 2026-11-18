@@ -138,6 +138,10 @@ class SECEdgarAgent:
     Supports Phoenix OTLP tracing and Phoenix experiment task factories.
     """
 
+    # Class-level flag: instrument once per process regardless of how many
+    # SECEdgarAgent instances are created (re-instrumenting raises errors).
+    _class_instrumented: bool = False
+
     def __init__(
         self,
         system_prompt_version: str = "v1",
@@ -154,6 +158,7 @@ class SECEdgarAgent:
         self._agent = None
         self._initialized = False
         self._http_transport = None
+        self._instrumented = False
 
     # ------------------------------------------------------------------
     # Initialization
@@ -164,15 +169,17 @@ class SECEdgarAgent:
         if self._initialized:
             return
 
-        # Phoenix OTLP tracing
-        from phoenix.otel import register
-        from openinference.instrumentation.langchain import LangChainInstrumentor
+        # Phoenix OTLP tracing — instrument once per process, not once per instance
+        if not SECEdgarAgent._class_instrumented:
+            from openinference.instrumentation.langchain import LangChainInstrumentor
+            from phoenix.otel import register
 
-        tracer_provider = register(
-            project_name=self.project_name,
-            endpoint=self.phoenix_otlp_endpoint,
-        )
-        LangChainInstrumentor().instrument(tracer_provider=tracer_provider)
+            tracer_provider = register(
+                project_name=self.project_name,
+                endpoint=self.phoenix_otlp_endpoint,
+            )
+            LangChainInstrumentor().instrument(tracer_provider=tracer_provider)
+            SECEdgarAgent._class_instrumented = True
 
         # MCP session over streamable-HTTP
         from mcp.client.streamable_http import streamable_http_client
@@ -199,11 +206,25 @@ class SECEdgarAgent:
         )
 
         system_prompt = self._load_system_prompt()
-        self._agent = create_react_agent(model=llm, tools=lc_tools, prompt=system_prompt)
+        self._agent = create_react_agent(
+            model=llm,
+            tools=lc_tools,
+            prompt=system_prompt,
+            checkpointer=None,
+        )
+        # Increase recursion limit for multi-step chains (default is 10)
+        self._recursion_limit = 15
         self._initialized = True
 
     def _load_system_prompt(self) -> str:
-        """Load the system prompt for the requested version."""
+        """Load the system prompt for the requested version.
+
+        Supports:
+          - "v1", "v2", ... → prompts/system_prompt_{version}.txt
+          - "yaml"          → reads instructions: from agents/sec_edgar_agent.yaml
+        """
+        if self.system_prompt_version == "yaml":
+            return self._load_yaml_prompt()
         prompt_file = PROMPTS_DIR / f"system_prompt_{self.system_prompt_version}.txt"
         if not prompt_file.exists():
             available = [p.stem for p in PROMPTS_DIR.glob("system_prompt_*.txt")]
@@ -213,6 +234,26 @@ class SECEdgarAgent:
             )
         return prompt_file.read_text()
 
+    def _load_yaml_prompt(self) -> str:
+        """Extract the instructions: field from agents/sec_edgar_agent.yaml."""
+        import yaml  # bundled in venv
+
+        agent_yaml = REPO_ROOT / "agents" / "sec_edgar_agent.yaml"
+        if not agent_yaml.exists():
+            raise FileNotFoundError(
+                f"Agent YAML not found: {agent_yaml}. "
+                "Cannot use system_prompt_version='yaml'."
+            )
+        data = yaml.safe_load(agent_yaml.read_text())
+        # Try top-level `instructions` first (ADK flat schema), then nested `spec.instructions`
+        instructions = data.get("instructions") or data.get("spec", {}).get("instructions", "")
+        if not instructions:
+            raise ValueError(
+                f"No 'instructions' key found in {agent_yaml}. "
+                "Check the YAML structure — expected a top-level 'instructions:' field."
+            )
+        return instructions
+
     # ------------------------------------------------------------------
     # Inference
     # ------------------------------------------------------------------
@@ -220,7 +261,10 @@ class SECEdgarAgent:
     async def run(self, query: str) -> str:
         """Run the agent on a single query and return the final text response."""
         await self.initialize()
-        result = await self._agent.ainvoke({"messages": [("user", query)]})
+        result = await self._agent.ainvoke(
+            {"messages": [("user", query)]},
+            config={"recursion_limit": self._recursion_limit},
+        )
         messages = result.get("messages", [])
         # The last message is the final assistant response
         for msg in reversed(messages):
@@ -243,16 +287,20 @@ class SECEdgarAgent:
         def task(example) -> dict:
             query = example.input.get("query", "")
             loop = asyncio.new_event_loop()
+            agent = SECEdgarAgent(
+                system_prompt_version=self.system_prompt_version,
+                mcp_endpoint=self.mcp_endpoint,
+                phoenix_otlp_endpoint=self.phoenix_otlp_endpoint,
+                project_name=self.project_name,
+            )
             try:
-                # Create a fresh agent per-task to get a clean MCP session
-                agent = SECEdgarAgent(
-                    system_prompt_version=self.system_prompt_version,
-                    mcp_endpoint=self.mcp_endpoint,
-                    phoenix_otlp_endpoint=self.phoenix_otlp_endpoint,
-                    project_name=self.project_name,
-                )
                 result = loop.run_until_complete(agent.run(query))
             finally:
+                # Always close MCP session cleanly to avoid resource leaks
+                try:
+                    loop.run_until_complete(agent.close())
+                except Exception:
+                    pass
                 loop.close()
             return {"result": result}
 

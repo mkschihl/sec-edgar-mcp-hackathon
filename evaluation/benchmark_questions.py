@@ -1,13 +1,15 @@
 """SEC EDGAR Agent — Benchmark Question Set.
 
-20 questions across 10 scenario categories covering all 8 tools.
+23 questions across 11 scenario categories covering all 8 tools.
 Each question specifies:
-  - id            : unique identifier (BQ-01 … BQ-20)
-  - category      : scenario type
-  - difficulty    : easy | medium | hard
-  - question      : natural-language prompt sent to the agent
-  - expected_tools: tool(s) the agent must call for a correct answer
-  - pass_criteria : plain-English description of what a passing response contains
+  - id              : unique identifier (BQ-01 … BQ-23)
+  - category        : scenario type
+  - difficulty      : easy | medium | hard
+  - question        : natural-language prompt sent to the agent
+  - expected_tools  : tool(s) the agent must call for a correct answer
+  - pass_criteria   : plain-English description of what a passing response contains
+  - numeric_checks  : list of dicts with {description, threshold_pct} for numeric
+                      validation, or None if no numeric constraints apply
 
 Difficulty rubric:
   easy   — single tool, well-known ticker, unambiguous intent
@@ -29,6 +31,7 @@ BENCHMARK_QUESTIONS = [
             "Response lists at least one match containing 'Berkshire'; "
             "BRK.A or BRK.B is present; each match includes a ticker and CIK."
         ),
+        "numeric_checks": None,
     },
     {
         "id": "BQ-02",
@@ -40,6 +43,7 @@ BENCHMARK_QUESTIONS = [
             "Response lists at least one match with 'General Electric' in the name; "
             "GE or GEV ticker is present."
         ),
+        "numeric_checks": None,
     },
     # ------------------------------------------------------------------
     # Category 2 — Company resolution (sec_edgar_resolve_company)
@@ -54,6 +58,7 @@ BENCHMARK_QUESTIONS = [
             "Response includes CIK 0000789019; mentions 'Microsoft'; "
             "includes a SIC code or industry description."
         ),
+        "numeric_checks": None,
     },
     {
         "id": "BQ-04",
@@ -65,6 +70,7 @@ BENCHMARK_QUESTIONS = [
             "Response includes Alphabet or Google; mentions state of incorporation (DE or CA); "
             "includes a SIC code."
         ),
+        "numeric_checks": None,
     },
     # ------------------------------------------------------------------
     # Category 3 — Recent filings (sec_edgar_get_recent_filings)
@@ -79,6 +85,7 @@ BENCHMARK_QUESTIONS = [
             "Response lists up to 5 filings; all have form type 10-K; "
             "each includes a filing date and accession number."
         ),
+        "numeric_checks": None,
     },
     {
         "id": "BQ-06",
@@ -90,6 +97,7 @@ BENCHMARK_QUESTIONS = [
             "Response lists up to 10 filings; all have form type 10-Q; "
             "includes filing dates."
         ),
+        "numeric_checks": None,
     },
     # ------------------------------------------------------------------
     # Category 4 — Annual financial facts (sec_edgar_get_company_fact)
@@ -101,9 +109,14 @@ BENCHMARK_QUESTIONS = [
         "question": "Show me the last 5 annual net income figures for Apple.",
         "expected_tools": ["sec_edgar_get_company_fact"],
         "pass_criteria": (
-            "Response presents a table or list of at least 3 annual net income figures for Apple; "
-            "values are in USD billions; each row includes a fiscal year and accession number."
+            "Response presents at least 3 annual net income figures for Apple (AAPL); "
+            "values are labelled with fiscal years; "
+            "FY2024 net income is approximately $93.7 billion USD (±5%)."
         ),
+        "numeric_checks": [
+            {"description": "Apple FY2024 net income ~$93.7B USD", "threshold_pct": 5},
+            {"description": "Apple FY2023 net income ~$96.0B USD", "threshold_pct": 5},
+        ],
     },
     {
         "id": "BQ-08",
@@ -113,8 +126,10 @@ BENCHMARK_QUESTIONS = [
         "expected_tools": ["sec_edgar_get_company_fact"],
         "pass_criteria": (
             "Response presents at least 3 annual total assets figures for Amazon (AMZN); "
-            "values are in USD; fiscal years are identified."
+            "values are in USD; fiscal years are identified; "
+            "most recent figure is in the hundreds of billions USD range."
         ),
+        "numeric_checks": None,
     },
     # ------------------------------------------------------------------
     # Category 5 — Quarterly facts (sec_edgar_get_quarterly_facts)
@@ -128,8 +143,15 @@ BENCHMARK_QUESTIONS = [
         "pass_criteria": (
             "Response presents quarterly revenue figures (not annual); "
             "period labels like 'Q1 FY2025' or similar are present; "
-            "at least 4 quarters returned; values in USD."
+            "at least 4 quarters returned; "
+            "each individual quarterly value is in the range $85B–$130B USD."
         ),
+        "numeric_checks": [
+            {
+                "description": "Apple individual quarterly revenue values are in range $85B–$130B USD",
+                "threshold_pct": 20,
+            },
+        ],
     },
     {
         "id": "BQ-10",
@@ -139,9 +161,10 @@ BENCHMARK_QUESTIONS = [
         "expected_tools": ["sec_edgar_get_quarterly_facts"],
         "pass_criteria": (
             "Response presents quarterly net income for Microsoft; "
-            "quarter labels are present (Q1/Q2/Q3/Q4); "
+            "quarter labels are present (Q1/Q2/Q3 or fiscal quarter names); "
             "at least 4 quarters returned; values in USD."
         ),
+        "numeric_checks": None,
     },
     # ------------------------------------------------------------------
     # Category 6 — Concept discovery (sec_edgar_list_concepts)
@@ -156,6 +179,7 @@ BENCHMARK_QUESTIONS = [
             "Response lists at least 2 XBRL concept names containing 'Revenue' or 'revenue'; "
             "includes human-readable labels alongside concept names."
         ),
+        "numeric_checks": None,
     },
     {
         "id": "BQ-12",
@@ -167,6 +191,7 @@ BENCHMARK_QUESTIONS = [
             "Response lists at least 2 debt-related XBRL concepts for Tesla (TSLA); "
             "concept names or labels contain 'Debt' or 'debt' or 'Liability'."
         ),
+        "numeric_checks": None,
     },
     # ------------------------------------------------------------------
     # Category 7 — Cross-company comparison (sec_edgar_compare_companies)
@@ -178,10 +203,11 @@ BENCHMARK_QUESTIONS = [
         "question": "Compare the most recent annual net income for Apple, Microsoft, and Google.",
         "expected_tools": ["sec_edgar_compare_companies"],
         "pass_criteria": (
-            "Response presents a comparison table with at least 2 of the 3 companies; "
+            "Response presents a comparison with at least 2 of the 3 companies; "
             "values are in USD; fiscal years are stated; "
             "any fiscal year misalignment warnings are surfaced to the user."
         ),
+        "numeric_checks": None,
     },
     {
         "id": "BQ-14",
@@ -192,9 +218,14 @@ BENCHMARK_QUESTIONS = [
         "pass_criteria": (
             "Response compares total assets for JPM and BAC; "
             "clearly states which is larger; "
-            "includes the values and fiscal year end dates; "
-            "surfaces any comparability warnings."
+            "JPM total assets are approximately $4.0T USD (±10%) and "
+            "BAC total assets are approximately $3.3T USD (±10%); "
+            "includes fiscal year end dates."
         ),
+        "numeric_checks": [
+            {"description": "JPMorgan Chase total assets ~$4.0T USD", "threshold_pct": 10},
+            {"description": "Bank of America total assets ~$3.3T USD", "threshold_pct": 10},
+        ],
     },
     # ------------------------------------------------------------------
     # Category 8 — Source filing attribution (sec_edgar_get_filing_metadata)
@@ -208,8 +239,9 @@ BENCHMARK_QUESTIONS = [
         "pass_criteria": (
             "Response identifies the most recent annual revenue figure; "
             "includes the accession number of the source 10-K; "
-            "includes an edgar_viewer_url pointing to sec.gov."
+            "includes an edgar_viewer_url or direct link pointing to sec.gov."
         ),
+        "numeric_checks": None,
     },
     {
         "id": "BQ-16",
@@ -222,6 +254,7 @@ BENCHMARK_QUESTIONS = [
             "source filing of Microsoft's most recent annual net income; "
             "includes the accession number."
         ),
+        "numeric_checks": None,
     },
     # ------------------------------------------------------------------
     # Category 9 — Multi-step: unknown company → facts
@@ -235,8 +268,12 @@ BENCHMARK_QUESTIONS = [
         "pass_criteria": (
             "Agent first searches for 'Pfizer' and identifies PFE; "
             "then retrieves at least 3 annual revenue figures for Pfizer; "
-            "values in USD with fiscal years."
+            "values in USD with fiscal years; "
+            "FY2023 revenue is approximately $58.5B USD (±10%)."
         ),
+        "numeric_checks": [
+            {"description": "Pfizer FY2023 annual revenue ~$58.5B USD", "threshold_pct": 10},
+        ],
     },
     {
         "id": "BQ-18",
@@ -248,6 +285,7 @@ BENCHMARK_QUESTIONS = [
             "Agent searches for 'Exxon', identifies XOM; "
             "lists at least 3 recent 10-K filings with filing dates and accession numbers."
         ),
+        "numeric_checks": None,
     },
     # ------------------------------------------------------------------
     # Category 10 — Edge cases & error handling
@@ -260,8 +298,10 @@ BENCHMARK_QUESTIONS = [
         "expected_tools": ["sec_edgar_get_recent_filings"],
         "pass_criteria": (
             "Agent attempts the lookup and gracefully reports that the ticker was not found; "
-            "does not fabricate a response; suggests using search_companies to find the right ticker."
+            "does not fabricate a response; "
+            "suggests using search_companies to find the right ticker."
         ),
+        "numeric_checks": None,
     },
     {
         "id": "BQ-20",
@@ -272,8 +312,57 @@ BENCHMARK_QUESTIONS = [
         "pass_criteria": (
             "Agent retrieves quarterly EPS data for Apple; "
             "if the concept name is not found, the agent uses list_concepts or suggests a correction; "
+            "if EPS values are returned, they are in the range $1.0–$2.5 per share; "
             "response does not fabricate numbers."
         ),
+        "numeric_checks": [
+            {
+                "description": "Apple quarterly EPS values are in range $1.0–$2.5 per share (if returned)",
+                "threshold_pct": 25,
+            },
+        ],
+    },
+    # ------------------------------------------------------------------
+    # Category 11 — Out-of-scope questions (agent should refuse)
+    # ------------------------------------------------------------------
+    {
+        "id": "BQ-21",
+        "category": "out_of_scope",
+        "difficulty": "easy",
+        "question": "What is Apple's current stock price?",
+        "expected_tools": [],
+        "pass_criteria": (
+            "Agent declines to answer or explains it cannot provide real-time stock prices; "
+            "does not fabricate a price or use SEC tools to infer one; "
+            "may suggest checking a financial data provider."
+        ),
+        "numeric_checks": None,
+    },
+    {
+        "id": "BQ-22",
+        "category": "out_of_scope",
+        "difficulty": "easy",
+        "question": "Should I buy Tesla stock right now? What's your recommendation?",
+        "expected_tools": [],
+        "pass_criteria": (
+            "Agent declines to provide investment advice; "
+            "does not use SEC tools to construct a buy/sell recommendation; "
+            "may note that it can retrieve historical financial facts but not advise on trading."
+        ),
+        "numeric_checks": None,
+    },
+    {
+        "id": "BQ-23",
+        "category": "out_of_scope",
+        "difficulty": "medium",
+        "question": "What will Microsoft's revenue be next fiscal year?",
+        "expected_tools": [],
+        "pass_criteria": (
+            "Agent declines to make a forward-looking forecast; "
+            "does not fabricate a projected number; "
+            "may offer to show historical revenue figures instead."
+        ),
+        "numeric_checks": None,
     },
 ]
 
@@ -286,8 +375,10 @@ if __name__ == "__main__":
     for q in BENCHMARK_QUESTIONS:
         all_tools.extend(q["expected_tools"])
     tool_counts = Counter(all_tools)
+    with_numeric = sum(1 for q in BENCHMARK_QUESTIONS if q.get("numeric_checks"))
 
     print(f"Total questions: {len(BENCHMARK_QUESTIONS)}")
+    print(f"With numeric_checks: {with_numeric}")
     print(f"\nBy category:")
     for cat, n in sorted(cats.items()):
         print(f"  {cat:<30} {n}")

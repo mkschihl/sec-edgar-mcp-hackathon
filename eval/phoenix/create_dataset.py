@@ -70,6 +70,7 @@ def upload_dataset(
     csv_path = resolve_csv_path(csv_path_override or entry["csv_path"])
     input_keys: list[str] = entry["input_keys"]
     output_keys: list[str] = entry["output_keys"]
+    metadata_keys: list[str] = entry.get("metadata_keys", [])
     description: str = entry.get("description", "")
     px_name = phoenix_name or dataset_name
 
@@ -78,10 +79,13 @@ def upload_dataset(
     print(f"CSV path     : {csv_path}")
     print(f"Input keys   : {input_keys}")
     print(f"Output keys  : {output_keys}")
+    if metadata_keys:
+        print(f"Metadata keys: {metadata_keys}")
     print(f"Description  : {description.strip()}")
     print()
 
-    df = validate_csv(csv_path, input_keys, output_keys)
+    # Validate that all declared keys exist in the CSV
+    df = validate_csv(csv_path, input_keys + metadata_keys, output_keys)
     print(f"Rows         : {len(df)}")
 
     if dry_run:
@@ -91,13 +95,16 @@ def upload_dataset(
     from phoenix.client import Client
 
     client = Client(base_url=phoenix_endpoint)
-    client.datasets.create_dataset(
+    create_kwargs: dict = dict(
         name=px_name,
         dataframe=df,
         input_keys=input_keys,
         output_keys=output_keys,
         dataset_description=description.strip(),
     )
+    if metadata_keys:
+        create_kwargs["metadata_keys"] = metadata_keys
+    client.datasets.create_dataset(**create_kwargs)
     print(f"\nDataset '{px_name}' uploaded to Phoenix at {phoenix_endpoint}.")
 
 
@@ -138,6 +145,8 @@ def main() -> None:
             print(f"    csv_path   : {entry['csv_path']}")
             print(f"    input_keys : {entry['input_keys']}")
             print(f"    output_keys: {entry['output_keys']}")
+            if entry.get("metadata_keys"):
+                print(f"    metadata_keys: {entry['metadata_keys']}")
         return
 
     if not args.dataset_name:

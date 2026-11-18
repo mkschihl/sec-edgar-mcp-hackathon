@@ -33,7 +33,7 @@ load_dotenv()
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 EVAL_ROOT = Path(__file__).resolve().parent
-PROMPT_VERSIONS = ["v1", "v2"]
+PROMPT_VERSIONS = ["v1", "v2", "yaml"]
 
 
 def validate_env() -> list[str]:
@@ -110,7 +110,7 @@ def main() -> None:
     from phoenix.client import Client
 
     from agent import SECEdgarAgent
-    from judges import check_answer_scope, match_expected_response
+    from judges import check_answer_scope, check_numeric_accuracy, match_expected_response
 
     # --- Load Phoenix dataset ---
     phoenix_url = args.phoenix_endpoint
@@ -145,7 +145,11 @@ def main() -> None:
     experiment = client.experiments.run_experiment(
         dataset=dataset,
         task=task,
-        evaluators=[check_answer_scope(), match_expected_response()],
+        evaluators=[
+            check_answer_scope(),
+            match_expected_response(),
+            check_numeric_accuracy(),
+        ],
         experiment_description=description,
     )
 

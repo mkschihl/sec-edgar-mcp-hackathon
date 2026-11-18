@@ -56,8 +56,15 @@ from benchmark_questions import BENCHMARK_QUESTIONS
 # Token loading
 # ---------------------------------------------------------------------------
 
+TRACES_DIR = EVAL_DIR / "traces"
+
+
 def load_token() -> str:
-    """Read the current bearer token from the ADK credentials cache."""
+    """Read the current bearer token from the ADK credentials cache.
+
+    Exits with an error message if the token is expired — continuing with an
+    expired token would produce misleading all-fail results.
+    """
     try:
         import yaml  # bundled with ADK venv
         creds = yaml.safe_load(CREDENTIALS_FILE.read_text())
@@ -65,9 +72,17 @@ def load_token() -> str:
         expiry = creds["auth"]["gsa-hackathon"].get("wxo_mcsp_token_expiry", 0)
         now = time.time()
         if expiry and now > expiry:
-            print(f"WARNING: Token expired at {datetime.fromtimestamp(expiry)}. "
-                  f"Re-activate with: orchestrate env activate gsa-hackathon --api-key $WXO_API_KEY")
+            print(
+                f"ERROR: Token expired at {datetime.fromtimestamp(expiry)}.\n"
+                "Re-activate with:\n"
+                "  source .env && export WXO_API_KEY\n"
+                "  venv/bin/orchestrate env activate gsa-hackathon --api-key \"$WXO_API_KEY\"",
+                file=sys.stderr,
+            )
+            sys.exit(1)
         return token
+    except SystemExit:
+        raise
     except Exception as exc:
         raise RuntimeError(
             f"Could not read token from {CREDENTIALS_FILE}: {exc}\n"
@@ -110,14 +125,17 @@ def get_agent_id(token: str) -> str:
 # Agent call via REST
 # ---------------------------------------------------------------------------
 
-def call_agent_rest(question: str, token: str, agent_id: str, timeout: int = 60) -> tuple[str, dict]:
-    """
-    POST a message to the agent via the /chat/completions SSE endpoint.
-    Returns (response_text, synthetic_dict_with_full_sse_text).
+def call_agent_rest(question: str, token: str, agent_id: str, timeout: int = 120) -> tuple[str, dict]:
+    """POST a message to the agent via the /chat/completions SSE endpoint.
 
-    The endpoint streams SSE lines. We collect:
-      - assistant content deltas → final response text
-      - tool_calls step deltas   → which tools fired (for scoring)
+    Returns (response_text, raw_dict) where raw_dict contains:
+      - "tool_calls": list[str]  — tool names fired (from SSE step_details only)
+      - "call_counts": dict[str, int]  — per-tool call counts
+      - "sse_events": list[str]  — raw SSE event types seen (for diagnostics)
+      - "raw_sse": str  — first 8KB of raw SSE text (for debugging)
+
+    Tool names are taken ONLY from SSE step_details (not from text scanning),
+    so the scorer reflects actual MCP tool invocations.
     """
     url = f"{SERVICE_URL}/v1/orchestrate/{agent_id}/chat/completions"
     headers = {
@@ -129,6 +147,8 @@ def call_agent_rest(question: str, token: str, agent_id: str, timeout: int = 60)
 
     response_chunks: list[str] = []
     tool_calls_seen: list[str] = []
+    call_counts: dict[str, int] = {}
+    sse_events: list[str] = []
     raw_sse_lines: list[str] = []
 
     try:
@@ -140,6 +160,9 @@ def call_agent_rest(question: str, token: str, agent_id: str, timeout: int = 60)
             for line in resp.iter_lines():
                 raw_sse_lines.append(line)
                 if not line.startswith("data: "):
+                    # Capture SSE event: lines
+                    if line.startswith("event: "):
+                        sse_events.append(line[7:].strip())
                     continue
                 payload = line[6:]
                 if payload.strip() == "[DONE]":
@@ -156,12 +179,13 @@ def call_agent_rest(question: str, token: str, agent_id: str, timeout: int = 60)
                     content = delta.get("content", "")
                     if content:
                         response_chunks.append(content)
-                    # Capture tool call names for scoring
+                    # Capture tool call names from step_details only
                     step = delta.get("step_details", {})
                     for tc in step.get("tool_calls", []):
                         name = tc.get("name", "")
                         if name:
                             tool_calls_seen.append(name)
+                            call_counts[name] = call_counts.get(name, 0) + 1
 
     except httpx.TimeoutException:
         return "[TIMEOUT]", {}
@@ -169,14 +193,15 @@ def call_agent_rest(question: str, token: str, agent_id: str, timeout: int = 60)
         return f"[ERROR: {exc}]", {}
 
     response_text = "".join(response_chunks).strip()
-    # Build a synthetic dict that contains tool names for the scorer
-    synthetic = {
+    raw = {
         "tool_calls": tool_calls_seen,
+        "call_counts": call_counts,
+        "sse_events": sse_events,
         "raw_sse": " ".join(raw_sse_lines)[:8000],
     }
     if not response_text:
-        response_text = synthetic["raw_sse"][:500]
-    return response_text, synthetic
+        response_text = raw["raw_sse"][:500]
+    return response_text, raw
 
 
 # ---------------------------------------------------------------------------
@@ -199,13 +224,19 @@ REFUSAL_PATTERNS = [
     r"i'm unable to",
     r"as an ai",
     r"i don't have (real-?time|live|current)",
-    r"i would need",
     r"not available in my (training|knowledge)",
 ]
 
 
 def extract_tools_fired(raw: dict | str) -> list[str]:
-    """Scan the full API response dict (or a string) for tool names."""
+    """Return the tool names that were fired, taken from SSE step_details only.
+
+    When `raw` is the structured dict returned by call_agent_rest(), use the
+    "tool_calls" key directly (which is populated only from step_details).
+    Fall back to text-scanning only for legacy / test inputs that are plain strings.
+    """
+    if isinstance(raw, dict) and "tool_calls" in raw:
+        return list(dict.fromkeys(raw["tool_calls"]))  # dedup, preserve order
     text = json.dumps(raw) if isinstance(raw, dict) else str(raw)
     return [name for name in ALL_TOOL_NAMES if name in text]
 
@@ -219,33 +250,68 @@ def looks_like_refusal(text: str) -> bool:
 # Scoring
 # ---------------------------------------------------------------------------
 
+_MIN_RESPONSE_CHARS = 40
+
+
 def score_question(q: dict, response_text: str, raw_response: dict) -> dict:
+    """Score a single question against its pass criteria.
+
+    Scoring logic:
+    - For out_of_scope questions (category="out_of_scope"): pass if the agent
+      did NOT fire expected_tools AND the response doesn't look like a hallucination;
+      fail if it fired tools and answered as if in scope.
+    - For in-scope questions: tool-call coverage drives the primary score;
+      short responses (<40 chars) are capped at partial even if tools fired.
+    - Tool names come from SSE step_details only (not text scanning).
+    """
+    # Tools fired: use step_details-only source
     tools_fired = extract_tools_fired(raw_response)
-    # Also scan response text in case reasoning isn't in the raw dict
-    tools_fired_text = extract_tools_fired(response_text)
-    tools_fired = list(set(tools_fired) | set(tools_fired_text))
 
     expected = q["expected_tools"]
     missing = [t for t in expected if t not in tools_fired]
     is_refusal = looks_like_refusal(response_text)
     is_timeout = "[TIMEOUT]" in response_text
     is_error = response_text.startswith("[HTTP") or response_text.startswith("[ERROR")
+    is_short = len(response_text.strip()) < _MIN_RESPONSE_CHARS
 
     if is_timeout:
         return dict(score="fail", tools_fired=tools_fired, tools_missing=missing,
                     is_refusal=False,
-                    notes="Request timed out (60s). Agent may be slow or token expired.")
+                    notes="Request timed out (120s). Agent may be slow or token expired.")
     if is_error:
         return dict(score="fail", tools_fired=[], tools_missing=expected,
                     is_refusal=False, notes=f"API error: {response_text[:120]}")
+
+    # Out-of-scope questions: a correct refusal is a pass
+    if q.get("category") == "out_of_scope":
+        if not tools_fired and (is_refusal or is_short or len(response_text) < 300):
+            return dict(score="pass", tools_fired=tools_fired, tools_missing=[],
+                        is_refusal=is_refusal,
+                        notes="Correctly declined to answer out-of-scope question.")
+        elif tools_fired:
+            return dict(score="fail", tools_fired=tools_fired, tools_missing=[],
+                        is_refusal=False,
+                        notes="Agent used SEC tools to answer an out-of-scope question.")
+        else:
+            return dict(score="partial", tools_fired=tools_fired, tools_missing=[],
+                        is_refusal=False,
+                        notes="Agent responded without tools; unclear refusal.")
+
+    # In-scope questions
     if is_refusal and not tools_fired:
         return dict(score="fail", tools_fired=tools_fired, tools_missing=missing,
                     is_refusal=True,
                     notes="Agent refused without calling any tool.")
     if not missing:
-        score = "partial" if is_refusal else "pass"
-        notes = ("All expected tools fired." if not is_refusal
-                 else "All tools fired but response contains refusal language.")
+        if is_short:
+            score = "partial"
+            notes = "All tools fired but response is too short (<40 chars)."
+        elif is_refusal:
+            score = "partial"
+            notes = "All tools fired but response contains refusal language."
+        else:
+            score = "pass"
+            notes = "All expected tools fired."
     elif len(missing) < len(expected):
         score = "partial"
         notes = f"Some tools fired. Missing: {missing}."
@@ -274,13 +340,17 @@ def generate_report(results: list[dict], elapsed: float) -> str:
     partial_rate = round(partials / total * 100) if total else 0
     fail_rate    = round(fails / total * 100) if total else 0
 
-    tool_stats: dict[str, dict] = {t: {"expected": 0, "fired": 0} for t in ALL_TOOL_NAMES}
+    tool_stats: dict[str, dict] = {t: {"expected": 0, "fired": 0, "calls": 0} for t in ALL_TOOL_NAMES}
     for r in results:
         for t in r["expected_tools"]:
             tool_stats[t]["expected"] += 1
         for t in r["tools_fired"]:
             if t in tool_stats:
                 tool_stats[t]["fired"] += 1
+        # Accumulate per-tool call counts (from call_counts in raw response)
+        for t, cnt in r.get("call_counts", {}).items():
+            if t in tool_stats:
+                tool_stats[t]["calls"] += cnt
 
     cat_stats: dict[str, list] = {}
     for r in results:
@@ -351,15 +421,18 @@ def generate_report(results: list[dict], elapsed: float) -> str:
         "",
         "## Tool Utilisation",
         "",
-        "| Tool | Expected in N Qs | Times Fired | Fire Rate |",
-        "|---|---|---|---|",
+        "| Tool | Expected in N Qs | Qs Fired | Fire Rate | Total Calls |",
+        "|---|---|---|---|---|",
     ]
     for tool, stats in sorted(tool_stats.items()):
         n_exp = stats["expected"]
         n_fired = stats["fired"]
+        n_calls = stats["calls"]
         if n_exp > 0:
             pct = round(n_fired / n_exp * 100)
-            lines.append(f"| `{tool}` | {n_exp} | {n_fired} | {pct}% |")
+            lines.append(
+                f"| `{tool}` | {n_exp} | {n_fired} | {pct}% | {n_calls} |"
+            )
 
     lines += [
         "",
@@ -460,6 +533,9 @@ def main() -> None:
     results = []
     start = time.time()
 
+    # Ensure traces dir exists
+    TRACES_DIR.mkdir(parents=True, exist_ok=True)
+
     for i, q in enumerate(questions):
         print(f"\n[{i+1}/{len(questions)}] {q['id']} — {q['category']} ({q['difficulty']})")
         print(f"  Q: {q['question'][:90]}{'...' if len(q['question']) > 90 else ''}")
@@ -467,13 +543,34 @@ def main() -> None:
         response_text, raw_resp = call_agent_rest(q["question"], token, agent_id)
         scored = score_question(q, response_text, raw_resp)
 
-        result = {**q, "response_text": response_text,
-                  "raw_response_keys": list(raw_resp.keys()) if raw_resp else [],
-                  **scored}
+        result = {
+            **q,
+            "response_text": response_text,
+            "call_counts": raw_resp.get("call_counts", {}),
+            "sse_events": raw_resp.get("sse_events", []),
+            **scored,
+        }
         results.append(result)
 
+        # Save per-question trace for offline analysis
+        trace_path = TRACES_DIR / f"{q['id']}.json"
+        trace_path.write_text(json.dumps({
+            "id": q["id"],
+            "question": q["question"],
+            "score": scored["score"],
+            "tools_fired": scored["tools_fired"],
+            "call_counts": raw_resp.get("call_counts", {}),
+            "sse_events": raw_resp.get("sse_events", []),
+            "response_text": response_text,
+            "notes": scored["notes"],
+        }, indent=2))
+
         icon = SCORE_EMOJI.get(scored["score"], "?")
-        print(f"  {icon} {scored['score'].upper()} | tools: {scored['tools_fired'] or '(none)'}")
+        calls_str = (
+            " | calls: " + ", ".join(f"{k}×{v}" for k, v in raw_resp.get("call_counts", {}).items())
+            if raw_resp.get("call_counts") else ""
+        )
+        print(f"  {icon} {scored['score'].upper()} | tools: {scored['tools_fired'] or '(none)'}{calls_str}")
         if scored["notes"] != "All expected tools fired.":
             print(f"     {scored['notes']}")
         if len(response_text) > 20 and not response_text.startswith("["):
@@ -487,6 +584,7 @@ def main() -> None:
     # Save raw JSON
     RAW_PATH.write_text(json.dumps(results, indent=2))
     print(f"\nRaw results → {RAW_PATH}")
+    print(f"Traces      → {TRACES_DIR}/")
 
     # Generate and save report
     report = generate_report(results, elapsed)

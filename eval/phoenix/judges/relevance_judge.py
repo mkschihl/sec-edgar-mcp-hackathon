@@ -5,8 +5,9 @@ or `out_of_scope`. No ground-truth reference is needed — it evaluates whether
 the agent used its tools to answer an answerable question, or appropriately
 refused an unanswerable one (e.g. stock price predictions).
 
-Returns a phoenix.evals.evaluators.ClassificationEvaluator created via
-create_classifier(), which is compatible with phoenix.client run_experiment().
+The judge wraps ClassificationEvaluator in a @create_evaluator function so that
+Phoenix auto-binds the named parameters (input, output) and the _INPUT_MAPPING
+is applied explicitly before calling the classifier.
 """
 
 from __future__ import annotations
@@ -14,9 +15,10 @@ from __future__ import annotations
 import os
 
 from dotenv import load_dotenv
-from phoenix.evals import LLM, create_classifier
 
 load_dotenv()
+
+_DEFAULT_JUDGE = "meta-llama/llama-3-3-70b-instruct"
 
 _TEMPLATE = """\
 You are a scope-compliance judge for an SEC EDGAR financial research assistant.
@@ -63,22 +65,53 @@ _INPUT_MAPPING = {
 }
 
 
-def check_answer_scope() -> object:
-    """Return a ClassificationEvaluator that checks scope without a reference answer.
+def check_answer_scope():
+    """Return a callable evaluator that checks scope without a reference answer.
 
-    Returns the evaluator object — pass it directly to run_experiment(evaluators=[...]).
+    Returns a wrapper function decorated with @create_evaluator. Phoenix
+    auto-binds the named parameters (input, output) from the experiment context
+    and the wrapper extracts the relevant strings before calling the underlying
+    ClassificationEvaluator.
+
+    Pass the returned callable directly to run_experiment(evaluators=[...]).
     """
-    judge_model = os.getenv("JUDGE_MODEL", "meta-llama/llama-3-3-70b-instruct")
+    from phoenix.evals import LLM, create_classifier
+    from phoenix.client.resources.experiments import create_evaluator  # type: ignore
+
+    judge_model = os.getenv("JUDGE_MODEL", _DEFAULT_JUDGE)
     llm = LLM(
         provider="litellm",
         model=f"watsonx/{judge_model}",
         # WATSONX_URL / WATSONX_API_KEY / WATSONX_PROJECT_ID are read from env by LiteLLM
         temperature=0.0,
     )
-    return create_classifier(
+    classifier = create_classifier(
         name="scope",
         prompt_template=_TEMPLATE,
         llm=llm,
         choices={"within_scope": 1, "out_of_scope": 0},
         direction="maximize",
     )
+
+    @create_evaluator(name="scope")
+    def _judge(input, output) -> dict:  # noqa: A002
+        # Extract plain strings from Phoenix dicts
+        query = input.get("query", "") if isinstance(input, dict) else str(input)
+        result = (
+            output.get("result", "") if isinstance(output, dict) else str(output)
+        )
+        eval_input = {"input": query, "output": result}
+        result_list = classifier.evaluate(eval_input, input_mapping={
+            "input":  lambda ex: ex.get("input", ""),
+            "output": lambda ex: ex.get("output", ""),
+        })
+        if not result_list:
+            return {"label": "out_of_scope", "score": 0, "explanation": ""}
+        item = result_list[0]
+        return {
+            "label": getattr(item, "label", "out_of_scope"),
+            "score": getattr(item, "score", 0),
+            "explanation": getattr(item, "explanation", ""),
+        }
+
+    return _judge

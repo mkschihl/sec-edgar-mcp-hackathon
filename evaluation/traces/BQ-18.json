@@ -1,0 +1,18 @@
+{
+  "id": "BQ-18",
+  "question": "Search for companies with 'Exxon' in their name, resolve the main one, then list its 5 most recent 10-K filings.",
+  "score": "pass",
+  "tools_fired": [
+    "sec_edgar_search_companies",
+    "sec_edgar_resolve_company",
+    "sec_edgar_get_recent_filings"
+  ],
+  "call_counts": {
+    "sec_edgar_search_companies": 1,
+    "sec_edgar_resolve_company": 1,
+    "sec_edgar_get_recent_filings": 1
+  },
+  "sse_events": [],
+  "response_text": "**Resolved Company (primary operating entity)**  \n- **Name:** EXXON MOBIL CORP  \n- **Ticker:** XOM  \n- **CIK:** 0000034088  \n- **SIC:** 2911 \u2013 Petroleum Refining  \n- **State of Incorporation:** TX  \n\n*Note:* The ticker \u201cXOM\u201d also matches a newer holding company (ExxonMobil Holdings Corp, CIK\u202f0002115436) that currently has no 10\u2011K filings. The filings below are from the operating company **EXXON MOBIL CORP**, which has recent 10\u2011K reports.\n\n### 5 Most Recent Form\u202f10\u2011K Filings\n\n| Filing Date | Report (Fiscal) Year End | Accession Number | Primary Document |\n|-------------|---------------------------|------------------|------------------|\n| 2026\u201102\u201118 | 2025\u201112\u201131 | 0000034088-26-000045 | xom-20251231.htm |\n| 2025\u201102\u201119 | 2024\u201112\u201131 | 0000034088-25-000010 | xom-20241231.htm |\n| 2024\u201102\u201128 | 2023\u201112\u201131 | 0000034088-24-000018 | xom-20231231.htm |\n| 2023\u201102\u201122 | 2022\u201112\u201131 | 0000034088-23-000020 | xom-20221231.htm |\n| 2022\u201102\u201123 | 2021\u201112\u201131 | 0000034088-22-000011 | xom-20211231.htm |\n\nThese filings are the most recent annual reports (Form\u202f10\u2011K) filed by Exxon\u202fMobil Corp. If you need the full documents, you can retrieve them via the SEC EDGAR viewer using the accession numbers listed.",
+  "notes": "All expected tools fired."
+}

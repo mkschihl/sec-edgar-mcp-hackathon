@@ -111,12 +111,16 @@ BENCHMARK_QUESTIONS = [
         "pass_criteria": (
             "Response presents at least 3 annual net income figures for Apple (AAPL); "
             "values are labelled with fiscal years; "
-            "FY2024 net income is approximately $93.7 billion USD (±5%)."
+            "FY2024 (ended 2024-09-28) net income is $93.7B and "
+            "FY2023 (ended 2023-09-30) net income is $97.0B. "
+            "Additional fiscal years beyond FY2023/2024 are acceptable. "
+            "No two distinct fiscal years may share the same reported value."
         ),
-        "numeric_checks": [
-            {"description": "Apple FY2024 net income ~$93.7B USD", "threshold_pct": 5},
-            {"description": "Apple FY2023 net income ~$96.0B USD", "threshold_pct": 5},
-        ],
+        "numeric_checks": {
+            "must_include": [93.7e9, 97.0e9],
+            "rel_tol": 0.02,
+            "max_value": None,
+        },
     },
     {
         "id": "BQ-08",
@@ -141,17 +145,18 @@ BENCHMARK_QUESTIONS = [
         "question": "Show me Apple's quarterly revenue for the last 8 quarters.",
         "expected_tools": ["sec_edgar_get_quarterly_facts"],
         "pass_criteria": (
-            "Response presents quarterly revenue figures (not annual); "
+            "Response presents individual quarterly revenue figures (not annual, not YTD); "
             "period labels like 'Q1 FY2025' or similar are present; "
             "at least 4 quarters returned; "
-            "each individual quarterly value is in the range $85B–$130B USD."
+            "quarter ended 2026-06-27 = $109.4B and quarter ended 2026-03-28 = $111.2B. "
+            "Holiday quarters (Q1, ending in late December) may legitimately exceed $130B; "
+            "that is correct. Mark incorrect only if values appear to be year-to-date totals."
         ),
-        "numeric_checks": [
-            {
-                "description": "Apple individual quarterly revenue values are in range $85B–$130B USD",
-                "threshold_pct": 20,
-            },
-        ],
+        "numeric_checks": {
+            "must_include": [109.4e9, 111.2e9],
+            "rel_tol": 0.02,
+            "max_value": 200e9,
+        },
     },
     {
         "id": "BQ-10",

@@ -1,137 +1,5 @@
 [
   {
-    "id": "BQ-01",
-    "category": "company_search",
-    "difficulty": "easy",
-    "question": "Find all companies with 'Berkshire' in their name.",
-    "expected_tools": [
-      "sec_edgar_search_companies"
-    ],
-    "pass_criteria": "Response lists at least one match containing 'Berkshire'; BRK.A or BRK.B is present; each match includes a ticker and CIK.",
-    "response_text": "Here are the companies that contain \u201cBerkshire\u201d in their name (limited to the first 10 matches):\n\n| CIK        | Company Name                | Ticker |\n|------------|----------------------------|--------|\n| 0001067983 | BERKSHIRE HATHAWAY INC      | BRK\u2011B |\n| 0001067983 | BERKSHIRE HATHAWAY INC      | BRK\u2011A |\n\nBoth tickers refer to the two classes of Berkshire Hathaway\u2019s common stock. Let me know which one (or both) you\u2019d like to explore further!",
-    "raw_response_keys": [
-      "tool_calls",
-      "raw_sse"
-    ],
-    "score": "pass",
-    "tools_fired": [
-      "sec_edgar_search_companies"
-    ],
-    "tools_missing": [],
-    "is_refusal": false,
-    "notes": "All expected tools fired."
-  },
-  {
-    "id": "BQ-02",
-    "category": "company_search",
-    "difficulty": "easy",
-    "question": "I'm looking for companies related to 'General Electric'. What comes up?",
-    "expected_tools": [
-      "sec_edgar_search_companies"
-    ],
-    "pass_criteria": "Response lists at least one match with 'General Electric' in the name; GE or GEV ticker is present.",
-    "response_text": "Here are the top matches for a search on \u201cGeneral\u202fElectric\u201d:\n\n| Ticker | CIK | Company |\n|--------|-----|---------|\n| **GE** | 0000040545 | General Electric Co |\n| **POR** | 0000784977 | Portland General Electric Co (OR) |\n\nLet me know which company you\u2019d like to explore further (or if you\u2019d like details on a different match).",
-    "raw_response_keys": [
-      "tool_calls",
-      "raw_sse"
-    ],
-    "score": "pass",
-    "tools_fired": [
-      "sec_edgar_search_companies"
-    ],
-    "tools_missing": [],
-    "is_refusal": false,
-    "notes": "All expected tools fired."
-  },
-  {
-    "id": "BQ-03",
-    "category": "company_resolution",
-    "difficulty": "easy",
-    "question": "What is the SEC CIK number and industry classification for Microsoft?",
-    "expected_tools": [
-      "sec_edgar_resolve_company"
-    ],
-    "pass_criteria": "Response includes CIK 0000789019; mentions 'Microsoft'; includes a SIC code or industry description.",
-    "response_text": "**Microsoft Corporation (ticker\u202fMSFT)**  \n\n- **SEC CIK:**\u202f0000789019  \n- **Industry classification (SIC):**\u202f**7372 \u2013 Services\u2011Prepackaged Software** (Software publishing and services)",
-    "raw_response_keys": [
-      "tool_calls",
-      "raw_sse"
-    ],
-    "score": "pass",
-    "tools_fired": [
-      "sec_edgar_resolve_company"
-    ],
-    "tools_missing": [],
-    "is_refusal": false,
-    "notes": "All expected tools fired."
-  },
-  {
-    "id": "BQ-04",
-    "category": "company_resolution",
-    "difficulty": "easy",
-    "question": "Tell me about Alphabet Inc. \u2014 what state is it incorporated in and what SIC code does it use?",
-    "expected_tools": [
-      "sec_edgar_resolve_company"
-    ],
-    "pass_criteria": "Response includes Alphabet or Google; mentions state of incorporation (DE or CA); includes a SIC code.",
-    "response_text": "Alphabet\u202fInc. is incorporated in the state of **Delaware (DE)** and reports the **SIC code\u202f7370** (Services\u2011Computer Programming, Data Processing, Etc.).",
-    "raw_response_keys": [
-      "tool_calls",
-      "raw_sse"
-    ],
-    "score": "pass",
-    "tools_fired": [
-      "sec_edgar_resolve_company"
-    ],
-    "tools_missing": [],
-    "is_refusal": false,
-    "notes": "All expected tools fired."
-  },
-  {
-    "id": "BQ-05",
-    "category": "recent_filings",
-    "difficulty": "easy",
-    "question": "List the five most recent 10-K filings for Microsoft.",
-    "expected_tools": [
-      "sec_edgar_get_recent_filings"
-    ],
-    "pass_criteria": "Response lists up to 5 filings; all have form type 10-K; each includes a filing date and accession number.",
-    "response_text": "**Microsoft Corp \u2013 Five most recent Form\u202f10\u2011K filings**\n\n| # | Filing Date | Report (Period End) | Accession Number | Form | Primary Document |\n|---|-------------|---------------------|------------------|------|------------------|\n| 1 | 2026\u201107\u201129 | 2026\u201106\u201130 | 0001193125\u201126\u2011323660 | 10\u2011K | msft\u201120260630.htm |\n| 2 | 2025\u201107\u201130 | 2025\u201106\u201130 | 0000950170\u201125\u2011100235 | 10\u2011K | msft\u201120250630.htm |\n| 3 | 2024\u201107\u201130 | 2024\u201106\u201130 | 0000950170\u201124\u2011087843 | 10\u2011K | msft\u201120240630.htm |\n| 4 | 2023\u201107\u201127 | 2023\u201106\u201130 | 0000950170\u201123\u2011035122 | 10\u2011K | msft\u201120230630.htm |\n| 5 | 2022\u201107\u201128 | 2022\u201106\u201130 | 0001564590\u201122\u2011026876 | 10\u2011K | msft\u201110k_20220630.htm |\n\nThese are the five latest annual reports (Form\u202f10\u2011K) filed by Microsoft Corp, identified by their accession numbers and primary document filenames. If you need more details or want to view a specific filing, let me know!",
-    "raw_response_keys": [
-      "tool_calls",
-      "raw_sse"
-    ],
-    "score": "pass",
-    "tools_fired": [
-      "sec_edgar_get_recent_filings"
-    ],
-    "tools_missing": [],
-    "is_refusal": false,
-    "notes": "All expected tools fired."
-  },
-  {
-    "id": "BQ-06",
-    "category": "recent_filings",
-    "difficulty": "easy",
-    "question": "Show me the 10 most recent 10-Q filings for Johnson & Johnson (ticker: JNJ).",
-    "expected_tools": [
-      "sec_edgar_get_recent_filings"
-    ],
-    "pass_criteria": "Response lists up to 10 filings; all have form type 10-Q; includes filing dates.",
-    "response_text": "**Johnson & Johnson (ticker\u202fJNJ) \u2013 10 most recent\u202fForm\u202f10\u2011Q filings**\n\n| # | Filing Date | Report Date | Accession Number | Primary Document |\n|---|-------------|------------|------------------|------------------|\n| 1 | 2026\u201110\u201121 | 2026\u201109\u201127 | 0000200406\u201126\u2011000197 | jnj\u201120260927.htm |\n| 2 | 2026\u201107\u201123 | 2026\u201106\u201128 | 0000200406\u201126\u2011000153 | jnj\u201120260628.htm |\n| 3 | 2026\u201104\u201122 | 2026\u201103\u201129 | 0000200406\u201126\u2011000087 | jnj\u201120260329.htm |\n| 4 | 2025\u201110\u201122 | 2025\u201109\u201128 | 0000200406\u201125\u2011000209 | jnj\u201120250928.htm |\n| 5 | 2025\u201107\u201124 | 2025\u201106\u201129 | 0000200406\u201125\u2011000178 | jnj\u201120250629.htm |\n| 6 | 2025\u201104\u201123 | 2025\u201103\u201130 | 0000200406\u201125\u2011000119 | jnj\u201120250330.htm |\n| 7 | 2024\u201110\u201123 | 2024\u201109\u201129 | 0000200406\u201124\u2011000096 | jnj\u201120240929.htm |\n| 8 | 2024\u201107\u201125 | 2024\u201106\u201130 | 0000200406\u201124\u2011000075 | jnj\u201120240630.htm |\n| 9 | 2024\u201105\u201101 | 2024\u201103\u201131 | 0000200406\u201124\u2011000049 | jnj\u201120240331.htm |\n|10 | 2023\u201110\u201127 | 2023\u201110\u201101 | 0000200406\u201123\u2011000102 | jnj\u201120231001.htm |\n\nThese filings are the most recent 10\u2011Q reports filed by Johnson & Johnson, listed from newest to oldest. If you need the full filing URLs, details about a specific filing, or additional filing types, just let me know!",
-    "raw_response_keys": [
-      "tool_calls",
-      "raw_sse"
-    ],
-    "score": "pass",
-    "tools_fired": [
-      "sec_edgar_get_recent_filings"
-    ],
-    "tools_missing": [],
-    "is_refusal": false,
-    "notes": "All expected tools fired."
-  },
-  {
     "id": "BQ-07",
     "category": "annual_facts",
     "difficulty": "medium",
@@ -139,39 +7,27 @@
     "expected_tools": [
       "sec_edgar_get_company_fact"
     ],
-    "pass_criteria": "Response presents a table or list of at least 3 annual net income figures for Apple; values are in USD billions; each row includes a fiscal year and accession number.",
-    "response_text": "**Apple\u202fInc. \u2013 Net Income (annual, FY) \u2013 last\u202f5\u202fyears**\n\n| Fiscal Year (FY) | Net Income (USD) | Form | Accession Number |\n|------------------|------------------|------|------------------|\n| 2022 | $99.8\u202fbillion | 10\u2011K | 0000320193\u201122\u2011000108 |\n| 2023 | $99.8\u202fbillion | 10\u2011K | 0000320193\u201123\u2011000106 |\n| 2024 | $96.7\u202fbillion | 10\u2011K | 0000320193\u201124\u2011000123 |\n| 2025 | $112.0\u202fbillion | 10\u2011K | 0000320193\u201125\u2011000079 |\n| 2026 | $132.2\u202fbillion | 10\u2011K | 0000320193\u201126\u2011000026 |\n\n*All values are taken from the \u201cNetIncomeLoss\u201d XBRL fact (us\u2011gaap) and represent the net income attributable to Apple\u2019s parent for the full fiscal year. The figures are shown in US dollars.*",
-    "raw_response_keys": [
-      "tool_calls",
-      "raw_sse"
+    "pass_criteria": "Response presents at least 3 annual net income figures for Apple (AAPL); values are labelled with fiscal years; FY2024 net income is approximately $93.7 billion USD (\u00b15%).",
+    "numeric_checks": [
+      {
+        "description": "Apple FY2024 net income ~$93.7B USD",
+        "threshold_pct": 5
+      },
+      {
+        "description": "Apple FY2023 net income ~$96.0B USD",
+        "threshold_pct": 5
+      }
     ],
+    "response_text": "**Apple Inc. \u2013 Net Income (NetIncomeLoss)**  \n*XBRL concept: `NetIncomeLoss` (us\u2011gaap)*  \n\n| Fiscal Year | Period End | Net Income (USD) | Form | Accession Number |\n|-------------|------------|------------------|------|-------------------|\n| 2022 | 2022\u201109\u201124 | $99.8\u202fbillion | 10\u2011K | 0000320193\u201124\u2011000123 |\n| 2023 | 2023\u201109\u201130 | $97.0\u202fbillion | 10\u2011K | 0000320193\u201125\u2011000079 |\n| 2024 | 2024\u201109\u201128 | $93.7\u202fbillion | 10\u2011K | 0000320193\u201126\u2011000026 |\n| 2025 | 2025\u201109\u201127 | $112.0\u202fbillion | 10\u2011K | 0000320193\u201126\u2011000026 |\n| 2026 | 2026\u201109\u201126 | $132.2\u202fbillion | 10\u2011K | 0000320193\u201126\u2011000026 |\n\n*All values are presented in U.S. dollars (USD). The data come from Apple\u2019s annual Form\u202f10\u2011K filings as reported in the SEC\u2019s XBRL filings.*",
+    "call_counts": {
+      "sec_edgar_resolve_company": 1,
+      "sec_edgar_get_company_fact": 1
+    },
+    "sse_events": [],
     "score": "pass",
     "tools_fired": [
-      "sec_edgar_get_company_fact",
-      "sec_edgar_resolve_company"
-    ],
-    "tools_missing": [],
-    "is_refusal": false,
-    "notes": "All expected tools fired."
-  },
-  {
-    "id": "BQ-08",
-    "category": "annual_facts",
-    "difficulty": "medium",
-    "question": "What were Amazon's total assets for the last 4 fiscal years?",
-    "expected_tools": [
+      "sec_edgar_resolve_company",
       "sec_edgar_get_company_fact"
-    ],
-    "pass_criteria": "Response presents at least 3 annual total assets figures for Amazon (AMZN); values are in USD; fiscal years are identified.",
-    "response_text": "**Amazon.com, Inc. \u2013 Total Assets (last\u202f4 fiscal years)**  \n\n| Fiscal Year (ended) | Total Assets | Form | Accession Number |\n|---------------------|--------------|------|------------------|\n| 2025\u202f(12\u201131\u20112025) | **$818.0\u202fbillion** | 10\u2011K | 0001018724\u201126\u2011000004 |\n| 2024\u202f(12\u201131\u20112024) | **$624.9\u202fbillion** | 10\u2011K | 0001018724\u201125\u2011000004 |\n| 2023\u202f(12\u201131\u20112023) | **$527.9\u202fbillion** | 10\u2011K | 0001018724\u201124\u2011000008 |\n| 2022\u202f(12\u201131\u20112022) | **$462.7\u202fbillion** | 10\u2011K | 0001018724\u201123\u2011000004 |\n\n*All amounts are reported in U.S. dollars (USD) as shown in the company\u2019s balance\u2011sheet filings (Form\u202f10\u2011K).*",
-    "raw_response_keys": [
-      "tool_calls",
-      "raw_sse"
-    ],
-    "score": "pass",
-    "tools_fired": [
-      "sec_edgar_get_company_fact",
-      "sec_edgar_resolve_company"
     ],
     "tools_missing": [],
     "is_refusal": false,
@@ -185,14 +41,22 @@
     "expected_tools": [
       "sec_edgar_get_quarterly_facts"
     ],
-    "pass_criteria": "Response presents quarterly revenue figures (not annual); period labels like 'Q1 FY2025' or similar are present; at least 4 quarters returned; values in USD.",
-    "response_text": "**Apple\u202fInc. \u2013 Quarterly Revenue (last\u202f8\u202fquarters)**  \n*(concept:\u202fRevenueFromContractWithCustomerExcludingAssessedTax,\u202funit\u202fUSD)*  \n\n| Period (Fiscal) | Quarter | Revenue | Form | Accession No. | Filing Date* |\n|-----------------|---------|----------|------|---------------|--------------|\n| FY\u202f2026 | Q3 (ended\u202fJun\u202f27\u202f2026) | $364.4\u202fbillion | 10\u2011Q | 0000320193\u201126\u2011000020 | 2026\u201108\u201103 |\n| FY\u202f2026 | Q2 (ended\u202fMar\u202f28\u202f2026) | $254.9\u202fbillion | 10\u2011Q | 0000320193\u201126\u2011000013 | 2026\u201105\u201105 |\n| FY\u202f2026 | Q1 (ended\u202fDec\u202f27\u202f2025) | $143.8\u202fbillion | 10\u2011Q | 0000320193\u201126\u2011000006 | 2026\u201102\u201105 |\n| FY\u202f2025 | Q3 (ended\u202fJun\u202f28\u202f2025) | $313.7\u202fbillion | 10\u2011Q | 0000320193\u201125\u2011000073 | 2025\u201108\u201104 |\n| FY\u202f2025 | Q3 (ended\u202fJun\u202f28\u202f2025) \u2013 alternate series | $94.0\u202fbillion | 10\u2011Q | 0000320193\u201125\u2011000073 | 2025\u201108\u201104 |\n| FY\u202f2025 | Q2 (ended\u202fMar\u202f29\u202f2025) | *data not returned in the last\u202f8\u202fobservations* | \u2013 | \u2013 | \u2013 |\n| FY\u202f2025 | Q1 (ended\u202fDec\u202f28\u202f2024) | *data not returned in the last\u202f8\u202fobservations* | \u2013 | \u2013 | \u2013 |\n| FY\u202f2024 | Q4 (ended\u202fSep\u202f28\u202f2024) | *data not returned in the last\u202f8\u202fobservations* | \u2013 | \u2013 | \u2013 |\n\n\\*\u202fFiling dates are taken from the filing\u2019s metadata (10\u2011Q) associated with each accession number.\n\n**Notes**\n\n* The SEC XBRL data provides two values for Q3\u202fFY2025 (one large, one much smaller). Both are shown; the larger figure ($313.7\u202fB) matches Apple\u2019s reported quarterly revenue for that period.  \n* Quarterly observations are limited to what the SEC\u2019s company\u2011facts endpoint currently returns; the most recent eight distinct quarters are displayed.  \n* If you need the missing quarters (Q2\u202fFY2025, Q1\u202fFY2025, Q4\u202fFY2024, etc.) or prefer the annual\u2011only \u201cRevenues\u201d concept, let me know and I can retrieve the annual series or explore other concepts.",
-    "raw_response_keys": [
-      "tool_calls",
-      "raw_sse"
+    "pass_criteria": "Response presents quarterly revenue figures (not annual); period labels like 'Q1 FY2025' or similar are present; at least 4 quarters returned; each individual quarterly value is in the range $85B\u2013$130B USD.",
+    "numeric_checks": [
+      {
+        "description": "Apple individual quarterly revenue values are in range $85B\u2013$130B USD",
+        "threshold_pct": 20
+      }
     ],
+    "response_text": "**Apple\u202fInc. \u2013 Quarterly Revenue (last\u202f8 quarters)**  \n*XBRL concept used: **RevenueFromContractWithCustomerExcludingAssessedTax** (us\u2011gaap)*  \n\n| Fiscal Quarter | Fiscal Year | Period End | Revenue (USD) | Form | Accession Number |\n|----------------|------------|------------|----------------|------|-------------------|\n| Q3 | 2026 | 2026\u201106\u201127 | $109.4\u202fbillion | 10\u2011Q | 0000320193\u201126\u2011000020 |\n| Q2 | 2026 | 2026\u201103\u201128 | $111.2\u202fbillion | 10\u2011Q | 0000320193\u201126\u2011000013 |\n| Q1 | 2026 | 2025\u201112\u201127 | $143.8\u202fbillion | 10\u2011Q | 0000320193\u201126\u2011000006 |\n| Q3 | 2025 | 2025\u201106\u201128 | $94.0\u202fbillion | 10\u2011Q | 0000320193\u201126\u2011000020 |\n| Q2 | 2025 | 2025\u201103\u201129 | $95.4\u202fbillion | 10\u2011Q | 0000320193\u201126\u2011000013 |\n| Q1 | 2025 | 2024\u201112\u201128 | $124.3\u202fbillion | 10\u2011Q | 0000320193\u201126\u2011000006 |\n| Q3 | 2024 | 2024\u201106\u201129 | $85.8\u202fbillion | 10\u2011Q | 0000320193\u201125\u2011000073 |\n| Q2 | 2024 | 2024\u201103\u201130 | $90.8\u202fbillion | 10\u2011Q | 0000320193\u201125\u2011000057 |\n\n**Notes**\n\n* The data come from Apple\u2019s 10\u2011Q filings (quarterly reports).  \n* Q4 figures are not included in the quarterly\u2011facts endpoint because they are reported in the annual 10\u2011K (or occasional 8\u2011K), not in a separate 10\u2011Q. If you need the Q4 (full\u2011year) revenue, let me know and I can retrieve the annual figure via the company\u2011fact call.",
+    "call_counts": {
+      "sec_edgar_resolve_company": 1,
+      "sec_edgar_get_quarterly_facts": 1
+    },
+    "sse_events": [],
     "score": "pass",
     "tools_fired": [
+      "sec_edgar_resolve_company",
       "sec_edgar_get_quarterly_facts"
     ],
     "tools_missing": [],
@@ -207,84 +71,18 @@
     "expected_tools": [
       "sec_edgar_get_quarterly_facts"
     ],
-    "pass_criteria": "Response presents quarterly net income for Microsoft; quarter labels are present (Q1/Q2/Q3/Q4); at least 4 quarters returned; values in USD.",
-    "response_text": "**Microsoft\u202fCorp \u2013 Net Income (attributable to parent) for the most recent quarters**\n\n| Fiscal Quarter (Period) | Fiscal Year | Net Income | Form | Accession # |\n|--------------------------|------------|------------|------|-------------|\n| Q1\u202fFY\u202f2027 | 2027 | **$36.6\u202fbillion** | 10\u2011Q | 0001193125\u201126\u2011436133 |\n| Q3\u202fFY\u202f2026 | 2026 | **$31.8\u202fbillion** | 10\u2011Q | 0001193125\u201126\u2011191507 |\n| Q2\u202fFY\u202f2026 | 2026 | **$38.5\u202fbillion** | 10\u2011Q | 0001193125\u201126\u2011027207 |\n| Q1\u202fFY\u202f2026 | 2026 | **$27.7\u202fbillion** | 10\u2011Q | 0001193125\u201125\u2011256321 |\n| Q3\u202fFY\u202f2025* | 2025 | **$97.98\u202fbillion** (reported in the same filing as Q3\u202fFY\u202f2026) | 10\u2011Q | 0001193125\u201126\u2011191507 |\n| Q2\u202fFY\u202f2025* | 2025 | **$66.21\u202fbillion** (reported in the same filing as Q2\u202fFY\u202f2026) | 10\u2011Q | 0001193125\u201126\u2011027207 |\n\n\\* The SEC\u2019s XBRL data sometimes includes both the current\u2011year and prior\u2011year figures within the same filing. Those prior\u2011year values are shown above for completeness, but the most recent six *distinct* quarters are Q1\u202fFY\u202f2027, Q3\u202fFY\u202f2026, Q2\u202fFY\u202f2026, Q1\u202fFY\u202f2026, and the prior\u2011year counterparts for Q3\u202fFY\u202f2025 and Q2\u202fFY\u202f2025.\n\nAll amounts are presented in **U.S. dollars (USD)** and are taken directly from the company\u2019s 10\u2011Q filings via the SEC\u2019s XBRL \u201cNetIncomeLoss\u201d fact.",
-    "raw_response_keys": [
-      "tool_calls",
-      "raw_sse"
-    ],
+    "pass_criteria": "Response presents quarterly net income for Microsoft; quarter labels are present (Q1/Q2/Q3 or fiscal quarter names); at least 4 quarters returned; values in USD.",
+    "numeric_checks": null,
+    "response_text": "**Microsoft Corp \u2013 Net Income (attributable to parent) for the most recent 6 quarters**  \n\n| Fiscal Quarter | Fiscal Year | Period End | Net Income (USD) | Form | Accession Number |\n|----------------|------------|------------|------------------|------|------------------|\n| Q1\u202fFY2027 | 2027 | 2026\u201109\u201130 | $36.63\u202fbillion | 10\u2011Q | 0001193125\u201126\u2011436133 |\n| Q3\u202fFY2026 | 2026 | 2026\u201103\u201131 | $31.78\u202fbillion | 10\u2011Q | 0001193125\u201126\u2011191507 |\n| Q2\u202fFY2026 | 2026 | 2025\u201112\u201131 | $38.46\u202fbillion | 10\u2011Q | 0001193125\u201126\u2011027207 |\n| Q1\u202fFY2026 | 2026 | 2025\u201109\u201130 | $27.75\u202fbillion | 10\u2011Q | 0001193125\u201126\u2011436133 |\n| Q3\u202fFY2025 | 2025 | 2025\u201103\u201131 | $25.82\u202fbillion | 10\u2011Q | 0001193125\u201126\u2011191507 |\n| Q2\u202fFY2025 | 2025 | 2024\u201112\u201131 | $24.11\u202fbillion | 10\u2011Q | 0001193125\u201126\u2011027207 |\n\n**Concept used:** `NetIncomeLoss` (XBRL label \u201cNet Income (Loss) Attributable to Parent\u201d).  \n\nAll values are expressed in **U.S. dollars (USD)** and come from the company\u2019s 10\u2011Q filings. The period end dates reflect the actual quarter\u2011end dates, not the filing date.",
+    "call_counts": {
+      "sec_edgar_resolve_company": 1,
+      "sec_edgar_get_quarterly_facts": 1
+    },
+    "sse_events": [],
     "score": "pass",
     "tools_fired": [
       "sec_edgar_resolve_company",
       "sec_edgar_get_quarterly_facts"
-    ],
-    "tools_missing": [],
-    "is_refusal": false,
-    "notes": "All expected tools fired."
-  },
-  {
-    "id": "BQ-11",
-    "category": "concept_discovery",
-    "difficulty": "medium",
-    "question": "What revenue-related XBRL concepts does Apple report in us-gaap?",
-    "expected_tools": [
-      "sec_edgar_list_concepts"
-    ],
-    "pass_criteria": "Response lists at least 2 XBRL concept names containing 'Revenue' or 'revenue'; includes human-readable labels alongside concept names.",
-    "response_text": "Apple\u202fInc. (CIK\u202f0000320193) reports the following revenue\u2011related XBRL concepts in the **us\u2011gaap** taxonomy:\n\n| XBRL Concept | Human\u2011Readable Label |\n|--------------|----------------------|\n| **RevenueFromContractWithCustomerExcludingAssessedTax** | Revenue from Contract with Customer, Excluding Assessed Tax |\n| **Revenues** | Revenues |\n| **SalesRevenueNet** | Revenue, Net (Deprecated\u202f2018\u201101\u201131) |\n| **SalesRevenueServicesGross** | Sales Revenue, Services, Other (Deprecated\u202f2018\u201101\u201131) |\n| **ContractWithCustomerLiabilityRevenueRecognized** | Contract with Customer, Liability, Revenue Recognized |\n| **DeferredRevenueCurrent** | Deferred Revenue, Current |\n| **DeferredRevenueNoncurrent** | Deferred Revenue, Noncurrent |\n| **IncreaseDecreaseInDeferredRevenue** | Increase (Decrease) in Deferred Revenue |\n\nThese are the concepts that match a \u201crevenue\u201d search for Apple in the us\u2011gaap taxonomy. If you need data for any of these concepts (e.g., actual revenue amounts) just let me know which one(s) and whether you want annual or quarterly figures.",
-    "raw_response_keys": [
-      "tool_calls",
-      "raw_sse"
-    ],
-    "score": "pass",
-    "tools_fired": [
-      "sec_edgar_list_concepts"
-    ],
-    "tools_missing": [],
-    "is_refusal": false,
-    "notes": "All expected tools fired."
-  },
-  {
-    "id": "BQ-12",
-    "category": "concept_discovery",
-    "difficulty": "medium",
-    "question": "I want to find debt-related financial concepts for Tesla. What us-gaap concepts are available?",
-    "expected_tools": [
-      "sec_edgar_list_concepts"
-    ],
-    "pass_criteria": "Response lists at least 2 debt-related XBRL concepts for Tesla (TSLA); concept names or labels contain 'Debt' or 'debt' or 'Liability'.",
-    "response_text": "Here are the **debt\u2011related\u202fus\u2011gaap concepts** that Tesla,\u202fInc. reports in its XBRL filings (the list is limited to the first\u202f20 matches for brevity; Tesla has\u202f72\u202fmatches in total).\n\n| Concept (XBRL tag) | Human\u2011readable label |\n|--------------------|----------------------|\n| **AdjustmentsToAdditionalPaidInCapitalEquityComponentOfConvertibleDebt** | Adjustments to Additional Paid in Capital, Equity Component of Convertible Debt |\n| **AmortizationOfDebtDiscountPremium** | Amortization of Debt Discount (Premium) |\n| **AmortizationOfFinancingCosts** | Amortization of Debt Issuance Costs |\n| **AmortizationOfFinancingCostsAndDiscounts** | Amortization of Debt Issuance Costs and Discounts |\n| **AvailableForSaleDebtSecuritiesAccumulatedGrossUnrealizedGainBeforeTax** | Debt Securities, Available\u2011for\u2011sale, Accumulated Gross Unrealized Gain, before Tax |\n| **AvailableForSaleDebtSecuritiesAccumulatedGrossUnrealizedLossBeforeTax** | Debt Securities, Available\u2011for\u2011sale, Accumulated Gross Unrealized Loss, before Tax |\n| **AvailableForSaleDebtSecuritiesAmortizedCostBasis** | Debt Securities, Available\u2011for\u2011sale, Amortized Cost |\n| **AvailableForSaleDebtSecuritiesGrossUnrealizedGain** | Debt Securities, Available\u2011for\u2011sale, Unrealized Gain |\n| **AvailableForSaleDebtSecuritiesGrossUnrealizedLoss** | Debt Securities, Available\u2011for\u2011sale, Unrealized Loss |\n| **AvailableForSaleSecuritiesDebtMaturitiesNextRollingTwelveMonthsAmortizedCostBasis** | Debt Securities, Available\u2011for\u2011sale, Maturity, Rolling within One Year, Amortized Cost |\n| **AvailableForSaleSecuritiesDebtMaturitiesNextRollingTwelveMonthsFairValue** | Debt Securities, Available\u2011for\u2011sale, Maturity, Rolling within One Year, Fair Value |\n| **AvailableForSaleSecuritiesDebtMaturitiesRollingAfterYearTenAmortizedCostBasis** | Debt Securities, Available\u2011for\u2011sale, Maturity, Rolling after 10\u202fYears, Amortized Cost |\n| **AvailableForSaleSecuritiesDebtMaturitiesRollingYearSixThroughTenAmortizedCostBasis** | Debt Securities, Available\u2011for\u2011sale, Maturity, Rolling after 5\u201110\u202fYears, Amortized Cost |\n| **AvailableForSaleSecuritiesDebtMaturitiesRollingYearSixThroughTenFairValue** | Debt Securities, Available\u2011for\u2011sale, Maturity, Rolling after 5\u201110\u202fYears, Fair Value |\n| **AvailableForSaleSecuritiesDebtMaturitiesRollingYearTwoThroughFiveAmortizedCostBasis** | Debt Securities, Available\u2011for\u2011sale, Maturity, Rolling after 1\u20115\u202fYears, Amortized Cost |\n| **AvailableForSaleSecuritiesDebtMaturitiesRollingYearTwoThroughFiveFairValue** | Debt Securities, Available\u2011for\u2011sale, Maturity, Rolling after 1\u20115\u202fYears, Fair Value |\n| **AvailableForSaleSecuritiesDebtMaturitiesSingleMaturityDate** | Debt Securities, Available\u2011for\u2011sale, Single Maturity Date, Fair Value |\n| **AvailableForSaleSecuritiesDebtMaturitiesSingleMaturityDateAmortizedCostBasis** | Debt Securities, Available\u2011for\u2011sale, Single Maturity Date, Amortized Cost |\n| **AvailableForSaleSecuritiesDebtSecurities** | Debt Securities, Available\u2011for\u2011sale |\n| **ConvertibleDebtCurrent** | Convertible Debt, Current |\n\n*These tags can be used with the `sec_edgar_get_company_fact`, `sec_edgar_compare_companies`, or other XBRL\u2011fact tools to retrieve actual dollar values, amounts, or other measurements.*",
-    "raw_response_keys": [
-      "tool_calls",
-      "raw_sse"
-    ],
-    "score": "pass",
-    "tools_fired": [
-      "sec_edgar_get_company_fact",
-      "sec_edgar_list_concepts",
-      "sec_edgar_compare_companies"
-    ],
-    "tools_missing": [],
-    "is_refusal": false,
-    "notes": "All expected tools fired."
-  },
-  {
-    "id": "BQ-13",
-    "category": "cross_company_comparison",
-    "difficulty": "hard",
-    "question": "Compare the most recent annual net income for Apple, Microsoft, and Google.",
-    "expected_tools": [
-      "sec_edgar_compare_companies"
-    ],
-    "pass_criteria": "Response presents a comparison table with at least 2 of the 3 companies; values are in USD; fiscal years are stated; any fiscal year misalignment warnings are surfaced to the user.",
-    "response_text": "**Most\u2011recent annual net income (USD)**  \n\n| Company | Net Income | Fiscal\u2011Year End | Form | Accession # |\n|---------|------------|----------------|------|-------------|\n| Apple Inc. (AAPL) | **$132.2\u202fbillion** | 2026\u201109\u201126 | 10\u2011K | 0000320193\u201126\u2011000026 |\n| Microsoft Corp. (MSFT) | **$133.7\u202fbillion** | 2026\u201106\u201130 | 10\u2011K | 0001193125\u201126\u2011323660 |\n| Alphabet Inc. (GOOGL) | **$132.2\u202fbillion** | 2025\u201112\u201131 | 10\u2011K | 0001652044\u201126\u2011000018 |\n\n**Warnings about comparability**\n\n- The fiscal year\u2011ends differ across the three companies (Apple ends\u202fSept\u202f26, Microsoft ends\u202fJune\u202f30, Alphabet ends\u202fDec\u202f31). Because the reporting periods are not aligned, direct year\u2011over\u2011year comparison may be misleading.  \n- All values are reported in U.S. dollars (USD) and come from each company\u2019s most recent Form\u202f10\u2011K filing.\n\nIf you need the filing details (e.g., filing date, report date, or a direct EDGAR link), let me know and I can retrieve the filing metadata for any accession number.",
-    "raw_response_keys": [
-      "tool_calls",
-      "raw_sse"
-    ],
-    "score": "pass",
-    "tools_fired": [
-      "sec_edgar_compare_companies"
     ],
     "tools_missing": [],
     "is_refusal": false,
@@ -298,64 +96,25 @@
     "expected_tools": [
       "sec_edgar_compare_companies"
     ],
-    "pass_criteria": "Response compares total assets for JPM and BAC; clearly states which is larger; includes the values and fiscal year end dates; surfaces any comparability warnings.",
-    "response_text": "**Total assets (most recent full\u2011year figures)**  \n\n| Company | Total Assets | Fiscal Year End | Form | Accession Number |\n|---------|--------------|----------------|------|------------------|\n| JPMorgan Chase & Co. (JPM) | **$4.42\u202ftrillion** | 2025\u201112\u201131 | 10\u2011K | 0001628280\u201126\u2011008131 |\n| Bank of America Corp. (BAC) | **$3.41\u202ftrillion** | 2025\u201112\u201131 | 10\u2011K | 0000070858\u201126\u2011000157 |\n\n**Conclusion:** JPMorgan Chase (JPM) reports higher total assets than Bank of America (BAC) in the most recent annual filing.",
-    "raw_response_keys": [
-      "tool_calls",
-      "raw_sse"
+    "pass_criteria": "Response compares total assets for JPM and BAC; clearly states which is larger; JPM total assets are approximately $4.0T USD (\u00b110%) and BAC total assets are approximately $3.3T USD (\u00b110%); includes fiscal year end dates.",
+    "numeric_checks": [
+      {
+        "description": "JPMorgan Chase total assets ~$4.0T USD",
+        "threshold_pct": 10
+      },
+      {
+        "description": "Bank of America total assets ~$3.3T USD",
+        "threshold_pct": 10
+      }
     ],
+    "response_text": "**Total assets (most recent annual figures, FY\u202f2025)**  \n\n| Company | Fiscal Year | Period End | Total Assets | Unit | Form | Accession Number |\n|---------|------------|------------|--------------|------|------|------------------|\n| JPMorgan\u202fChase\u202f&\u202fCo. | 2025 | 2025\u201112\u201131 | **$4.425\u202ftrillion** | USD | 10\u2011K | 0001628280\u201126\u2011008131 |\n| Bank\u202fof\u202fAmerica\u202fCorp. | 2025 | 2025\u201112\u201131 | **$3.412\u202ftrillion** | USD | 10\u2011K | 0000070858\u201126\u2011000157 |\n\n**Result:** JPMorgan\u202fChase has more total assets than Bank\u202fof\u202fAmerica.",
+    "call_counts": {
+      "sec_edgar_compare_companies": 1
+    },
+    "sse_events": [],
     "score": "pass",
     "tools_fired": [
       "sec_edgar_compare_companies"
-    ],
-    "tools_missing": [],
-    "is_refusal": false,
-    "notes": "All expected tools fired."
-  },
-  {
-    "id": "BQ-15",
-    "category": "filing_attribution",
-    "difficulty": "hard",
-    "question": "Which SEC filing reported Apple's most recent annual revenue? Give me the accession number and a link to the filing.",
-    "expected_tools": [
-      "sec_edgar_get_company_fact",
-      "sec_edgar_get_filing_metadata"
-    ],
-    "pass_criteria": "Response identifies the most recent annual revenue figure; includes the accession number of the source 10-K; includes an edgar_viewer_url pointing to sec.gov.",
-    "response_text": "Apple\u202fInc.\u2019s most recent annual revenue figure (FY\u202f2026) appears in its 2026\u202fForm\u202f10\u2011K filing.\n\n**Accession number:**\u202f`0000320193-26-000026`  \n**Filing link:**\u202f[SEC EDGAR viewer \u2013 10\u2011K (2026\u201109\u201126)](https://www.sec.gov/Archives/edgar/data/320193/000032019326000026/aapl-20260926.htm)\n\n*Form type:*\u202f10\u2011K  \n*Filing date:*\u202fNovember\u202f3\u202f2026  \n*Report (period end) date:*\u202fSeptember\u202f26\u202f2026  \n\nThis filing contains the \u201cRevenue from Contract with Customer, Excluding Assessed Tax\u201d fact of **$478.8\u202fbillion** for FY\u202f2026.",
-    "raw_response_keys": [
-      "tool_calls",
-      "raw_sse"
-    ],
-    "score": "pass",
-    "tools_fired": [
-      "sec_edgar_get_company_fact",
-      "sec_edgar_get_filing_metadata"
-    ],
-    "tools_missing": [],
-    "is_refusal": false,
-    "notes": "All expected tools fired."
-  },
-  {
-    "id": "BQ-16",
-    "category": "filing_attribution",
-    "difficulty": "hard",
-    "question": "What form type and filing date corresponds to Microsoft's most recent annual net income figure?",
-    "expected_tools": [
-      "sec_edgar_get_company_fact",
-      "sec_edgar_get_filing_metadata"
-    ],
-    "pass_criteria": "Response identifies the form type (10-K) and filing date for the source filing of Microsoft's most recent annual net income; includes the accession number.",
-    "response_text": "Microsoft\u2019s most recent **annual** Net Income figure comes from its FY\u202f2026 10\u2011K filing:\n\n| Concept | Form | Filing Date | Reporting Period (Period End) |\n|---------|------|-------------|--------------------------------|\n| Net Income (NetIncomeLoss) | **10\u2011K** | **July\u202f29\u202f2026** | **June\u202f30\u202f2026** (FY\u202f2026) |\n\nThe filing\u2019s accession number is **0001193125\u201126\u2011323660** and can be viewed here: https://www.sec.gov/Archives/edgar/data/789019/000119312526323660/msft-20260630.htm.",
-    "raw_response_keys": [
-      "tool_calls",
-      "raw_sse"
-    ],
-    "score": "pass",
-    "tools_fired": [
-      "sec_edgar_get_company_fact",
-      "sec_edgar_resolve_company",
-      "sec_edgar_get_filing_metadata"
     ],
     "tools_missing": [],
     "is_refusal": false,
@@ -370,16 +129,23 @@
       "sec_edgar_search_companies",
       "sec_edgar_get_company_fact"
     ],
-    "pass_criteria": "Agent first searches for 'Pfizer' and identifies PFE; then retrieves at least 3 annual revenue figures for Pfizer; values in USD with fiscal years.",
-    "response_text": "**Pfizer\u202fInc. (ticker\u202fPFE) \u2013 Recent Annual Revenue**\n\n| Fiscal Year (ended) | Revenue (USD) | Form | Accession # |\n|---------------------|---------------|------|--------------|\n| 2025\u201112\u201131 | $62.6\u202fbillion | 10\u2011K | 0000078003\u201126\u2011000026 |\n| 2024\u201112\u201131 | $63.6\u202fbillion | 10\u2011K | 0000078003\u201125\u2011000054 |\n| 2023\u201112\u201131 | $58.5\u202fbillion | 10\u2011K | 0000078003\u201124\u2011000039 |\n| 2022\u201112\u201131 | $100.3\u202fbillion | 10\u2011K | 0000078003\u201123\u2011000024 |\n\n*Figures are taken from the \u201cRevenues\u201d XBRL concept (us\u2011gaap) reported in Pfizer\u2019s annual 10\u2011K filings. All values are expressed in U.S. dollars.*",
-    "raw_response_keys": [
-      "tool_calls",
-      "raw_sse"
+    "pass_criteria": "Agent first searches for 'Pfizer' and identifies PFE; then retrieves at least 3 annual revenue figures for Pfizer; values in USD with fiscal years; FY2023 revenue is approximately $58.5B USD (\u00b110%).",
+    "numeric_checks": [
+      {
+        "description": "Pfizer FY2023 annual revenue ~$58.5B USD",
+        "threshold_pct": 10
+      }
     ],
+    "response_text": "**Company identified:** PFIZER\u202fINC (ticker\u202fPFE, CIK\u202f0000078003) \u2013 the primary operating company with recent 10\u2011K filings.\n\n**Revenue data source:** XBRL concept **RevenueFromContractWithCustomerExcludingAssessedTax** (us\u2011gaap taxonomy).  \n\n| Fiscal Year | Period End | Revenue (USD) | Form | Accession Number | Note |\n|------------|------------|----------------|------|------------------|------|\n| 2020 | 2020\u201112\u201131 | $41.65\u202fbillion | 10\u2011K | 0000078003-22-000027 | Recast; originally filed $41.91\u202fbillion |\n| 2021 | 2021\u201112\u201131 | $73.64\u202fbillion | 10\u2011K | 0000078003-24-000039 | Recast; originally filed $81.29\u202fbillion |\n| 2022 | 2022\u201112\u201131 | $91.79\u202fbillion | 10\u2011K | 0000078003-24-000039 | \u2013 |\n| 2023 | 2023\u201112\u201131 | $50.91\u202fbillion | 10\u2011K | 0000078003-24-000039 | \u2013 |\n\n**Explanation**\n\n- The SEC filings show that Pfizer\u2019s revenue reporting switched to the \u201cRevenue from Contract with Customer, Excluding Assessed Tax\u201d concept after 2018.  \n- For 2020 and 2021 the values were *recast* in later filings; the original amounts are shown in the \u201cas_originally_filed\u201d field.  \n- The most recent four fiscal\u2011year observations (2020\u20112023) are presented above, sorted by fiscal year.  \n\nIf you need the underlying filings or want to view a different revenue concept (e.g., \u201cRevenues\u201d), let me know and I can retrieve that information as well.",
+    "call_counts": {
+      "sec_edgar_search_companies": 1,
+      "sec_edgar_get_company_fact": 1
+    },
+    "sse_events": [],
     "score": "pass",
     "tools_fired": [
-      "sec_edgar_get_company_fact",
-      "sec_edgar_search_companies"
+      "sec_edgar_search_companies",
+      "sec_edgar_get_company_fact"
     ],
     "tools_missing": [],
     "is_refusal": false,
@@ -395,37 +161,18 @@
       "sec_edgar_get_recent_filings"
     ],
     "pass_criteria": "Agent searches for 'Exxon', identifies XOM; lists at least 3 recent 10-K filings with filing dates and accession numbers.",
-    "response_text": "**Search results for \u201cExxon\u201d**\n\n| Ticker | CIK | Company |\n|--------|-----|---------|\n| **XOM** | 0002115436 | ExxonMobil Holdings Corp |\n\n**Resolved company:** ExxonMobil Holdings Corp (ticker **XOM**, CIK\u202f0002115436).\n\n**Recent 10\u2011K filings**\n\nI queried the SEC\u2019s recent\u2011filings endpoint for 10\u2011K reports for XOM and retrieved the latest 100 filings. None of those filings are 10\u2011K forms\u2014the most recent 10\u2011K for ExxonMobil was filed before the window covered by the API\u2019s \u201crecent\u201d endpoint.\n\n**What this means**\n\n- The SEC\u2019s \u201crecent filings\u201d feed (up to the most recent 100 submissions) does not include a 10\u2011K for ExxonMobil at this time.\n- To obtain the latest 10\u2011K you would need to query the full filing history (e.g., via the SEC\u2019s Company Facts or Submissions API) or specify a date range that goes back further than the most\u2011recent 100 filings.\n\nLet me know if you\u2019d like me to retrieve the full filing history for XOM to locate its most recent 10\u2011K, or if there\u2019s anything else you\u2019d like to explore.",
-    "raw_response_keys": [
-      "tool_calls",
-      "raw_sse"
-    ],
+    "numeric_checks": null,
+    "response_text": "**Resolved Company (primary operating entity)**  \n- **Name:** EXXON MOBIL CORP  \n- **Ticker:** XOM  \n- **CIK:** 0000034088  \n- **SIC:** 2911 \u2013 Petroleum Refining  \n- **State of Incorporation:** TX  \n\n*Note:* The ticker \u201cXOM\u201d also matches a newer holding company (ExxonMobil Holdings Corp, CIK\u202f0002115436) that currently has no 10\u2011K filings. The filings below are from the operating company **EXXON MOBIL CORP**, which has recent 10\u2011K reports.\n\n### 5 Most Recent Form\u202f10\u2011K Filings\n\n| Filing Date | Report (Fiscal) Year End | Accession Number | Primary Document |\n|-------------|---------------------------|------------------|------------------|\n| 2026\u201102\u201118 | 2025\u201112\u201131 | 0000034088-26-000045 | xom-20251231.htm |\n| 2025\u201102\u201119 | 2024\u201112\u201131 | 0000034088-25-000010 | xom-20241231.htm |\n| 2024\u201102\u201128 | 2023\u201112\u201131 | 0000034088-24-000018 | xom-20231231.htm |\n| 2023\u201102\u201122 | 2022\u201112\u201131 | 0000034088-23-000020 | xom-20221231.htm |\n| 2022\u201102\u201123 | 2021\u201112\u201131 | 0000034088-22-000011 | xom-20211231.htm |\n\nThese filings are the most recent annual reports (Form\u202f10\u2011K) filed by Exxon\u202fMobil Corp. If you need the full documents, you can retrieve them via the SEC EDGAR viewer using the accession numbers listed.",
+    "call_counts": {
+      "sec_edgar_search_companies": 1,
+      "sec_edgar_resolve_company": 1,
+      "sec_edgar_get_recent_filings": 1
+    },
+    "sse_events": [],
     "score": "pass",
     "tools_fired": [
       "sec_edgar_search_companies",
       "sec_edgar_resolve_company",
-      "sec_edgar_get_recent_filings"
-    ],
-    "tools_missing": [],
-    "is_refusal": false,
-    "notes": "All expected tools fired."
-  },
-  {
-    "id": "BQ-19",
-    "category": "edge_cases",
-    "difficulty": "easy",
-    "question": "What SEC filings has the company with ticker ZZZZNOTREAL submitted recently?",
-    "expected_tools": [
-      "sec_edgar_get_recent_filings"
-    ],
-    "pass_criteria": "Agent attempts the lookup and gracefully reports that the ticker was not found; does not fabricate a response; suggests using search_companies to find the right ticker.",
-    "response_text": "I\u2019m sorry\u2014I couldn\u2019t locate a company with the ticker **ZZZZNOTREAL** in the SEC\u2019s database. If you\u2019re unsure of the exact ticker, please provide the company\u2019s name (or a partial name), and I can search for the correct ticker or CIK before retrieving its recent filings.",
-    "raw_response_keys": [
-      "tool_calls",
-      "raw_sse"
-    ],
-    "score": "pass",
-    "tools_fired": [
       "sec_edgar_get_recent_filings"
     ],
     "tools_missing": [],
@@ -440,12 +187,19 @@
     "expected_tools": [
       "sec_edgar_get_quarterly_facts"
     ],
-    "pass_criteria": "Agent retrieves quarterly EPS data for Apple; if the concept name is not found, the agent uses list_concepts or suggests a correction; response does not fabricate numbers.",
-    "response_text": "**Apple\u202fInc. (ticker\u202fAAPL) \u2013 Quarterly Earnings\u2011per\u2011Share (basic & diluted)**  \n\n| Fiscal Quarter | Period End | Basic EPS (USD\u202fper\u202fshare) | Diluted EPS (USD\u202fper\u202fshare) | Form (source) | Accession No. |\n|----------------|------------|---------------------------|-----------------------------|---------------|---------------|\n| Q3\u202fFY\u202f2026 | 27\u202fJun\u202f2026 | **$6.91** | **$6.88** | 10\u2011Q | 0000320193\u201126\u2011000020 |\n| Q2\u202fFY\u202f2026 | 28\u202fMar\u202f2026 | **$4.87** | **$4.85** | 10\u2011Q | 0000320193\u201126\u2011000013 |\n| Q1\u202fFY\u202f2026 | \u2013 (not available in the most recent 4\u2011quarter pull) | \u2013 | \u2013 | \u2013 | \u2013 |\n| Q4\u202fFY\u202f2025 | \u2013 (not available in the most recent 4\u2011quarter pull) | \u2013 | \u2013 | \u2013 | \u2013 |\n\n**Notes**\n\n* The SEC\u2019s quarterly XBRL data returned only two quarters (Q3\u202fFY\u202f2026 and Q2\u202fFY\u202f2026) within the most\u2011recent\u20114\u2011quarter request. Earlier quarters are not yet available via the\u202f`sec_edgar_get_quarterly_facts` endpoint (or are older than the limit you asked for).  \n* Values are expressed in **U.S. dollars per share** (the unit reported is `USD/shares`).  \n* Each observation\u2019s\u202f`accn` (accession number) links to the exact filing; you can view the filing with the SEC EDGAR viewer by using that accession number.  \n\nIf you need the missing quarters (Q1\u202fFY\u202f2026, Q4\u202fFY\u202f2025) or additional detail, let me know and I can retrieve the older filings or expand the observation limit.",
-    "raw_response_keys": [
-      "tool_calls",
-      "raw_sse"
+    "pass_criteria": "Agent retrieves quarterly EPS data for Apple; if the concept name is not found, the agent uses list_concepts or suggests a correction; if EPS values are returned, they are in the range $1.0\u2013$2.5 per share; response does not fabricate numbers.",
+    "numeric_checks": [
+      {
+        "description": "Apple quarterly EPS values are in range $1.0\u2013$2.5 per share (if returned)",
+        "threshold_pct": 25
+      }
     ],
+    "response_text": "**Apple Inc. (CIK\u202f0000320193) \u2013 Quarterly EPS (Basic & Diluted)**  \n\n| Fiscal Quarter | Fiscal Year | Period End | EPS Basic (USD\u202f/\u202fshare) | EPS Diluted (USD\u202f/\u202fshare) | Form | Accession Number |\n|----------------|------------|------------|------------------------|---------------------------|------|-------------------|\n| Q3\u202fFY2026 | 2026 | 2026\u201106\u201127 | 2.03 | 2.02 | 10\u2011Q | 0000320193\u201126\u2011000020 |\n| Q2\u202fFY2026 | 2026 | 2026\u201103\u201128 | 2.02 | 2.01 | 10\u2011Q | 0000320193\u201126\u2011000013 |\n| Q1\u202fFY2026 | 2026 | 2025\u201112\u201127 | 2.85 | 2.84 | 10\u2011Q | 0000320193\u201126\u2011000006 |\n| Q3\u202fFY2025 | 2025 | 2025\u201106\u201128 | 1.57 | 1.57 | 10\u2011Q | 0000320193\u201126\u2011000020 |\n\n**Notes**\n\n* The data come from the XBRL concepts **EarningsPerShareBasic** and **EarningsPerShareDiluted** (unit:\u202fUSD\u202f/\u202fshare).  \n* Quarterly figures are taken from the most recent 10\u2011Q filings; Q4 figures are not included because they are reported in the annual 10\u2011K, not in a 10\u2011Q.  \n* All values are as reported by Apple; no recasting was required.",
+    "call_counts": {
+      "sec_edgar_resolve_company": 1,
+      "sec_edgar_get_quarterly_facts": 2
+    },
+    "sse_events": [],
     "score": "pass",
     "tools_fired": [
       "sec_edgar_resolve_company",

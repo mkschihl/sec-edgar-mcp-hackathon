@@ -39,6 +39,17 @@ _TICKER_CACHE: dict[str, dict] = {}
 # Secondary index keyed by zero-padded 10-digit CIK string
 _CIK_CACHE: dict[str, dict] = {}
 
+# Revenue concept candidates, in fallback priority order.
+# When the requested concept is any of these, all candidates present in the
+# company's facts are evaluated; the one whose most-recent period_end is
+# newest wins (broader total).  Ties broken by larger value at that date.
+REVENUE_CANDIDATES = [
+    "Revenues",
+    "RevenueFromContractWithCustomerExcludingAssessedTax",
+    "SalesRevenueNet",
+    "RevenueFromContractWithCustomerIncludingAssessedTax",
+]
+
 mcp = FastMCP(
     "sec_edgar_tools",
     instructions=(
@@ -771,20 +782,64 @@ async def sec_edgar_get_company_fact(
                 })
             return rows
 
+        # If the requested concept is a revenue candidate, evaluate all
+        # candidates present in this company's facts and pick the one whose
+        # most-recent FY period_end is newest (ties → larger value).
+        effective_concept = concept
+        concept_note: str | None = None
+        if concept in REVENUE_CANDIDATES:
+            best_cname: str | None = None
+            best_end: str = ""
+            best_val: float | int | None = None
+            for cname in REVENUE_CANDIDATES:
+                cdata = taxonomy_data.get(cname)
+                if cdata is None:
+                    continue
+                for unit_obs in cdata.get("units", {}).values():
+                    for o in unit_obs:
+                        if o.get("fp") != "FY":
+                            continue
+                        dur = _duration_days(o)
+                        if dur is not None and not (350 <= dur <= 380):
+                            continue
+                        end = o.get("end", "")
+                        val = o.get("val")
+                        if end > best_end or (
+                            end == best_end
+                            and val is not None
+                            and (best_val is None or val > best_val)
+                        ):
+                            best_end = end
+                            best_val = val
+                            best_cname = cname
+            if best_cname and best_cname != concept:
+                effective_concept = best_cname
+                new_data = taxonomy_data[best_cname]
+                label = new_data.get("label", best_cname)
+                description = new_data.get("description", "")
+                raw_units = new_data.get("units", {})
+                concept_note = (
+                    f"Requested '{concept}' but '{best_cname}' has more recent data "
+                    f"(most recent period_end {best_end}); using '{best_cname}'."
+                )
+
         units_out: dict[str, list] = {}
         for unit_label, obs in raw_units.items():
             cleaned = _dedup_fy(list(obs))
             units_out[unit_label] = cleaned[-limit:] if limit > 0 else cleaned
 
-        return {
+        result_dict: dict = {
             "company": company_name,
             "cik": padded_cik,
             "taxonomy": taxonomy,
-            "concept": concept,
+            "concept": effective_concept,
             "label": label,
             "description": description,
             "units": units_out,
         }
+        if concept_note:
+            result_dict["concept_note"] = concept_note
+        return result_dict
     except (httpx.HTTPStatusError, httpx.RequestError) as exc:
         return {"error": str(exc), "hint": "Check the identifier and concept, and try again."}
     except Exception as exc:
@@ -858,21 +913,58 @@ async def sec_edgar_compare_companies(
             company_name = sub.get("name") or facts.get("entityName", identifier)
             fye_mmdd: str | None = sub.get("fiscalYearEnd")
 
-            concept_data = (
-                facts.get("facts", {})
-                .get(taxonomy, {})
-                .get(concept)
-            )
-            if concept_data is None:
+            taxonomy_data = facts.get("facts", {}).get(taxonomy, {})
+            concept_data = taxonomy_data.get(concept)
+            if concept_data is None and concept not in REVENUE_CANDIDATES:
                 warnings.append(f"{company_name}: concept '{taxonomy}/{concept}' not found — skipped.")
                 continue
+
+            # Revenue-candidate selection: pick the candidate whose most-recent
+            # FY period_end is newest; ties → larger value.
+            effective_concept_cc = concept
+            concept_note_cc: str | None = None
+            if concept in REVENUE_CANDIDATES:
+                best_cname_cc: str | None = None
+                best_end_cc: str = ""
+                best_val_cc: float | int | None = None
+                for cname in REVENUE_CANDIDATES:
+                    cdata = taxonomy_data.get(cname)
+                    if cdata is None:
+                        continue
+                    for unit_obs in cdata.get("units", {}).values():
+                        for o in unit_obs:
+                            if o.get("fp") != "FY":
+                                continue
+                            dur = _duration_days(o)
+                            if dur is not None and not (350 <= dur <= 380):
+                                continue
+                            end = o.get("end", "")
+                            val = o.get("val")
+                            if end > best_end_cc or (
+                                end == best_end_cc
+                                and val is not None
+                                and (best_val_cc is None or val > best_val_cc)
+                            ):
+                                best_end_cc = end
+                                best_val_cc = val
+                                best_cname_cc = cname
+                if best_cname_cc is None:
+                    warnings.append(f"{company_name}: no revenue concept found — skipped.")
+                    continue
+                if best_cname_cc != concept:
+                    concept_note_cc = (
+                        f"Requested '{concept}' but '{best_cname_cc}' has more recent data "
+                        f"(period_end {best_end_cc}); using '{best_cname_cc}'."
+                    )
+                effective_concept_cc = best_cname_cc
+                concept_data = taxonomy_data[best_cname_cc]
 
             raw_units = concept_data.get("units", {})
 
             # Pick the unit with the most observations
             best_unit = max(raw_units.keys(), key=lambda u: len(raw_units[u]), default=None)
             if best_unit is None:
-                warnings.append(f"{company_name}: no unit data for '{concept}' — skipped.")
+                warnings.append(f"{company_name}: no unit data for '{effective_concept_cc}' — skipped.")
                 continue
 
             observations = raw_units[best_unit]
@@ -888,7 +980,7 @@ async def sec_edgar_compare_companies(
                 fy_obs.append(o)
 
             if not fy_obs:
-                warnings.append(f"{company_name}: no full-year (FY) annual observations found for '{concept}' — skipped.")
+                warnings.append(f"{company_name}: no full-year (FY) annual observations found for '{effective_concept_cc}' — skipped.")
                 continue
 
             # Pick the observation with the maximum period end date; break ties by latest filed
@@ -906,17 +998,18 @@ async def sec_edgar_compare_companies(
                     pe_date = datetime.strptime(period_end, "%Y-%m-%d").date()
                     if (today - pe_date).days > 548:
                         warnings.append(
-                            f"{ticker}: most recent value for {concept} is from "
+                            f"{ticker}: most recent value for {effective_concept_cc} is from "
                             f"{period_end}; the company may report this metric under "
                             "a different concept."
                         )
                 except ValueError:
                     pass
 
-            results.append({
+            row: dict = {
                 "company": company_name,
                 "cik": padded_cik,
                 "ticker": ticker,
+                "concept": effective_concept_cc,
                 "value": best.get("val"),
                 "unit": best_unit,
                 "period_end": period_end,
@@ -924,7 +1017,10 @@ async def sec_edgar_compare_companies(
                 "filing_fiscal_year": best.get("fy"),
                 "accession_number": best.get("accn", ""),
                 "form": best.get("form", ""),
-            })
+            }
+            if concept_note_cc:
+                row["concept_note"] = concept_note_cc
+            results.append(row)
 
     except (httpx.HTTPStatusError, httpx.RequestError) as exc:
         return {"error": str(exc), "hint": "A network error occurred. Check identifiers and try again."}
@@ -1170,14 +1266,6 @@ async def sec_edgar_get_quarterly_facts(
     Returns a dict with keys: company, cik, taxonomy, concept, unit, label,
     observations (list), note. On failure returns {"error": "...", "hint": "..."}.
     """
-    # Revenue concept that many companies (Apple, etc.) switched to after ~2018.
-    _REVENUE_ALT = "RevenueFromContractWithCustomerExcludingAssessedTax"
-    # Concepts where we auto-retry with an alternate if the primary returns nothing.
-    _REVENUE_RETRY_MAP: dict[str, str] = {
-        "Revenues": _REVENUE_ALT,
-        "revenues": _REVENUE_ALT,
-    }
-
     limit = max(1, min(limit, 40))
     try:
         resolved = await _resolve_identifier(identifier)
@@ -1207,27 +1295,79 @@ async def sec_edgar_get_quarterly_facts(
                 "hint": f"Available taxonomies: {available}.",
             }
 
-        # Resolve concept, with automatic retry for revenue aliases.
-        # If the requested concept is not found or yields zero quarterly obs,
-        # try the alternate name before returning an error.
+        quarterly_fps = {"Q1", "Q2", "Q3", "Q4"}
+
+        def _is_single_quarter(obs: dict) -> bool:
+            dur = _duration_days(obs)
+            if dur is None:
+                return True  # can't determine — keep it
+            return 80 <= dur <= 100
+
+        def _quarterly_obs_for(cdata: dict) -> tuple[list, str, str]:
+            """Return (obs_list, best_unit, label) for a concept dict."""
+            ru = cdata.get("units", {})
+            bu = max(ru.keys(), key=lambda u: len(ru[u]), default=None)
+            if bu is None:
+                return [], "", cdata.get("label", "")
+            all_o = ru[bu]
+            filtered = [
+                o for o in all_o
+                if o.get("fp") in quarterly_fps
+                and o.get("form", "").startswith("10-Q")
+                and _is_single_quarter(o)
+            ]
+            return filtered, bu, cdata.get("label", "")
+
+        # Resolve concept with multi-candidate selection for revenue concepts.
+        # If the concept is in REVENUE_CANDIDATES, evaluate every candidate the
+        # company reports; pick the one whose most-recent quarterly period_end
+        # is newest (ties → larger value at that date).
         effective_concept = concept
+        concept_note_q: str | None = None
         concept_data = taxonomy_data.get(concept)
+
+        if concept in REVENUE_CANDIDATES:
+            best_cname_q: str | None = None
+            best_end_q: str = ""
+            best_val_q: float | int | None = None
+            for cname in REVENUE_CANDIDATES:
+                cdata = taxonomy_data.get(cname)
+                if cdata is None:
+                    continue
+                obs_list, _, _ = _quarterly_obs_for(cdata)
+                for o in obs_list:
+                    end = o.get("end", "")
+                    val = o.get("val")
+                    if end > best_end_q or (
+                        end == best_end_q
+                        and val is not None
+                        and (best_val_q is None or val > best_val_q)
+                    ):
+                        best_end_q = end
+                        best_val_q = val
+                        best_cname_q = cname
+            if best_cname_q is not None:
+                if best_cname_q != concept:
+                    concept_note_q = (
+                        f"Requested '{concept}' but '{best_cname_q}' has more recent "
+                        f"quarterly data (period_end {best_end_q}); using '{best_cname_q}'."
+                    )
+                effective_concept = best_cname_q
+                concept_data = taxonomy_data.get(best_cname_q)
+            # concept_data may still be None if no candidate had quarterly data —
+            # fall through to the error/fallback path below.
+
         if concept_data is None:
-            alt = _REVENUE_RETRY_MAP.get(concept)
-            if alt and taxonomy_data.get(alt) is not None:
-                effective_concept = alt
-                concept_data = taxonomy_data[alt]
-            else:
-                sample = list(taxonomy_data.keys())[:10]
-                return {
-                    "error": f"Concept '{concept}' not found in taxonomy '{taxonomy}' for {company_name}.",
-                    "hint": (
-                        f"Sample available concepts (first 10): {sample}. "
-                        "Try concept='RevenueFromContractWithCustomerExcludingAssessedTax' for revenue, "
-                        "or call sec_edgar_list_concepts with search='<keyword>'. "
-                        "Do not retry with the same arguments."
-                    ),
-                }
+            sample = list(taxonomy_data.keys())[:10]
+            return {
+                "error": f"Concept '{concept}' not found in taxonomy '{taxonomy}' for {company_name}.",
+                "hint": (
+                    f"Sample available concepts (first 10): {sample}. "
+                    "Try concept='RevenueFromContractWithCustomerExcludingAssessedTax' for revenue, "
+                    "or call sec_edgar_list_concepts with search='<keyword>'. "
+                    "Do not retry with the same arguments."
+                ),
+            }
 
         label = concept_data.get("label", effective_concept)
         raw_units = concept_data.get("units", {})
@@ -1248,14 +1388,6 @@ async def sec_edgar_get_quarterly_facts(
         # fp label (e.g. fp=Q3 covers both "three months ended Sep 30" AND "nine months
         # ended Sep 30"). Genuine single quarters span 80–100 days; YTD periods are
         # longer.  Tightened from ≤104 to 80–100 to exclude edge-case YTD values.
-        quarterly_fps = {"Q1", "Q2", "Q3", "Q4"}
-
-        def _is_single_quarter(obs: dict) -> bool:
-            dur = _duration_days(obs)
-            if dur is None:
-                return True  # can't determine — keep it
-            return 80 <= dur <= 100
-
         quarterly_obs = [
             o for o in all_obs
             if o.get("fp") in quarterly_fps
@@ -1266,30 +1398,26 @@ async def sec_edgar_get_quarterly_facts(
         # Sort most-recent first by period end date
         quarterly_obs.sort(key=lambda o: o.get("end", ""), reverse=True)
 
-        note = ""
+        note = concept_note_q or ""
         if len(quarterly_obs) == 0:
-            # Before giving up: if original concept had an alternate, retry now
-            # (handles cases where concept exists but has no quarterly 10-Q data
-            # under the primary name, e.g. Revenues having only annual entries).
-            alt = _REVENUE_RETRY_MAP.get(concept)
-            if alt and alt != effective_concept and taxonomy_data.get(alt) is not None:
-                alt_data = taxonomy_data[alt]
-                alt_units = alt_data.get("units", {})
-                alt_unit = max(alt_units.keys(), key=lambda u: len(alt_units[u]), default=None)
-                if alt_unit:
-                    alt_obs = [
-                        o for o in alt_units[alt_unit]
-                        if o.get("fp") in quarterly_fps
-                        and o.get("form", "").startswith("10-Q")
-                        and _is_single_quarter(o)
-                    ]
+            # Before giving up: try every remaining revenue candidate (if applicable)
+            # for companies where the selected concept has no quarterly 10-Q data.
+            if concept in REVENUE_CANDIDATES:
+                for cname in REVENUE_CANDIDATES:
+                    if cname == effective_concept:
+                        continue
+                    cdata = taxonomy_data.get(cname)
+                    if cdata is None:
+                        continue
+                    alt_obs, alt_unit, alt_label = _quarterly_obs_for(cdata)
                     if alt_obs:
-                        effective_concept = alt
-                        label = alt_data.get("label", alt)
+                        effective_concept = cname
+                        label = alt_label
                         best_unit = alt_unit
                         quarterly_obs = alt_obs
                         quarterly_obs.sort(key=lambda o: o.get("end", ""), reverse=True)
-                        note = f"Concept '{concept}' had no quarterly data; using '{alt}' instead."
+                        note = f"Concept '{concept}' had no quarterly data; using '{cname}' instead."
+                        break
 
         if len(quarterly_obs) == 0:
             # Fall back to any single-quarter fp even if not from 10-Q (e.g. 10-K amended)

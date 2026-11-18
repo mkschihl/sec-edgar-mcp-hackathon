@@ -1,0 +1,14 @@
+{
+  "id": "BQ-14",
+  "question": "Which company has more total assets \u2014 JPMorgan Chase (JPM) or Bank of America (BAC)? Use the most recent annual figures.",
+  "score": "pass",
+  "tools_fired": [
+    "sec_edgar_compare_companies"
+  ],
+  "call_counts": {
+    "sec_edgar_compare_companies": 1
+  },
+  "sse_events": [],
+  "response_text": "**Total assets (most recent annual figures, FY\u202f2025)**  \n\n| Company | Fiscal Year | Period End | Total Assets | Unit | Form | Accession Number |\n|---------|------------|------------|--------------|------|------|------------------|\n| JPMorgan\u202fChase\u202f&\u202fCo. | 2025 | 2025\u201112\u201131 | **$4.425\u202ftrillion** | USD | 10\u2011K | 0001628280\u201126\u2011008131 |\n| Bank\u202fof\u202fAmerica\u202fCorp. | 2025 | 2025\u201112\u201131 | **$3.412\u202ftrillion** | USD | 10\u2011K | 0000070858\u201126\u2011000157 |\n\n**Result:** JPMorgan\u202fChase has more total assets than Bank\u202fof\u202fAmerica.",
+  "notes": "All expected tools fired."
+}

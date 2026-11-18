@@ -263,6 +263,95 @@ async def test_holding_shell_resolve():
               f"got: {result2['warning']!r}")
 
 
+async def test_pfe_annual_revenue_candidate():
+    print("\n[10] PFE annual revenue — REVENUE_CANDIDATES: request RevenueFromContractWithCustomerExcludingAssessedTax, expect Revenues")
+    result = await sec_edgar_get_company_fact(
+        "PFE", "us-gaap", "RevenueFromContractWithCustomerExcludingAssessedTax", limit=4
+    )
+    if "error" in result:
+        check("no error", False, result["error"])
+        return
+
+    # Must have switched to the broader "Revenues" concept
+    effective = result.get("concept", "")
+    check(
+        "concept == Revenues",
+        effective == "Revenues",
+        f"got '{effective}'",
+    )
+
+    # concept_note must be present (explains the switch)
+    check(
+        "concept_note present",
+        bool(result.get("concept_note")),
+        "no concept_note in result",
+    )
+
+    rows = result.get("units", {}).get("USD", [])
+    if not check("returned rows", len(rows) > 0, f"got {len(rows)}"):
+        return
+
+    spot = {r.get("fiscal_year_end"): r.get("value") for r in rows}
+
+    # Three known Pfizer annual revenue values under "Revenues"
+    expected = {
+        "2025-12-31": 62579000000,
+        "2024-12-31": 63627000000,
+        "2023-12-31": 59553000000,
+    }
+    for pe, expected_val in expected.items():
+        actual = spot.get(pe)
+        check(
+            f"PFE revenue at {pe} == {expected_val:,}",
+            actual == expected_val,
+            f"got {actual} (period_end not present)" if actual is None else f"got {actual:,}",
+        )
+
+
+async def test_aapl_quarterly_revenues_candidate():
+    print("\n[11] AAPL quarterly Revenues — REVENUE_CANDIDATES: expect 109417000000 at 2026-06-27")
+    result = await sec_edgar_get_quarterly_facts("AAPL", "us-gaap", "Revenues", limit=8)
+    if "error" in result:
+        check("no error", False, result["error"])
+        return
+
+    obs = result.get("observations", [])
+    if not check("returned observations", len(obs) > 0, f"got {len(obs)}"):
+        return
+
+    spot = {o.get("period_end"): o.get("value") for o in obs}
+    actual = spot.get("2026-06-27")
+    check(
+        "value at 2026-06-27 == 109417000000",
+        actual == 109417000000,
+        f"got {actual}",
+    )
+
+
+async def test_pfe_compare_companies_revenue():
+    print("\n[12] compare_companies(['PFE'], 'us-gaap', 'Revenues') — period_end 2025-12-31")
+    result = await sec_edgar_compare_companies(["PFE"], "us-gaap", "Revenues")
+    if "error" in result:
+        check("no error", False, result["error"])
+        return
+
+    results = result.get("results", [])
+    if not check("one result", len(results) == 1, f"got {len(results)}"):
+        return
+
+    r = results[0]
+    check(
+        "PFE period_end == 2025-12-31",
+        r.get("period_end") == "2025-12-31",
+        f"got '{r.get('period_end')}'",
+    )
+    check(
+        "PFE concept == Revenues",
+        r.get("concept") == "Revenues",
+        f"got '{r.get('concept')}'",
+    )
+
+
 async def test_exxon_10k_filings():
     print("\n[9] get_recent_filings('0000034088', '10-K', 5) — at least 3 filings")
     result = await sec_edgar_get_recent_filings("0000034088", "10-K", 5)
@@ -308,6 +397,9 @@ async def main():
     await test_exxon_search()
     await test_holding_shell_resolve()
     await test_exxon_10k_filings()
+    await test_pfe_annual_revenue_candidate()
+    await test_aapl_quarterly_revenues_candidate()
+    await test_pfe_compare_companies_revenue()
 
     print(f"\n{'=' * 50}")
     if failures == 0:

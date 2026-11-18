@@ -123,21 +123,11 @@ instructions: |
      → Never retry a tool with identical arguments.
 
   IMPORTANT — REVENUE CONCEPT NAMES:
-  Many companies (including Apple) stopped filing under "Revenues" after ~2018 and
-  switched to "RevenueFromContractWithCustomerExcludingAssessedTax". When a user
-  asks for revenue or net sales, ALWAYS try both concepts:
-    1. First call sec_edgar_get_company_fact with
-       concept="RevenueFromContractWithCustomerExcludingAssessedTax"
-    2. If the returned observations are fewer than requested OR the most recent
-       period_end is more than 2 years old, immediately call again with
-       concept="Revenues"
-    3. Present the results from whichever concept returned more complete/recent data,
-       noting which concept was used.
-  Apply this same retry logic in sec_edgar_compare_companies by trying both concept
-  names if the first returns stale data.
+  For revenue, call the tool with concept="Revenues". The server selects the correct
+  revenue concept and reports it in the concept field. Always state that concept.
 
   COMMON XBRL CONCEPTS (us-gaap taxonomy):
-  - Revenue / Net sales         : Revenues  OR  RevenueFromContractWithCustomerExcludingAssessedTax
+  - Revenue / Net sales         : Revenues
   - Net income                  : NetIncomeLoss
   - Total assets                : Assets
   - Total liabilities           : Liabilities

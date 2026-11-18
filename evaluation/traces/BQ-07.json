@@ -1,0 +1,16 @@
+{
+  "id": "BQ-07",
+  "question": "Show me the last 5 annual net income figures for Apple.",
+  "score": "pass",
+  "tools_fired": [
+    "sec_edgar_resolve_company",
+    "sec_edgar_get_company_fact"
+  ],
+  "call_counts": {
+    "sec_edgar_resolve_company": 1,
+    "sec_edgar_get_company_fact": 1
+  },
+  "sse_events": [],
+  "response_text": "**Apple Inc. \u2013 Net Income (NetIncomeLoss)**  \n*XBRL concept: `NetIncomeLoss` (us\u2011gaap)*  \n\n| Fiscal Year | Period End | Net Income (USD) | Form | Accession Number |\n|-------------|------------|------------------|------|-------------------|\n| 2022 | 2022\u201109\u201124 | $99.8\u202fbillion | 10\u2011K | 0000320193\u201124\u2011000123 |\n| 2023 | 2023\u201109\u201130 | $97.0\u202fbillion | 10\u2011K | 0000320193\u201125\u2011000079 |\n| 2024 | 2024\u201109\u201128 | $93.7\u202fbillion | 10\u2011K | 0000320193\u201126\u2011000026 |\n| 2025 | 2025\u201109\u201127 | $112.0\u202fbillion | 10\u2011K | 0000320193\u201126\u2011000026 |\n| 2026 | 2026\u201109\u201126 | $132.2\u202fbillion | 10\u2011K | 0000320193\u201126\u2011000026 |\n\n*All values are presented in U.S. dollars (USD). The data come from Apple\u2019s annual Form\u202f10\u2011K filings as reported in the SEC\u2019s XBRL filings.*",
+  "notes": "All expected tools fired."
+}

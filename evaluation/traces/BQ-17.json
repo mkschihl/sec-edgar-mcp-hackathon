@@ -1,0 +1,16 @@
+{
+  "id": "BQ-17",
+  "question": "I don't know the ticker \u2014 find companies with 'Pfizer' in the name, then show me the last 4 annual revenue figures for the main one.",
+  "score": "pass",
+  "tools_fired": [
+    "sec_edgar_search_companies",
+    "sec_edgar_get_company_fact"
+  ],
+  "call_counts": {
+    "sec_edgar_search_companies": 1,
+    "sec_edgar_get_company_fact": 1
+  },
+  "sse_events": [],
+  "response_text": "**Company identified:** PFIZER\u202fINC (ticker\u202fPFE, CIK\u202f0000078003) \u2013 the primary operating company with recent 10\u2011K filings.\n\n**Revenue data source:** XBRL concept **RevenueFromContractWithCustomerExcludingAssessedTax** (us\u2011gaap taxonomy).  \n\n| Fiscal Year | Period End | Revenue (USD) | Form | Accession Number | Note |\n|------------|------------|----------------|------|------------------|------|\n| 2020 | 2020\u201112\u201131 | $41.65\u202fbillion | 10\u2011K | 0000078003-22-000027 | Recast; originally filed $41.91\u202fbillion |\n| 2021 | 2021\u201112\u201131 | $73.64\u202fbillion | 10\u2011K | 0000078003-24-000039 | Recast; originally filed $81.29\u202fbillion |\n| 2022 | 2022\u201112\u201131 | $91.79\u202fbillion | 10\u2011K | 0000078003-24-000039 | \u2013 |\n| 2023 | 2023\u201112\u201131 | $50.91\u202fbillion | 10\u2011K | 0000078003-24-000039 | \u2013 |\n\n**Explanation**\n\n- The SEC filings show that Pfizer\u2019s revenue reporting switched to the \u201cRevenue from Contract with Customer, Excluding Assessed Tax\u201d concept after 2018.  \n- For 2020 and 2021 the values were *recast* in later filings; the original amounts are shown in the \u201cas_originally_filed\u201d field.  \n- The most recent four fiscal\u2011year observations (2020\u20112023) are presented above, sorted by fiscal year.  \n\nIf you need the underlying filings or want to view a different revenue concept (e.g., \u201cRevenues\u201d), let me know and I can retrieve that information as well.",
+  "notes": "All expected tools fired."
+}

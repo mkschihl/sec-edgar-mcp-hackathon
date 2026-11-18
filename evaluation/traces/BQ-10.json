@@ -1,0 +1,16 @@
+{
+  "id": "BQ-10",
+  "question": "What was Microsoft's net income in each of the last 6 quarters?",
+  "score": "pass",
+  "tools_fired": [
+    "sec_edgar_resolve_company",
+    "sec_edgar_get_quarterly_facts"
+  ],
+  "call_counts": {
+    "sec_edgar_resolve_company": 1,
+    "sec_edgar_get_quarterly_facts": 1
+  },
+  "sse_events": [],
+  "response_text": "**Microsoft Corp \u2013 Net Income (attributable to parent) for the most recent 6 quarters**  \n\n| Fiscal Quarter | Fiscal Year | Period End | Net Income (USD) | Form | Accession Number |\n|----------------|------------|------------|------------------|------|------------------|\n| Q1\u202fFY2027 | 2027 | 2026\u201109\u201130 | $36.63\u202fbillion | 10\u2011Q | 0001193125\u201126\u2011436133 |\n| Q3\u202fFY2026 | 2026 | 2026\u201103\u201131 | $31.78\u202fbillion | 10\u2011Q | 0001193125\u201126\u2011191507 |\n| Q2\u202fFY2026 | 2026 | 2025\u201112\u201131 | $38.46\u202fbillion | 10\u2011Q | 0001193125\u201126\u2011027207 |\n| Q1\u202fFY2026 | 2026 | 2025\u201109\u201130 | $27.75\u202fbillion | 10\u2011Q | 0001193125\u201126\u2011436133 |\n| Q3\u202fFY2025 | 2025 | 2025\u201103\u201131 | $25.82\u202fbillion | 10\u2011Q | 0001193125\u201126\u2011191507 |\n| Q2\u202fFY2025 | 2025 | 2024\u201112\u201131 | $24.11\u202fbillion | 10\u2011Q | 0001193125\u201126\u2011027207 |\n\n**Concept used:** `NetIncomeLoss` (XBRL label \u201cNet Income (Loss) Attributable to Parent\u201d).  \n\nAll values are expressed in **U.S. dollars (USD)** and come from the company\u2019s 10\u2011Q filings. The period end dates reflect the actual quarter\u2011end dates, not the filing date.",
+  "notes": "All expected tools fired."
+}

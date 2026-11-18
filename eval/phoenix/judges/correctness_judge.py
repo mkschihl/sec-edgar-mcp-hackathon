@@ -19,7 +19,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-_DEFAULT_JUDGE = "meta-llama/llama-3-3-70b-instruct"
+_DEFAULT_JUDGE = "mistralai/mistral-small-3-1-24b-instruct-2503"
 _AGENT_DEFAULT  = "meta-llama/llama-3-3-70b-instruct"
 
 # Warn at import time if JUDGE_MODEL == AGENT_MODEL (self-preference bias risk)
@@ -49,15 +49,11 @@ response must contain.
   data, refuses to answer when it should not, or contradicts the reference.
 - If the agent correctly reports that a ticker/company was not found (error-handling
   question), mark `correct` provided no data was fabricated.
-- If the reference expects at least N items (e.g. "at least 3 annual figures") and
-  the agent returns fewer, mark `incorrect` only if the shortfall is significant
-  (less than half the expected minimum); minor shortfalls are `correct`.
-- If the reference expects fiscal years to be labelled and the agent provides only
-  raw dates, mark `correct` provided the dates clearly correspond to the fiscal
-  year periods described in the reference.
-- If the reference expects warnings about data comparability (e.g. different fiscal
-  year ends) and the agent omits them but the data itself is accurate, mark
-  `correct`; warnings are advisory, not required facts.
+- Any figure that differs from a figure in the reference by more than 1% is incorrect.
+- If the reference attributes a value to a period end date or fiscal year, the
+  response must attribute that value to the same period. Mislabeled years are incorrect.
+- Quarterly figures that are year-to-date or multi-quarter totals are incorrect.
+- If the reference says no warning is needed, the absence of a warning is correct.
 
 ## Inputs
 USER QUESTION:

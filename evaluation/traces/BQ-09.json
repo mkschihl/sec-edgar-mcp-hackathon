@@ -1,0 +1,16 @@
+{
+  "id": "BQ-09",
+  "question": "Show me Apple's quarterly revenue for the last 8 quarters.",
+  "score": "pass",
+  "tools_fired": [
+    "sec_edgar_resolve_company",
+    "sec_edgar_get_quarterly_facts"
+  ],
+  "call_counts": {
+    "sec_edgar_resolve_company": 1,
+    "sec_edgar_get_quarterly_facts": 1
+  },
+  "sse_events": [],
+  "response_text": "**Apple\u202fInc. \u2013 Quarterly Revenue (last\u202f8 quarters)**  \n*XBRL concept used: **RevenueFromContractWithCustomerExcludingAssessedTax** (us\u2011gaap)*  \n\n| Fiscal Quarter | Fiscal Year | Period End | Revenue (USD) | Form | Accession Number |\n|----------------|------------|------------|----------------|------|-------------------|\n| Q3 | 2026 | 2026\u201106\u201127 | $109.4\u202fbillion | 10\u2011Q | 0000320193\u201126\u2011000020 |\n| Q2 | 2026 | 2026\u201103\u201128 | $111.2\u202fbillion | 10\u2011Q | 0000320193\u201126\u2011000013 |\n| Q1 | 2026 | 2025\u201112\u201127 | $143.8\u202fbillion | 10\u2011Q | 0000320193\u201126\u2011000006 |\n| Q3 | 2025 | 2025\u201106\u201128 | $94.0\u202fbillion | 10\u2011Q | 0000320193\u201126\u2011000020 |\n| Q2 | 2025 | 2025\u201103\u201129 | $95.4\u202fbillion | 10\u2011Q | 0000320193\u201126\u2011000013 |\n| Q1 | 2025 | 2024\u201112\u201128 | $124.3\u202fbillion | 10\u2011Q | 0000320193\u201126\u2011000006 |\n| Q3 | 2024 | 2024\u201106\u201129 | $85.8\u202fbillion | 10\u2011Q | 0000320193\u201125\u2011000073 |\n| Q2 | 2024 | 2024\u201103\u201130 | $90.8\u202fbillion | 10\u2011Q | 0000320193\u201125\u2011000057 |\n\n**Notes**\n\n* The data come from Apple\u2019s 10\u2011Q filings (quarterly reports).  \n* Q4 figures are not included in the quarterly\u2011facts endpoint because they are reported in the annual 10\u2011K (or occasional 8\u2011K), not in a separate 10\u2011Q. If you need the Q4 (full\u2011year) revenue, let me know and I can retrieve the annual figure via the company\u2011fact call.",
+  "notes": "All expected tools fired."
+}

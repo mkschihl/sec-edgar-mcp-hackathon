@@ -1,0 +1,16 @@
+{
+  "id": "BQ-20",
+  "question": "Show me Apple's quarterly EarningsPerShareBasicAndDiluted for the last 4 quarters.",
+  "score": "pass",
+  "tools_fired": [
+    "sec_edgar_resolve_company",
+    "sec_edgar_get_quarterly_facts"
+  ],
+  "call_counts": {
+    "sec_edgar_resolve_company": 1,
+    "sec_edgar_get_quarterly_facts": 2
+  },
+  "sse_events": [],
+  "response_text": "**Apple Inc. (CIK\u202f0000320193) \u2013 Quarterly EPS (Basic & Diluted)**  \n\n| Fiscal Quarter | Fiscal Year | Period End | EPS Basic (USD\u202f/\u202fshare) | EPS Diluted (USD\u202f/\u202fshare) | Form | Accession Number |\n|----------------|------------|------------|------------------------|---------------------------|------|-------------------|\n| Q3\u202fFY2026 | 2026 | 2026\u201106\u201127 | 2.03 | 2.02 | 10\u2011Q | 0000320193\u201126\u2011000020 |\n| Q2\u202fFY2026 | 2026 | 2026\u201103\u201128 | 2.02 | 2.01 | 10\u2011Q | 0000320193\u201126\u2011000013 |\n| Q1\u202fFY2026 | 2026 | 2025\u201112\u201127 | 2.85 | 2.84 | 10\u2011Q | 0000320193\u201126\u2011000006 |\n| Q3\u202fFY2025 | 2025 | 2025\u201106\u201128 | 1.57 | 1.57 | 10\u2011Q | 0000320193\u201126\u2011000020 |\n\n**Notes**\n\n* The data come from the XBRL concepts **EarningsPerShareBasic** and **EarningsPerShareDiluted** (unit:\u202fUSD\u202f/\u202fshare).  \n* Quarterly figures are taken from the most recent 10\u2011Q filings; Q4 figures are not included because they are reported in the annual 10\u2011K, not in a 10\u2011Q.  \n* All values are as reported by Apple; no recasting was required.",
+  "notes": "All expected tools fired."
+}

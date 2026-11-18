@@ -129,10 +129,15 @@ def call_agent_rest(question: str, token: str, agent_id: str, timeout: int = 120
     """POST a message to the agent via the /chat/completions SSE endpoint.
 
     Returns (response_text, raw_dict) where raw_dict contains:
-      - "tool_calls": list[str]  — tool names fired (from SSE step_details only)
-      - "call_counts": dict[str, int]  — per-tool call counts
-      - "sse_events": list[str]  — raw SSE event types seen (for diagnostics)
-      - "raw_sse": str  — first 8KB of raw SSE text (for debugging)
+      - "tool_calls": list[str]       — tool names fired (from SSE step_details only)
+      - "call_counts": dict[str, int] — per-tool call counts
+      - "sse_events": list[dict]      — every successfully-parsed JSON chunk from
+                                        the SSE stream, in order. Includes content
+                                        deltas, step_details, and finish events.
+                                        Previously this stored bare "event:" type
+                                        lines, which were always empty because WXO
+                                        only emits "data:" lines with JSON payloads.
+      - "raw_sse": str                — first 8KB of raw SSE text (for debugging)
 
     Tool names are taken ONLY from SSE step_details (not from text scanning),
     so the scorer reflects actual MCP tool invocations.
@@ -148,7 +153,7 @@ def call_agent_rest(question: str, token: str, agent_id: str, timeout: int = 120
     response_chunks: list[str] = []
     tool_calls_seen: list[str] = []
     call_counts: dict[str, int] = {}
-    sse_events: list[str] = []
+    sse_events: list[dict] = []   # parsed JSON chunks, not bare event: lines
     raw_sse_lines: list[str] = []
 
     try:
@@ -160,9 +165,6 @@ def call_agent_rest(question: str, token: str, agent_id: str, timeout: int = 120
             for line in resp.iter_lines():
                 raw_sse_lines.append(line)
                 if not line.startswith("data: "):
-                    # Capture SSE event: lines
-                    if line.startswith("event: "):
-                        sse_events.append(line[7:].strip())
                     continue
                 payload = line[6:]
                 if payload.strip() == "[DONE]":
@@ -171,6 +173,10 @@ def call_agent_rest(question: str, token: str, agent_id: str, timeout: int = 120
                     chunk = json.loads(payload)
                 except json.JSONDecodeError:
                     continue
+
+                # Store every parsed chunk so the trace file captures the full
+                # SSE stream (content deltas, step_details, finish events, etc.)
+                sse_events.append(chunk)
 
                 choices = chunk.get("choices", [])
                 for choice in choices:

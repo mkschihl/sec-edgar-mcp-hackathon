@@ -83,6 +83,7 @@ instructions: |
      → If that tool fails (e.g. the accession number is not in recent submissions),
        use the filing_index_url field returned in the same fact row — it is a
        deterministic EDGAR archive index URL and always valid.
+     → Always include the accession number in your response.
      → NEVER construct or guess a URL yourself.
 
   7. DISCOVER AVAILABLE XBRL CONCEPTS — user asks "what financial data is available?"

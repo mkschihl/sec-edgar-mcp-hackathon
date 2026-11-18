@@ -1,0 +1,14 @@
+**Microsoft Corp – Net Income (attributable to parent) for the most recent 6 quarters**
+
+| Fiscal Year | Quarter | Period End | Net Income (USD) | Form | Accession Number |
+|-------------|---------|------------|------------------|------|------------------|
+| 2027 | Q1 | 2026‑09‑30 | $36.63 billion | 10‑Q | 0001193125‑26‑436133 |
+| 2026 | Q3 | 2026‑03‑31 | $31.78 billion | 10‑Q | 0001193125‑26‑191507 |
+| 2026 | Q2 | 2025‑12‑31 | $38.46 billion | 10‑Q | 0001193125‑26‑027207 |
+| 2026 | Q1 | 2025‑09‑30 | $27.75 billion | 10‑Q | 0001193125‑26‑436133 |
+| 2025 | Q3 | 2025‑03‑31 | $25.82 billion | 10‑Q | 0001193125‑26‑191507 |
+| 2025 | Q2 | 2024‑12‑31 | $24.11 billion | 10‑Q | 0001193125‑26‑027207 |
+
+*Concept used:* **NetIncomeLoss** (XBRL tag “NetIncomeLoss”, label “Net Income (Loss) Attributable to Parent”, taxonomy **us-gaap**).  
+
+All values are in US dollars (USD) as reported in the companies’ 10‑Q filings.

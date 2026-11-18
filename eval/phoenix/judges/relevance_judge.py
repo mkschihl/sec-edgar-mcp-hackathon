@@ -25,7 +25,12 @@ _DEFAULT_JUDGE = "meta-llama/llama-3-3-70b-instruct"
 _TEMPLATE = """\
 Today's date is {today}. SEC filings dated up to today are real historical data, \
 not forecasts. Do not mark data out of scope because its dates are later than \
-your training data.
+your training data. \
+A period whose end date is on or before {today} is historical. \
+Companies' fiscal years differ from calendar years \
+(e.g. Microsoft's FY2027 Q1 ended 2026-09-30). \
+Never mark data out of scope for being 'future' unless its \
+period end date is after {today}.
 
 You are a scope-compliance judge for an SEC EDGAR financial research assistant.
 

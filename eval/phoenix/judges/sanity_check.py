@@ -50,6 +50,7 @@ def _get_bq(bq_id: str) -> dict:
 
 BQ07 = _get_bq("BQ-07")
 BQ09 = _get_bq("BQ-09")
+BQ10 = _get_bq("BQ-10")
 BQ17 = _get_bq("BQ-17")
 
 # ---------------------------------------------------------------------------
@@ -75,6 +76,16 @@ _BQ09_ACTUAL_RESPONSE = _load_fixture("BQ-09e.txt")
 _BQ17_OLD_RESPONSE = _load_fixture("BQ-17d.txt")
 # BQ-17 old response (Pfizer revenue, wrong concept RevenueFromContractWithCustomer...).
 # Reports $50.91B for FY2023 — expect incorrect + numeric < 1.0 after REVENUE_CANDIDATES fix.
+
+_BQ07_ACTUAL_RESPONSE = _load_fixture("BQ-07f.txt")
+# BQ-07 actual WXO response (Apple net income, 5 fiscal years).
+# Period ends: 2022-09-24, 2023-09-30, 2024-09-28, 2025-09-27, 2026-09-26 — all ≤ today.
+# Tests that the fiscal-year date-context fix prevents false out_of_scope verdicts.
+
+_BQ10_ACTUAL_RESPONSE = _load_fixture("BQ-10f.txt")
+# BQ-10 actual WXO response (Microsoft quarterly net income, 6 quarters).
+# Includes a row labelled "FY2027 Q1" with period end 2026-09-30 — ≤ today.
+# Scope judge should NOT flag this as out_of_scope under the new fiscal-year rule.
 
 # ---------------------------------------------------------------------------
 # Test cases
@@ -159,6 +170,36 @@ CASES = [
         "expect_correctness": "correct",
         "expect_numeric": ("==", 1.0),
     },
+    # --- BQ-07 fixture (scope fix validation) ---
+    {
+        "id": "BQ-07f",
+        "label": "BQ-07 ACTUAL WXO response — all period ends ≤ today, expect within_scope",
+        "bq_id": "BQ-07",
+        "question": BQ07["question"],
+        "response": _BQ07_ACTUAL_RESPONSE,
+        # Content: returns FY2022-FY2026; FY2025 ($112B) and FY2026 ($132B) ARE new
+        # historical data, and the reference says "additional fiscal years beyond
+        # FY2023/2024 are acceptable." The judge correctly marks this correct.
+        # Primary goal of this case: scope must be within_scope (all period ends ≤ today).
+        "expect_correctness": "correct",
+        "expect_scope": "within_scope",
+        "expect_numeric": ("==", 1.0),  # $93.7B and $97.0B both present → 1.0
+    },
+    # --- BQ-10 fixture (fiscal-year label scope fix) ---
+    {
+        "id": "BQ-10f",
+        "label": "BQ-10 ACTUAL WXO response — FY2027 Q1 label but period end 2026-09-30 ≤ today, expect within_scope",
+        "bq_id": "BQ-10",
+        "question": BQ10["question"],
+        "response": _BQ10_ACTUAL_RESPONSE,
+        # Content: 'FY2027 Q1' label is a Microsoft fiscal-year convention;
+        # period end 2026-09-30 ≤ today → historical, not a forecast.
+        # The reference only requires quarter labels + 4+ quarters in USD; the agent
+        # returns 6 quarters → judge correctly marks correct.
+        "expect_correctness": "correct",
+        "expect_scope": "within_scope",
+        "expect_numeric": ("any", None),
+    },
     # --- BQ-17 cases ---
     {
         "id": "BQ-17d",
@@ -214,12 +255,28 @@ def _run_correctness(question: str, response: str, reference: str) -> dict:
     )
 
 
+def _run_scope(question: str, response: str) -> dict:
+    """Call the scope judge through check_answer_scope()."""
+    from eval.phoenix.judges.relevance_judge import check_answer_scope  # noqa: PLC0415
+
+    judge_fn = check_answer_scope()
+    return judge_fn(
+        input={"query": question},
+        output={"result": response},
+    )
+
+
 def _run_numeric(response: str, numeric_checks) -> dict:
     """Call the deterministic numeric judge directly."""
     from eval.phoenix.judges.numeric_judge import _score_numeric  # noqa: PLC0415
 
     score, explanation = _score_numeric(response, numeric_checks)
-    label = "numeric_pass" if score >= 1.0 else "numeric_fail"
+    if score is None:
+        label = "numeric_na"
+    elif score >= 1.0:
+        label = "numeric_pass"
+    else:
+        label = "numeric_fail"
     return {"label": label, "score": score, "explanation": explanation}
 
 
@@ -278,6 +335,26 @@ def main() -> None:
         print(f"  explanation : {textwrap.shorten(str(expl), width=200, placeholder='…')}")
         print()
 
+        # --- Scope judge (only for cases that declare expect_scope) ---
+        if "expect_scope" in case:
+            print("Running scope judge (LLM) …")
+            s = _run_scope(case["question"], case["response"])
+            exp_s = case["expect_scope"]
+            if s["label"] == "judge_error":
+                pass_s = False
+                status_s = "FAIL ❌  (judge_error)"
+            else:
+                pass_s = s["label"] == exp_s
+                status_s = "PASS ✅" if pass_s else "FAIL ❌"
+            all_pass = all_pass and pass_s
+            print(f"  label       : {s['label']}")
+            print(f"  score       : {s['score']}")
+            print(f"  expected    : {exp_s}")
+            print(f"  result      : {status_s}")
+            s_expl = s.get("explanation") or ""
+            print(f"  explanation : {textwrap.shorten(str(s_expl), width=200, placeholder='…')}")
+            print()
+
         # --- Numeric judge ---
         print("Running numeric judge (deterministic) …")
         n = _run_numeric(case["response"], num_checks)
@@ -287,10 +364,13 @@ def main() -> None:
             pass_n = n["score"] == exp_val
             exp_n_desc = f"== {exp_val}"
         elif op == "<":
-            pass_n = n["score"] < exp_val
+            if n["score"] is None:
+                pass_n = False  # None is not < any number
+            else:
+                pass_n = n["score"] < exp_val
             exp_n_desc = f"< {exp_val}"
         elif op == ">=":
-            pass_n = n["score"] >= exp_val
+            pass_n = (n["score"] or 0) >= exp_val
             exp_n_desc = f">= {exp_val}"
         else:
             pass_n = True

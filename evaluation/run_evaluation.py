@@ -283,52 +283,61 @@ def score_question(q: dict, response_text: str, raw_response: dict) -> dict:
     is_short = len(response_text.strip()) < _MIN_RESPONSE_CHARS
 
     if is_timeout:
-        return dict(score="fail", tools_fired=tools_fired, tools_missing=missing,
+        return dict(score="fail", routing="routing_diff",
+                    tools_fired=tools_fired, tools_missing=missing,
                     is_refusal=False,
                     notes="Request timed out (120s). Agent may be slow or token expired.")
     if is_error:
-        return dict(score="fail", tools_fired=[], tools_missing=expected,
+        return dict(score="fail", routing="routing_diff",
+                    tools_fired=[], tools_missing=expected,
                     is_refusal=False, notes=f"API error: {response_text[:120]}")
 
     # Out-of-scope questions: a correct refusal is a pass
     if q.get("category") == "out_of_scope":
         if not tools_fired and (is_refusal or is_short or len(response_text) < 300):
-            return dict(score="pass", tools_fired=tools_fired, tools_missing=[],
+            return dict(score="pass", routing="routing_ok",
+                        tools_fired=tools_fired, tools_missing=[],
                         is_refusal=is_refusal,
-                        notes="Correctly declined to answer out-of-scope question.")
+                        notes="routing_ok — correctly declined out-of-scope question.")
         elif tools_fired:
-            return dict(score="fail", tools_fired=tools_fired, tools_missing=[],
+            return dict(score="fail", routing="routing_diff",
+                        tools_fired=tools_fired, tools_missing=[],
                         is_refusal=False,
-                        notes="Agent used SEC tools to answer an out-of-scope question.")
+                        notes="routing_diff — agent used SEC tools for out-of-scope question.")
         else:
-            return dict(score="partial", tools_fired=tools_fired, tools_missing=[],
+            return dict(score="partial", routing="routing_diff",
+                        tools_fired=tools_fired, tools_missing=[],
                         is_refusal=False,
-                        notes="Agent responded without tools; unclear refusal.")
+                        notes="routing_diff — responded without tools; unclear refusal.")
 
     # In-scope questions
     if is_refusal and not tools_fired:
-        return dict(score="fail", tools_fired=tools_fired, tools_missing=missing,
+        return dict(score="fail", routing="routing_diff",
+                    tools_fired=tools_fired, tools_missing=missing,
                     is_refusal=True,
                     notes="Agent refused without calling any tool.")
     if not missing:
+        routing = "routing_ok"
         if is_short:
             score = "partial"
-            notes = "All tools fired but response is too short (<40 chars)."
+            notes = "routing_ok — response too short (<40 chars)."
         elif is_refusal:
             score = "partial"
-            notes = "All tools fired but response contains refusal language."
+            notes = "routing_ok — response contains refusal language."
         else:
             score = "pass"
-            notes = "All expected tools fired."
+            notes = "routing_ok — all expected tools fired."
     elif len(missing) < len(expected):
+        routing = "routing_diff"
         score = "partial"
-        notes = f"Some tools fired. Missing: {missing}."
+        notes = f"routing_diff — some tools fired; missing: {missing}."
     else:
+        routing = "routing_diff"
         score = "fail"
-        notes = f"No expected tools fired. Missing: {missing}."
+        notes = f"routing_diff — no expected tools fired; missing: {missing}."
 
-    return dict(score=score, tools_fired=tools_fired, tools_missing=missing,
-                is_refusal=is_refusal, notes=notes)
+    return dict(score=score, routing=routing, tools_fired=tools_fired,
+                tools_missing=missing, is_refusal=is_refusal, notes=notes)
 
 
 # ---------------------------------------------------------------------------
@@ -388,8 +397,8 @@ def generate_report(results: list[dict], elapsed: float) -> str:
         "",
         "## Results by Question",
         "",
-        "| ID | Diff | Category | Score | Expected Tools | Tools Fired | Notes |",
-        "|---|---|---|---|---|---|---|",
+        "| ID | Diff | Category | Score | Routing | Expected Tools | Tools Fired | Notes |",
+        "|---|---|---|---|---|---|---|---|",
     ]
 
     for r in results:
@@ -397,10 +406,11 @@ def generate_report(results: list[dict], elapsed: float) -> str:
         s_icon = SCORE_EMOJI.get(r["score"], "")
         exp_str   = ", ".join(f"`{t.replace('sec_edgar_','')}`" for t in r["expected_tools"])
         fired_str = ", ".join(f"`{t.replace('sec_edgar_','')}`" for t in r["tools_fired"]) or "*(none)*"
+        routing   = r.get("routing", "")
         notes = r["notes"].replace("|", "\\|")
         lines.append(
             f"| {r['id']} | {d_icon} {r['difficulty']} | {r['category']} "
-            f"| {s_icon} {r['score']} | {exp_str} | {fired_str} | {notes} |"
+            f"| {s_icon} {r['score']} | {routing} | {exp_str} | {fired_str} | {notes} |"
         )
 
     lines += ["", "---", "", "## Agent Responses", ""]
@@ -566,6 +576,7 @@ def main() -> None:
             "id": q["id"],
             "question": q["question"],
             "score": scored["score"],
+            "routing": scored.get("routing", ""),
             "tools_fired": scored["tools_fired"],
             "call_counts": raw_resp.get("call_counts", {}),
             "sse_events": raw_resp.get("sse_events", []),
@@ -578,8 +589,9 @@ def main() -> None:
             " | calls: " + ", ".join(f"{k}×{v}" for k, v in raw_resp.get("call_counts", {}).items())
             if raw_resp.get("call_counts") else ""
         )
-        print(f"  {icon} {scored['score'].upper()} | tools: {scored['tools_fired'] or '(none)'}{calls_str}")
-        if scored["notes"] != "All expected tools fired.":
+        routing_lbl = scored.get("routing", "")
+        print(f"  {icon} {scored['score'].upper()} | {routing_lbl} | tools: {scored['tools_fired'] or '(none)'}{calls_str}")
+        if not scored["notes"].startswith("routing_ok — all expected"):
             print(f"     {scored['notes']}")
         if len(response_text) > 20 and not response_text.startswith("["):
             print(f"     response: {response_text[:120]}...")

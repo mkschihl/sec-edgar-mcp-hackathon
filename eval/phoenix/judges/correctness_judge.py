@@ -38,7 +38,12 @@ if _judge_model == _agent_model:
 _TEMPLATE = """\
 Today's date is {today}. SEC filings dated up to today are real historical data, \
 not forecasts. Do not mark data incorrect or out of scope because its dates are \
-later than your training data.
+later than your training data. \
+A period whose end date is on or before {today} is historical. \
+Companies' fiscal years differ from calendar years \
+(e.g. Microsoft's FY2027 Q1 ended 2026-09-30). \
+Never mark data incorrect or out of scope for being 'future' unless its \
+period end date is after {today}.
 
 You are a financial-data accuracy judge for an SEC EDGAR research assistant.
 

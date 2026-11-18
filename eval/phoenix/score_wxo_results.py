@@ -3,7 +3,7 @@
 Reads evaluation/raw_results.json (responses from the production WXO agent),
 runs the correctness, scope, and numeric judges on each response using the
 pass_criteria from benchmark_questions.py, and prints a per-question table with
-the judge explanation for every failure.
+the full judge explanation for every failure plus a routing column (informational).
 
 No Phoenix experiment needed — scores run locally against the LLM judge.
 
@@ -15,6 +15,12 @@ Optional flags:
     --ids BQ-07 BQ-09   Score only specific question IDs
     --raw-path PATH      Override path to raw_results.json
     --no-llm             Skip LLM judges (correctness + scope); only run numeric
+
+Columns:
+    Routing  (informational only) — routing_ok if all expected_tools fired,
+             routing_diff if some expected tools were absent. This reflects
+             which tool path the agent took, not whether the answer is correct.
+             Optional tools (optional_tools key) are never counted as missing.
 """
 
 from __future__ import annotations
@@ -180,6 +186,14 @@ def main() -> None:
         reference = _build_reference(bq)
         checks    = bq.get("numeric_checks")
 
+        # Routing: informational only — did all expected tools fire?
+        # optional_tools are never counted as missing.
+        expected_tools = bq.get("expected_tools", [])
+        optional_tools = set(bq.get("optional_tools") or [])
+        tools_fired    = r.get("tools_fired", [])
+        missing_tools  = [t for t in expected_tools if t not in tools_fired and t not in optional_tools]
+        routing = "routing_ok" if not missing_tools else f"routing_diff (missing: {missing_tools})"
+
         corr_result  = _run_correctness_judge(question, response, reference) if not args.no_llm else {"label": "skipped", "score": None, "explanation": ""}
         scope_result = _run_scope_judge(question, response) if not args.no_llm else {"label": "skipped", "score": None, "explanation": ""}
         num_result   = _run_numeric_judge(response, checks)
@@ -187,6 +201,7 @@ def main() -> None:
         rows.append({
             "id": bq_id,
             "question": question[:60],
+            "routing": routing,
             "corr": corr_result,
             "scope": scope_result,
             "num": num_result,
@@ -195,16 +210,22 @@ def main() -> None:
         c_icon = "✅" if corr_result["score"] == 1 else ("⬜" if corr_result["label"] == "skipped" else "❌")
         s_icon = "✅" if scope_result["score"] == 1 else ("⬜" if scope_result["label"] == "skipped" else "❌")
         n_icon = "✅" if num_result["score"] == 1.0 else ("—" if num_result["score"] is None else "❌")
+        r_icon = "🗺" if routing == "routing_ok" else "⚠"
         print(f"\n{bq_id}: {question[:70]}")
+        print(f"  Routing     : {r_icon} {routing}  [informational]")
         print(f"  Correctness : {c_icon} {corr_result['label']}")
         print(f"  Scope       : {s_icon} {scope_result['label']}")
         print(f"  Numeric     : {n_icon} {num_result['label']}")
+        # Full explanations — no truncation
         if corr_result["label"] not in ("correct", "skipped") and corr_result.get("explanation"):
-            print(f"  → corr fail : {corr_result['explanation'][:200]}")
+            print(f"  → corr fail :")
+            print(f"    {corr_result['explanation']}")
         if scope_result["label"] not in ("within_scope", "skipped") and scope_result.get("explanation"):
-            print(f"  → scope fail: {scope_result['explanation'][:200]}")
+            print(f"  → scope fail:")
+            print(f"    {scope_result['explanation']}")
         if num_result["label"] not in ("numeric_pass", "numeric_na") and num_result.get("explanation"):
-            print(f"  → num fail  : {num_result['explanation'][:200]}")
+            print(f"  → num fail  :")
+            print(f"    {num_result['explanation']}")
 
     # Summary
     print("\n" + "=" * 80)

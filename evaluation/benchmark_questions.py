@@ -223,13 +223,13 @@ BENCHMARK_QUESTIONS = [
         "pass_criteria": (
             "Response compares total assets for JPM and BAC; "
             "clearly states which is larger; "
-            "JPM total assets are approximately $4.0T USD (±10%) and "
-            "BAC total assets are approximately $3.3T USD (±10%); "
+            "JPM total assets are approximately $4.42T USD (±0.5%) and "
+            "BAC total assets are approximately $3.41T USD (±0.5%); "
             "includes fiscal year end dates."
         ),
         "numeric_checks": {
-            "must_include": [4.0e12, 3.3e12],
-            "rel_tol": 0.10,
+            "must_include": [4.4249e12, 3.411738e12],
+            "rel_tol": 0.005,
             "max_value": None,
         },
     },

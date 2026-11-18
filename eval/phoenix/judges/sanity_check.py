@@ -92,6 +92,11 @@ _BQ10_ACTUAL_RESPONSE = _load_fixture("BQ-10f.txt")
 # Includes a row labelled "FY2027 Q1" with period end 2026-09-30 — ≤ today.
 # Scope judge should NOT flag this as out_of_scope under the new fiscal-year rule.
 
+_BQ10_DERIVED_RESPONSE = _load_fixture("BQ-10h.txt")
+# BQ-10 current response from raw_results.json (includes Q4 FY2026 derived row).
+# Q1 FY2027=$36.63B, Q4 FY2026=$35.77B (derived), Q3 FY2026=$31.78B,
+# Q2 FY2026=$38.46B — all four must_include values present within rel_tol=0.5%.
+
 # ---------------------------------------------------------------------------
 # Test cases
 # ---------------------------------------------------------------------------
@@ -190,18 +195,30 @@ CASES = [
         "expect_scope": "within_scope",
         "expect_numeric": ("==", 1.0),
     },
-    # --- BQ-10 fixture (fiscal-year label scope fix + numeric) ---
+    # --- BQ-10 fixture (fiscal-year label scope fix) ---
     {
         "id": "BQ-10f",
-        "label": "BQ-10 ACTUAL WXO response — FY2027 Q1 label but period end 2026-09-30 ≤ today, expect within_scope + numeric 1.0",
+        "label": "BQ-10 scope fix — FY2027 Q1 label but period end 2026-09-30 ≤ today, expect within_scope (no Q4 row — numeric < 1.0)",
         "bq_id": "BQ-10",
         "question": BQ10["question"],
         "response": _BQ10_ACTUAL_RESPONSE,
-        # Content: 'FY2027 Q1' label is a Microsoft fiscal-year convention;
-        # period end 2026-09-30 ≤ today → historical, not a forecast.
-        # The reference requires 4+ quarters in USD; the agent returns 6 quarters.
-        # numeric_checks now has must_include=[36.629B, 31.778B, 38.458B] rel_tol=0.5%.
-        # Fixture contains $36.63B, $31.78B, $38.46B → all within 0.5% → score 1.0.
+        # This fixture pre-dates the Q4 derivation feature; it does NOT contain a Q4 row.
+        # The reference now requires Q4 FY2026 ≈ $35.8B, which is absent here → numeric < 1.0.
+        # The correctness judge may be uncertain; we only assert scope (the original purpose).
+        # Use BQ-10h for the full correctness + numeric test.
+        "expect_scope": "within_scope",
+        "expect_numeric": ("<", 1.0),
+    },
+    # --- BQ-10h: derived Q4 row in response ---
+    {
+        "id": "BQ-10h",
+        "label": "BQ-10 CURRENT response — includes Q4 FY2026 derived row, expect correct + numeric 1.0",
+        "bq_id": "BQ-10",
+        "question": BQ10["question"],
+        "response": _BQ10_DERIVED_RESPONSE,
+        # Q1 FY2027=$36.63B (~36.629B ✓), Q4 FY2026=$35.77B (~35.766B ✓),
+        # Q3 FY2026=$31.78B (~31.778B ✓), Q2 FY2026=$38.46B (~38.458B ✓).
+        # pass_criteria explicitly accepts derived Q4 rows as legitimate single-quarter values.
         "expect_correctness": "correct",
         "expect_scope": "within_scope",
         "expect_numeric": ("==", 1.0),
@@ -327,38 +344,39 @@ def main() -> None:
         print()
 
         # --- Correctness judge (majority vote — 3 runs) ---
-        print("Running correctness judge (LLM, 3-run majority vote) …")
-        c = _run_correctness(case["question"], case["response"], reference)
-        exp_c = case["expect_correctness"]
+        if "expect_correctness" in case:
+            print("Running correctness judge (LLM, 3-run majority vote) …")
+            c = _run_correctness(case["question"], case["response"], reference)
+            exp_c = case["expect_correctness"]
 
-        # judge_error is always a FAIL; unstable counts as FAIL when expect is definite
-        if c["label"] == "judge_error":
-            pass_c = False
-            status_c = "FAIL ❌  (judge_error — LLM returned malformed JSON after 3 attempts)"
-        elif c["label"] == "unstable":
-            # unstable fails unless we expected instability (we never do in sanity cases)
-            pass_c = False
-            status_c = "FAIL ❌  (unstable — 3 votes split)"
-        else:
-            pass_c = c["label"] == exp_c
-            status_c = "PASS ✅" if pass_c else "FAIL ❌"
+            # judge_error is always a FAIL; unstable counts as FAIL when expect is definite
+            if c["label"] == "judge_error":
+                pass_c = False
+                status_c = "FAIL ❌  (judge_error — LLM returned malformed JSON after 3 attempts)"
+            elif c["label"] == "unstable":
+                # unstable fails unless we expected instability (we never do in sanity cases)
+                pass_c = False
+                status_c = "FAIL ❌  (unstable — 3 votes split)"
+            else:
+                pass_c = c["label"] == exp_c
+                status_c = "PASS ✅" if pass_c else "FAIL ❌"
 
-        stable_tag = "" if c.get("stable", True) else "  [UNSTABLE]"
-        all_pass = all_pass and pass_c
-        print(f"  label       : {c['label']}{stable_tag}")
-        print(f"  score       : {c['score']}")
-        print(f"  expected    : {exp_c}")
-        print(f"  result      : {status_c}")
-        # Print all 3 explanations for unstable or failed results
-        all_expls = c.get("all_explanations") or []
-        if not pass_c and all_expls:
-            print(f"  all 3 votes :")
-            for i, expl in enumerate(all_expls, 1):
-                print(f"    [{i}] {textwrap.shorten(str(expl), width=200, placeholder='…')}")
-        else:
-            expl = c.get("explanation") or ""
-            print(f"  explanation : {textwrap.shorten(str(expl), width=200, placeholder='…')}")
-        print()
+            stable_tag = "" if c.get("stable", True) else "  [UNSTABLE]"
+            all_pass = all_pass and pass_c
+            print(f"  label       : {c['label']}{stable_tag}")
+            print(f"  score       : {c['score']}")
+            print(f"  expected    : {exp_c}")
+            print(f"  result      : {status_c}")
+            # Print all 3 explanations for unstable or failed results
+            all_expls = c.get("all_explanations") or []
+            if not pass_c and all_expls:
+                print(f"  all 3 votes :")
+                for i, expl in enumerate(all_expls, 1):
+                    print(f"    [{i}] {textwrap.shorten(str(expl), width=200, placeholder='…')}")
+            else:
+                expl = c.get("explanation") or ""
+                print(f"  explanation : {textwrap.shorten(str(expl), width=200, placeholder='…')}")
+            print()
 
         # --- Scope judge (only for cases that declare expect_scope) ---
         if "expect_scope" in case:

@@ -152,7 +152,9 @@ BENCHMARK_QUESTIONS = [
             "at least 4 quarters returned; "
             "quarter ended 2026-06-27 = $109.4B and quarter ended 2026-03-28 = $111.2B. "
             "Holiday quarters (Q1, ending in late December) may legitimately exceed $130B; "
-            "that is correct. Mark incorrect only if values appear to be year-to-date totals."
+            "that is correct. Mark incorrect only if values appear to be year-to-date totals. "
+            "Fiscal Q4 rows marked '(derived)' are computed as annual minus nine-month YTD; "
+            "they are legitimate single-quarter values, not year-to-date totals, and are correct."
         ),
         "numeric_checks": {
             "must_include": [109.4e9, 111.2e9],
@@ -176,10 +178,13 @@ BENCHMARK_QUESTIONS = [
             "Values must be single-quarter (not year-to-date) amounts. "
             "Most recent quarter (Q1 FY2027, ended 2026-09-30) net income ≈ $36.6B; "
             "Q3 FY2026 (ended 2026-03-31) ≈ $31.8B; "
-            "Q2 FY2026 (ended 2025-12-31) ≈ $38.5B."
+            "Q2 FY2026 (ended 2025-12-31) ≈ $38.5B; "
+            "Q4 FY2026 (ended 2026-06-30) ≈ $35.8B (derived: annual minus nine-month YTD). "
+            "Fiscal Q4 rows marked '(derived)' are computed as annual minus nine-month YTD; "
+            "they are legitimate single-quarter values, not year-to-date totals, and are correct."
         ),
         "numeric_checks": {
-            "must_include": [36.629e9, 31.778e9, 38.458e9],
+            "must_include": [36.629e9, 31.778e9, 38.458e9, 35.766e9],
             "rel_tol": 0.005,
             "max_value": None,
         },

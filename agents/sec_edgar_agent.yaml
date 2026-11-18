@@ -78,11 +78,16 @@ instructions: |
 
   6. IDENTIFY THE SOURCE FILING FOR A DATA POINT — user asks "which filing reported
      this number?" or wants to verify the source:
-     → Call sec_edgar_get_filing_metadata with the company's CIK and accession_number
-       from the fact row and present its edgar_viewer_url.
-     → If that tool fails (e.g. the accession number is not in recent submissions),
-       use the filing_index_url field returned in the same fact row — it is a
-       deterministic EDGAR archive index URL and always valid.
+     → To find which filing reported a number, you MUST first call
+       sec_edgar_get_company_fact (or sec_edgar_compare_companies) for that metric.
+       Take the accession_number from the most recent row, then call
+       sec_edgar_get_filing_metadata with it. Do not use sec_edgar_get_recent_filings
+       to answer "which filing reported X" questions; the latest 10-K is not always
+       the source of a given value.
+     → Present the edgar_viewer_url from sec_edgar_get_filing_metadata.
+     → If sec_edgar_get_filing_metadata fails (e.g. the accession number is not in
+       recent submissions), use the filing_index_url field returned in the same fact
+       row — it is a deterministic EDGAR archive index URL and always valid.
      → Always include the accession number in your response.
      → Always state the value itself (e.g. the revenue amount or other financial
        figure) alongside the filing details so the user has both the data and

@@ -8,6 +8,14 @@ as the core factual claims match the reference.
 The judge wraps ClassificationEvaluator in a @create_evaluator function so that
 Phoenix auto-binds the named parameters (input, output, reference) and the
 _INPUT_MAPPING is applied explicitly before calling the classifier.
+
+Majority-vote mode
+------------------
+Both `majority_vote_correctness()` (standalone) and the Phoenix-bound
+`match_expected_response()` run the classifier **3 times** per question and
+return the majority label.  When the 3 votes disagree the label is "unstable"
+and the score is 0.5.  All 3 raw explanations are stored in
+``result["all_explanations"]`` so callers can display them on failure.
 """
 
 from __future__ import annotations
@@ -15,6 +23,7 @@ from __future__ import annotations
 import os
 import sys
 import time
+from collections import Counter
 from datetime import date as _date
 
 from dotenv import load_dotenv
@@ -91,6 +100,120 @@ _INPUT_MAPPING = {
 }
 
 
+def _single_classify(classifier, eval_input: dict, input_mapping: dict) -> dict:
+    """Run the classifier once with 3-attempt retry; return a result dict."""
+    last_exc: Exception | None = None
+    for attempt in range(1, 4):
+        try:
+            result_list = classifier.evaluate(eval_input, input_mapping=input_mapping)
+            if not result_list:
+                return {"label": "incorrect", "score": 0, "explanation": ""}
+            item = result_list[0]
+            return {
+                "label": getattr(item, "label", "incorrect"),
+                "score": getattr(item, "score", 0),
+                "explanation": getattr(item, "explanation", ""),
+            }
+        except Exception as exc:  # noqa: BLE001
+            last_exc = exc
+            if attempt < 3:
+                time.sleep(2 ** attempt)  # 2s, 4s back-off
+    return {
+        "label": "judge_error",
+        "score": None,
+        "explanation": f"classifier.evaluate failed after 3 attempts: {last_exc}",
+    }
+
+
+def _majority_vote(runs: list[dict]) -> dict:
+    """Aggregate 3 classifier runs into a single majority-vote result.
+
+    Rules:
+    - If any run is judge_error, treat it as "incorrect" for voting purposes
+      (conservative: a broken judge should not inflate scores).
+    - Majority label wins (2-of-3 or 3-of-3).
+    - When all 3 labels differ (impossible for binary choices, but guard anyway)
+      or when it's judge_error on all 3, return label="judge_error".
+    - When the 3 votes are split 2-1 (not 3-of-3 unanimous), set
+      ``"stable": False`` and label="unstable" with score=0.5.
+    - ``"all_explanations"`` always holds the list of 3 raw explanations.
+    """
+    labels = [r["label"] if r["label"] != "judge_error" else "incorrect" for r in runs]
+    explanations = [r.get("explanation", "") for r in runs]
+
+    counter = Counter(labels)
+    winner, count = counter.most_common(1)[0]
+
+    unanimous = (count == 3)
+    all_errors = all(r["label"] == "judge_error" for r in runs)
+
+    if all_errors:
+        return {
+            "label": "judge_error",
+            "score": None,
+            "explanation": runs[0].get("explanation", ""),
+            "all_explanations": explanations,
+            "stable": False,
+        }
+
+    if not unanimous:
+        # 2-of-3: majority label wins but mark as unstable
+        return {
+            "label": "unstable",
+            "score": 0.5,
+            "explanation": f"Majority={winner} (2/3); votes={labels}",
+            "all_explanations": explanations,
+            "stable": False,
+        }
+
+    # 3-of-3 unanimous
+    score_map = {"correct": 1, "incorrect": 0}
+    return {
+        "label": winner,
+        "score": score_map.get(winner, 0),
+        "explanation": explanations[0],  # all 3 agree — first suffices
+        "all_explanations": explanations,
+        "stable": True,
+    }
+
+
+def majority_vote_correctness(
+    question: str,
+    response: str,
+    reference: str,
+) -> dict:
+    """Run the correctness judge 3 times and return a majority-vote result.
+
+    Returns a dict with keys:
+        label        — "correct" | "incorrect" | "unstable" | "judge_error"
+        score        — 1 (correct) | 0 (incorrect) | 0.5 (unstable) | None (error)
+        explanation  — summary explanation
+        all_explanations — list[str] with all 3 raw explanations
+        stable       — True when all 3 votes agree
+    """
+    from phoenix.evals import LLM, create_classifier
+
+    judge_model = os.getenv("JUDGE_MODEL", _DEFAULT_JUDGE)
+    llm = LLM(provider="litellm", model=f"watsonx/{judge_model}", temperature=0.0)
+    prompt = _TEMPLATE.replace("{today}", _date.today().isoformat())
+    classifier = create_classifier(
+        name="correctness",
+        prompt_template=prompt,
+        llm=llm,
+        choices={"correct": 1, "incorrect": 0},
+        direction="maximize",
+    )
+    eval_input = {"input": question, "output": response, "reference": reference}
+    input_mapping = {
+        "input":     lambda ex: ex.get("input", ""),
+        "output":    lambda ex: ex.get("output", ""),
+        "reference": lambda ex: ex.get("reference", ""),
+    }
+
+    runs = [_single_classify(classifier, eval_input, input_mapping) for _ in range(3)]
+    return _majority_vote(runs)
+
+
 def match_expected_response():
     """Return a callable evaluator that checks correctness vs ground truth.
 
@@ -98,6 +221,9 @@ def match_expected_response():
     auto-binds the named parameters (input, output, reference) from the
     experiment context and the wrapper extracts the relevant strings before
     calling the underlying ClassificationEvaluator.
+
+    Uses majority-vote (3 runs) per question. When the 3 votes disagree the
+    label is "unstable" with score 0.5.
 
     Pass the returned callable directly to run_experiment(evaluators=[...]).
     """
@@ -137,26 +263,14 @@ def match_expected_response():
             "output":    lambda ex: ex.get("output", ""),
             "reference": lambda ex: ex.get("reference", ""),
         }
-        last_exc: Exception | None = None
-        for attempt in range(1, 4):
-            try:
-                result_list = classifier.evaluate(eval_input, input_mapping=input_mapping)
-                if not result_list:
-                    return {"label": "incorrect", "score": 0, "explanation": ""}
-                item = result_list[0]
-                return {
-                    "label": getattr(item, "label", "incorrect"),
-                    "score": getattr(item, "score", 0),
-                    "explanation": getattr(item, "explanation", ""),
-                }
-            except Exception as exc:  # noqa: BLE001
-                last_exc = exc
-                if attempt < 3:
-                    time.sleep(2 ** attempt)  # 2s, 4s back-off
+
+        runs = [_single_classify(classifier, eval_input, input_mapping) for _ in range(3)]
+        result_dict = _majority_vote(runs)
+        # Phoenix expects only label/score/explanation keys; drop extras
         return {
-            "label": "judge_error",
-            "score": None,
-            "explanation": f"classifier.evaluate failed after 3 attempts: {last_exc}",
+            "label": result_dict["label"],
+            "score": result_dict["score"],
+            "explanation": result_dict["explanation"],
         }
 
     return _judge

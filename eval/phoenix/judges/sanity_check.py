@@ -77,6 +77,11 @@ _BQ17_OLD_RESPONSE = _load_fixture("BQ-17d.txt")
 # BQ-17 old response (Pfizer revenue, wrong concept RevenueFromContractWithCustomer...).
 # Reports $50.91B for FY2023 — expect incorrect + numeric < 1.0 after REVENUE_CANDIDATES fix.
 
+_BQ17_NEW_RESPONSE = _load_fixture("BQ-17g.txt")
+# BQ-17 current response from raw_results.json (uses Revenues concept correctly).
+# FY2024=$63.6B, FY2023=$59.6B (recast), FY2022=$101.2B, FY2025=$62.6B
+# All three must_include values present within rel_tol=0.5% → expect correct + numeric 1.0
+
 _BQ07_ACTUAL_RESPONSE = _load_fixture("BQ-07f.txt")
 # BQ-07 actual WXO response (Apple net income, 5 fiscal years).
 # Period ends: 2022-09-24, 2023-09-30, 2024-09-28, 2025-09-27, 2026-09-26 — all ≤ today.
@@ -214,6 +219,19 @@ CASES = [
         "expect_numeric": ("<", 1.0),
     },
     {
+        "id": "BQ-17g",
+        "label": "BQ-17 CURRENT raw_results.json response — expect correct + numeric 1.0",
+        "bq_id": "BQ-17",
+        "question": BQ17["question"],
+        "response": _BQ17_NEW_RESPONSE,
+        # Uses Revenues concept; FY2025=$62.6B (~$62.579B ✓), FY2024=$63.6B (~$63.627B ✓),
+        # FY2023=$59.6B (recast, ~$59.553B ✓), FY2022=$101.2B (recast, ~$100.3B, diff 0.9% < 1% ✓)
+        # All three must_include values present within rel_tol=0.5%.
+        # pass_criteria explicitly accepts both original and recast values for FY2022/FY2023.
+        "expect_correctness": "correct",
+        "expect_numeric": ("==", 1.0),
+    },
+    {
         "id": "BQ-17e",
         "label": "BQ-17 WRONG — shifted values (62.579→60.0, 63.627→61.5)",
         "bq_id": "BQ-17",
@@ -237,22 +255,14 @@ CASES = [
 # ---------------------------------------------------------------------------
 
 def _run_correctness(question: str, response: str, reference: str) -> dict:
-    """Call the correctness judge through match_expected_response().
+    """Call the correctness judge with majority vote (3 runs).
 
-    This exercises the 3-attempt retry wrapper and the judge_error return path,
-    exactly as it will run during a Phoenix experiment.
+    Uses majority_vote_correctness() directly so that all_explanations and
+    stable fields are available for printing in the sanity report.
     """
-    from eval.phoenix.judges.correctness_judge import match_expected_response  # noqa: PLC0415
+    from eval.phoenix.judges.correctness_judge import majority_vote_correctness  # noqa: PLC0415
 
-    judge_fn = match_expected_response()
-    # judge_fn is a @create_evaluator-wrapped function.
-    # When called outside Phoenix, we pass plain strings — the wrapper converts
-    # them via isinstance checks (str → str, dict → dict.get(...)).
-    return judge_fn(
-        input={"query": question},
-        output={"result": response},
-        reference={"responses": reference},
-    )
+    return majority_vote_correctness(question, response, reference)
 
 
 def _run_scope(question: str, response: str) -> dict:
@@ -313,26 +323,38 @@ def main() -> None:
         print(f"  {num_checks!r}")
         print()
 
-        # --- Correctness judge ---
-        print("Running correctness judge (LLM) …")
+        # --- Correctness judge (majority vote — 3 runs) ---
+        print("Running correctness judge (LLM, 3-run majority vote) …")
         c = _run_correctness(case["question"], case["response"], reference)
         exp_c = case["expect_correctness"]
 
-        # judge_error is always a FAIL
+        # judge_error is always a FAIL; unstable counts as FAIL when expect is definite
         if c["label"] == "judge_error":
             pass_c = False
             status_c = "FAIL ❌  (judge_error — LLM returned malformed JSON after 3 attempts)"
+        elif c["label"] == "unstable":
+            # unstable fails unless we expected instability (we never do in sanity cases)
+            pass_c = False
+            status_c = "FAIL ❌  (unstable — 3 votes split)"
         else:
             pass_c = c["label"] == exp_c
             status_c = "PASS ✅" if pass_c else "FAIL ❌"
 
+        stable_tag = "" if c.get("stable", True) else "  [UNSTABLE]"
         all_pass = all_pass and pass_c
-        print(f"  label       : {c['label']}")
+        print(f"  label       : {c['label']}{stable_tag}")
         print(f"  score       : {c['score']}")
         print(f"  expected    : {exp_c}")
         print(f"  result      : {status_c}")
-        expl = c.get("explanation") or ""
-        print(f"  explanation : {textwrap.shorten(str(expl), width=200, placeholder='…')}")
+        # Print all 3 explanations for unstable or failed results
+        all_expls = c.get("all_explanations") or []
+        if not pass_c and all_expls:
+            print(f"  all 3 votes :")
+            for i, expl in enumerate(all_expls, 1):
+                print(f"    [{i}] {textwrap.shorten(str(expl), width=200, placeholder='…')}")
+        else:
+            expl = c.get("explanation") or ""
+            print(f"  explanation : {textwrap.shorten(str(expl), width=200, placeholder='…')}")
         print()
 
         # --- Scope judge (only for cases that declare expect_scope) ---

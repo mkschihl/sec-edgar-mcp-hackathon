@@ -167,7 +167,11 @@ BENCHMARK_QUESTIONS = [
         "pass_criteria": (
             "Response presents quarterly net income for Microsoft; "
             "quarter labels are present (Q1/Q2/Q3 or fiscal quarter names); "
-            "at least 4 quarters returned; values in USD."
+            "at least 4 distinct quarters returned, each with a unique period end date; "
+            "values in USD. "
+            "Microsoft uses a fiscal year that starts in July — 'FY2027 Q1' label "
+            "with period end 2026-09-30 is correct and historical, not a forecast. "
+            "Mark correct if each row has a distinct period end date and a quarter label."
         ),
         "numeric_checks": None,
     },
@@ -278,12 +282,17 @@ BENCHMARK_QUESTIONS = [
             "Agent first searches for 'Pfizer' and identifies PFE; "
             "then retrieves at least 3 annual revenue figures for Pfizer (concept: Revenues); "
             "values in USD with fiscal years; "
+            "FY2025 (ended 2025-12-31) revenue is approximately $62.6B; "
             "FY2024 (ended 2024-12-31) revenue is approximately $63.6B; "
-            "FY2023 (ended 2023-12-31) revenue is approximately $62.6B; "
-            "FY2023 may show a recast note — the ORIGINAL filing reported $58.5B, "
+            "FY2023 (ended 2023-12-31) revenue is approximately $62.6B OR $59.6B — "
+            "FY2023 may show a recast note; the ORIGINAL filing reported $58.5B, "
             "but the recast value is $59.6B; either value is acceptable provided it is "
             "labelled as FY2023. "
-            "FY2022 (ended 2022-12-31) revenue is approximately $100.3B. "
+            "FY2022 (ended 2022-12-31) revenue is approximately $100.3B (original) or "
+            "$101.2B (recast); either value is acceptable provided it is labelled as FY2022. "
+            "The question asks for the LAST 4 annual figures, so the window may start from "
+            "FY2022 or FY2021 depending on the most recent data available; FY2025 is "
+            "historical (ended 2025-12-31 which is before today). "
             "Values should not be from the RevenueFromContractWithCustomer... concept, "
             "which reports different (incorrect) figures."
         ),

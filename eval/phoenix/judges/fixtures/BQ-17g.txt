@@ -1,0 +1,18 @@
+**Company found**
+
+| Company | Ticker | CIK | SIC | SIC Description | State of Incorporation |
+|---------|--------|------|-----|-----------------|------------------------|
+| PFIZER INC | PFE | 0000078003 | 2834 | Pharmaceutical Preparations | Delaware |
+
+**Last 4 annual revenue figures (concept: “Revenues”)**
+
+| Fiscal Year | Period End | Revenue (USD) | Form | Accession Number |
+|-------------|------------|--------------|------|------------------|
+| 2022 | 2022‑12‑31 | $101.2 billion* | 10‑K | 0000078003‑25‑000054 |
+| 2023 | 2023‑12‑31 | $59.6 billion* | 10‑K | 0000078003‑26‑000026 |
+| 2024 | 2024‑12‑31 | $63.6 billion | 10‑K | 0000078003‑26‑000026 |
+| 2025 | 2025‑12‑31 | $62.6 billion | 10‑K | 0000078003‑26‑000026 |
+
+\*These values were **recast** in a later filing; the original amounts reported were $100.33 billion (2022) and $58.50 billion (2023). The recast values are shown above, per the SEC filing.  
+
+**Sources** – The revenue figures come from Pfizer’s XBRL “Revenues” concept in its recent Form 10‑K filings (accession numbers shown). The filing index URLs are provided in each row if you need to view the full documents.

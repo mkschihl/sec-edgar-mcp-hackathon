@@ -7,6 +7,11 @@ the full judge explanation for every failure plus a routing column (informationa
 
 No Phoenix experiment needed — scores run locally against the LLM judge.
 
+Correctness is judged with **majority vote**: the classifier runs 3 times and
+the majority label wins.  When the 3 votes disagree the label is "unstable"
+(score 0.5).  All 3 raw explanations are printed for unstable or incorrect
+results.
+
 Usage (from workspace root, with venv active and .env sourced):
     source .env && export WATSONX_URL WATSONX_API_KEY WATSONX_PROJECT_ID JUDGE_MODEL
     venv/bin/python eval/phoenix/score_wxo_results.py
@@ -64,35 +69,14 @@ def _build_reference(bq: dict) -> str:
 # ---------------------------------------------------------------------------
 
 def _run_correctness_judge(question: str, response: str, reference: str) -> dict:
-    from judges.correctness_judge import _TEMPLATE, _DEFAULT_JUDGE
-    from datetime import date as _date
-    from phoenix.evals import LLM, create_classifier
+    """Run the correctness judge with majority vote (3 runs).
 
-    judge_model = os.getenv("JUDGE_MODEL", _DEFAULT_JUDGE)
-    llm = LLM(provider="litellm", model=f"watsonx/{judge_model}", temperature=0.0)
-    prompt = _TEMPLATE.replace("{today}", _date.today().isoformat())
-    classifier = create_classifier(
-        name="correctness",
-        prompt_template=prompt,
-        llm=llm,
-        choices={"correct": 1, "incorrect": 0},
-        direction="maximize",
-    )
-    eval_input = {"input": question, "output": response, "reference": reference}
-    input_mapping = {
-        "input":     lambda ex: ex.get("input", ""),
-        "output":    lambda ex: ex.get("output", ""),
-        "reference": lambda ex: ex.get("reference", ""),
-    }
-    items = classifier.evaluate(eval_input, input_mapping=input_mapping)
-    if not items:
-        return {"label": "incorrect", "score": 0, "explanation": ""}
-    item = items[0]
-    return {
-        "label": getattr(item, "label", "incorrect"),
-        "score": getattr(item, "score", 0),
-        "explanation": getattr(item, "explanation", ""),
-    }
+    Returns a dict with label/score/explanation/all_explanations/stable keys.
+    label is "correct" | "incorrect" | "unstable" | "judge_error".
+    """
+    from judges.correctness_judge import majority_vote_correctness
+
+    return majority_vote_correctness(question, response, reference)
 
 
 def _run_scope_judge(question: str, response: str) -> dict:
@@ -194,7 +178,7 @@ def main() -> None:
         missing_tools  = [t for t in expected_tools if t not in tools_fired and t not in optional_tools]
         routing = "routing_ok" if not missing_tools else f"routing_diff (missing: {missing_tools})"
 
-        corr_result  = _run_correctness_judge(question, response, reference) if not args.no_llm else {"label": "skipped", "score": None, "explanation": ""}
+        corr_result  = _run_correctness_judge(question, response, reference) if not args.no_llm else {"label": "skipped", "score": None, "explanation": "", "all_explanations": [], "stable": True}
         scope_result = _run_scope_judge(question, response) if not args.no_llm else {"label": "skipped", "score": None, "explanation": ""}
         num_result   = _run_numeric_judge(response, checks)
 
@@ -207,19 +191,43 @@ def main() -> None:
             "num": num_result,
         })
 
-        c_icon = "✅" if corr_result["score"] == 1 else ("⬜" if corr_result["label"] == "skipped" else "❌")
+        # Correctness icon: ⚠ for unstable, ✅ correct, ❌ incorrect/error, ⬜ skipped
+        if corr_result["label"] == "correct":
+            c_icon = "✅"
+        elif corr_result["label"] in ("skipped",):
+            c_icon = "⬜"
+        elif corr_result["label"] == "unstable":
+            c_icon = "⚠"
+        else:
+            c_icon = "❌"
+
         s_icon = "✅" if scope_result["score"] == 1 else ("⬜" if scope_result["label"] == "skipped" else "❌")
         n_icon = "✅" if num_result["score"] == 1.0 else ("—" if num_result["score"] is None else "❌")
         r_icon = "🗺" if routing == "routing_ok" else "⚠"
+
+        stable_tag = "" if corr_result.get("stable", True) else "  [UNSTABLE — 3 votes split]"
+
         print(f"\n{bq_id}: {question[:70]}")
         print(f"  Routing     : {r_icon} {routing}  [informational]")
-        print(f"  Correctness : {c_icon} {corr_result['label']}")
+        print(f"  Correctness : {c_icon} {corr_result['label']}{stable_tag}")
         print(f"  Scope       : {s_icon} {scope_result['label']}")
         print(f"  Numeric     : {n_icon} {num_result['label']}")
-        # Full explanations — no truncation
-        if corr_result["label"] not in ("correct", "skipped") and corr_result.get("explanation"):
+
+        # Print all 3 explanations for unstable or incorrect correctness results
+        needs_all_expls = corr_result["label"] in ("unstable", "incorrect", "judge_error")
+        if needs_all_expls and not args.no_llm:
+            all_expls = corr_result.get("all_explanations") or []
+            if all_expls:
+                print(f"  → corr explanations (all 3 votes):")
+                for i, expl in enumerate(all_expls, 1):
+                    print(f"    [{i}] {expl}")
+            elif corr_result.get("explanation"):
+                print(f"  → corr fail :")
+                print(f"    {corr_result['explanation']}")
+        elif corr_result["label"] not in ("correct", "skipped") and corr_result.get("explanation"):
             print(f"  → corr fail :")
             print(f"    {corr_result['explanation']}")
+
         if scope_result["label"] not in ("within_scope", "skipped") and scope_result.get("explanation"):
             print(f"  → scope fail:")
             print(f"    {scope_result['explanation']}")
@@ -230,11 +238,13 @@ def main() -> None:
     # Summary
     print("\n" + "=" * 80)
     if not args.no_llm:
-        corr_pass  = sum(1 for r in rows if r["corr"]["score"] == 1)
-        scope_pass = sum(1 for r in rows if r["scope"]["score"] == 1)
-        num_scored = [r for r in rows if r["num"]["score"] is not None]
-        num_pass   = sum(1 for r in num_scored if r["num"]["score"] == 1.0)
-        print(f"SUMMARY  correctness={corr_pass}/{len(rows)}  scope={scope_pass}/{len(rows)}  "
+        corr_pass     = sum(1 for r in rows if r["corr"]["score"] == 1)
+        corr_unstable = sum(1 for r in rows if r["corr"]["label"] == "unstable")
+        scope_pass    = sum(1 for r in rows if r["scope"]["score"] == 1)
+        num_scored    = [r for r in rows if r["num"]["score"] is not None]
+        num_pass      = sum(1 for r in num_scored if r["num"]["score"] == 1.0)
+        unstable_note = f"  ({corr_unstable} unstable)" if corr_unstable else ""
+        print(f"SUMMARY  correctness={corr_pass}/{len(rows)}{unstable_note}  scope={scope_pass}/{len(rows)}  "
               f"numeric={num_pass}/{len(num_scored)} (of {len(num_scored)} with checks)")
     else:
         num_scored = [r for r in rows if r["num"]["score"] is not None]

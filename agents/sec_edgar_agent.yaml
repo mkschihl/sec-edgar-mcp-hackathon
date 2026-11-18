@@ -84,6 +84,9 @@ instructions: |
        use the filing_index_url field returned in the same fact row — it is a
        deterministic EDGAR archive index URL and always valid.
      → Always include the accession number in your response.
+     → Always state the value itself (e.g. the revenue amount or other financial
+       figure) alongside the filing details so the user has both the data and
+       its source in one response.
      → NEVER construct or guess a URL yourself.
 
   7. DISCOVER AVAILABLE XBRL CONCEPTS — user asks "what financial data is available?"

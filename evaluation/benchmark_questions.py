@@ -258,11 +258,16 @@ BENCHMARK_QUESTIONS = [
         "optional_tools": ["sec_edgar_get_filing_metadata"],
         "pass_criteria": (
             "Response identifies the most recent annual revenue figure; "
+            "states the revenue amount (~$478.8B for FY ended 2026-09-26); "
             "includes the accession number of the source 10-K; "
             "includes an edgar_viewer_url or direct link pointing to sec.gov; "
             "the link must be a sec.gov URL returned by a tool."
         ),
-        "numeric_checks": None,
+        "numeric_checks": {
+            "must_include": [478.834e9],
+            "rel_tol": 0.005,
+            "max_value": None,
+        },
     },
     {
         "id": "BQ-16",
@@ -274,9 +279,14 @@ BENCHMARK_QUESTIONS = [
         "pass_criteria": (
             "Response identifies the form type (10-K) and filing date for the "
             "source filing of Microsoft's most recent annual net income; "
+            "states the net income amount (~$133.7B for FY ended 2026-06-30); "
             "includes the accession number."
         ),
-        "numeric_checks": None,
+        "numeric_checks": {
+            "must_include": [133.749e9],
+            "rel_tol": 0.005,
+            "max_value": None,
+        },
     },
     # ------------------------------------------------------------------
     # Category 9 — Multi-step: unknown company → facts

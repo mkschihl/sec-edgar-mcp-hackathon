@@ -18,7 +18,7 @@ from __future__ import annotations
 
 import asyncio
 import re
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from typing import Annotated
 from urllib.parse import quote as _url_quote
 
@@ -1262,12 +1262,18 @@ async def sec_edgar_get_quarterly_facts(
     concept: Annotated[str, "XBRL concept tag, e.g. 'Revenues', 'NetIncomeLoss'."],
     limit: Annotated[int, "Number of quarterly observations to return, most recent first. Default 8, max 40."] = 8,
 ) -> dict:
-    """Return quarterly (Q1/Q2/Q3) XBRL observations for a single concept and company.
+    """Return quarterly (Q1/Q2/Q3/Q4) XBRL observations for a single concept and company.
 
-    IMPORTANT: This tool returns Q1, Q2, and Q3 only.  Q4 figures are NOT available
-    here because companies do not file a 10-Q for Q4; Q4 data appears only in the
-    annual 10-K or an earnings 8-K.  Use sec_edgar_get_company_fact for full-year (FY)
-    annual figures.
+    Q1, Q2, and Q3 observations come directly from 10-Q filings.  Q4 is DERIVED for
+    flow items (USD monetary concepts with a start date) by computing:
+        Q4 = annual FY value  −  nine-month YTD value
+    where both values share the same period_start.  Derived rows carry derived=True
+    and a derivation note referencing both accession numbers.
+
+    Q4 derivation is skipped (and a note is added) for:
+      • per-share units (e.g. "USD/shares") — not additive across quarters
+      • share-count units (e.g. "shares")   — not additive
+      • instant (balance-sheet) facts       — no start date; not a flow concept
 
     Filters to 10-Q observations with a single-quarter duration of 80–100 days.
     This eliminates year-to-date (YTD) cumulative values (e.g. a nine-month total
@@ -1280,11 +1286,14 @@ async def sec_edgar_get_quarterly_facts(
     field showing which concept name was actually used.
 
     Each observation key reference:
-      fiscal_quarter  — the SEC fp value (Q1/Q2/Q3)
+      fiscal_quarter  — the SEC fp value (Q1/Q2/Q3) or "Q4" for derived rows
       fiscal_year     — derived from the period end date (not the filing year)
-      period_label    — human-readable, e.g. "Q3 FY2024"
+      period_label    — human-readable, e.g. "Q3 FY2024" or "Q4 FY2024"
       period_start / period_end — ISO dates bounding the quarter
       value           — the numeric fact value
+      derived         — True if the row was derived (annual minus nine-month YTD);
+                        False for real 10-Q observations
+      derivation      — present only on derived rows; describes the computation
       accession_number, filing_fiscal_year — filing provenance (do NOT use
         filing_fiscal_year as the period label)
 
@@ -1464,15 +1473,8 @@ async def sec_edgar_get_quarterly_facts(
                 }
 
         note_parts = []
-        if len(quarterly_obs) < limit:
-            note_parts.append(
-                f"Only {len(quarterly_obs)} single-quarter observations available "
-                f"(requested {limit}). Q4 figures are not filed in 10-Qs — they appear "
-                "in the annual 10-K or earnings 8-K, which are not included here."
-            )
         if note:
             note_parts.append(note)
-        note = " ".join(note_parts)
 
         # Deduplicate: keep only the latest-filed observation per (start, end) pair.
         # This correctly collapses restatements of the same period window, even when
@@ -1486,8 +1488,104 @@ async def sec_edgar_get_quarterly_facts(
         # Re-sort after dedup
         quarterly_obs.sort(key=lambda o: o.get("end", ""), reverse=True)
 
-        # Slice and annotate
-        sliced = quarterly_obs[:limit]
+        # ----------------------------------------------------------------
+        # Q4 derivation — only for USD flow items (not per-share, not
+        # share-count, not instant/balance-sheet facts).
+        # For each fiscal year that has BOTH an annual FY record (350–380
+        # days, 10-K) AND a nine-month YTD record (260–285 days, same
+        # period_start), compute Q4 = annual − nine-month YTD.
+        # ----------------------------------------------------------------
+        derived_q4_obs: list[dict] = []
+        can_derive_q4 = (
+            best_unit == "USD"
+            and any(o.get("start") for o in all_obs)  # flow items have start
+        )
+        if not can_derive_q4:
+            if best_unit in ("shares",) or "/" in best_unit:
+                note_parts.append(
+                    f"Q4 derivation skipped: unit '{best_unit}' is not additive "
+                    "(per-share or share-count values cannot be derived as annual minus nine-month YTD)."
+                )
+            else:
+                # Instant (balance-sheet) facts have no start date
+                note_parts.append(
+                    "Q4 derivation skipped: concept appears to be an instant "
+                    "(balance-sheet) fact with no period start date."
+                )
+        else:
+            # Find annual FY records from 10-K filings (350–380 days)
+            annual_fy: list[dict] = []
+            for o in all_obs:
+                if o.get("fp") != "FY":
+                    continue
+                if not o.get("form", "").startswith("10-K"):
+                    continue
+                dur = _duration_days(o)
+                if dur is not None and 350 <= dur <= 380:
+                    annual_fy.append(o)
+
+            # Deduplicate annual by period_start: keep latest-filed per start
+            ann_seen: dict[str, dict] = {}
+            for o in annual_fy:
+                start = o.get("start", "")
+                if not start:
+                    continue
+                if start not in ann_seen or o.get("filed", "") > ann_seen[start].get("filed", ""):
+                    ann_seen[start] = o
+
+            # Find nine-month YTD records (fp=Q3, 260–285 days): same period_start key
+            ytd_seen: dict[str, dict] = {}
+            for o in all_obs:
+                if o.get("fp") != "Q3":
+                    continue
+                dur = _duration_days(o)
+                if dur is None or not (260 <= dur <= 285):
+                    continue
+                start = o.get("start", "")
+                if not start:
+                    continue
+                if start not in ytd_seen or o.get("filed", "") > ytd_seen[start].get("filed", ""):
+                    ytd_seen[start] = o
+
+            # Match annual ↔ nine-month YTD by period_start → derive Q4
+            for start, ann in ann_seen.items():
+                ytd = ytd_seen.get(start)
+                if ytd is None:
+                    continue
+                ann_val = ann.get("val")
+                ytd_val = ytd.get("val")
+                if ann_val is None or ytd_val is None:
+                    continue
+                q4_val = ann_val - ytd_val
+                # Q4 period: start = day after nine-month end, end = annual end
+                try:
+                    ytd_end = datetime.strptime(ytd.get("end", ""), "%Y-%m-%d").date()
+                    q4_start = str(ytd_end + timedelta(days=1))
+                except (ValueError, TypeError):
+                    continue
+                q4_end = ann.get("end", "")
+                derived_q4_obs.append({
+                    "start": q4_start,
+                    "end": q4_end,
+                    "val": q4_val,
+                    "fp": "Q4",
+                    "form": ann.get("form", ""),
+                    "accn": ann.get("accn", ""),
+                    "fy": ann.get("fy"),
+                    "filed": ann.get("filed", ""),
+                    "_derived": True,
+                    "_derivation": (
+                        f"annual ({ann.get('accn','')}) minus "
+                        f"nine-month YTD ({ytd.get('accn','')})"
+                    ),
+                })
+
+        # Merge Q1–Q3 real rows with derived Q4 rows, re-sort, then limit
+        combined = quarterly_obs + derived_q4_obs
+        combined.sort(key=lambda o: o.get("end", ""), reverse=True)
+        sliced = combined[:limit]
+
+        # Build final observations list
         observations = []
         for o in sliced:
             fp = o.get("fp", "")
@@ -1497,7 +1595,8 @@ async def sec_edgar_get_quarterly_facts(
             except Exception:
                 fiscal_year = o.get("fy")
             period_label = f"{fp} FY{fiscal_year}" if fp and fiscal_year else fp
-            observations.append({
+            is_derived = bool(o.get("_derived"))
+            obs_entry: dict = {
                 "period_label": period_label,
                 "fiscal_quarter": fp,
                 "fiscal_year": fiscal_year,
@@ -1507,7 +1606,19 @@ async def sec_edgar_get_quarterly_facts(
                 "form": o.get("form", ""),
                 "accession_number": o.get("accn", ""),
                 "filing_fiscal_year": o.get("fy"),
-            })
+                "derived": is_derived,
+            }
+            if is_derived:
+                obs_entry["derivation"] = o.get("_derivation", "")
+            observations.append(obs_entry)
+
+        if len(observations) < limit and len(quarterly_obs) < limit:
+            note_parts.append(
+                f"Only {len(observations)} quarterly observations available "
+                f"(requested {limit})."
+            )
+
+        note = " ".join(note_parts)
 
         return {
             "company": company_name,

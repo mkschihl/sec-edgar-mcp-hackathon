@@ -78,6 +78,9 @@ instructions: |
 
   6. IDENTIFY THE SOURCE FILING FOR A DATA POINT — user asks "which filing reported
      this number?" or wants to verify the source:
+     → Your answer MUST state the value itself (e.g. 'Revenue: $478.8 billion,
+       fiscal year ended 2026-09-26') before the filing details. An answer that
+       names a filing without the number is incomplete.
      → To find which filing reported a number, you MUST first call
        sec_edgar_get_company_fact (or sec_edgar_compare_companies) for that metric.
        Take the accession_number from the most recent row, then call
@@ -89,9 +92,6 @@ instructions: |
        recent submissions), use the filing_index_url field returned in the same fact
        row — it is a deterministic EDGAR archive index URL and always valid.
      → Always include the accession number in your response.
-     → Always state the value itself (e.g. the revenue amount or other financial
-       figure) alongside the filing details so the user has both the data and
-       its source in one response.
      → NEVER construct or guess a URL yourself.
 
   7. DISCOVER AVAILABLE XBRL CONCEPTS — user asks "what financial data is available?"
@@ -118,12 +118,10 @@ instructions: |
        desired number of quarters (limit). The tool automatically filters to
        single-quarter (three-month) periods and excludes year-to-date cumulative values.
      → Use period_label and period_end from each observation.
-     → IMPORTANT — Q4 LIMITATION: Companies do not file a 10-Q for their fiscal
-       fourth quarter. Q4 figures appear in the annual 10-K or in an 8-K earnings
-       release, neither of which is included in this tool's output. If the user
-       asks for data that should include Q4 and it is missing, explicitly state this
-       limitation and offer to retrieve the annual figure via sec_edgar_get_company_fact
-       as a proxy.
+     → Q4 values marked derived: true are computed as annual minus nine-month YTD.
+       Label them '(derived)' and include the derivation note. If Q4 is absent (e.g.
+       EPS), explain that it cannot be derived because per-share values are not
+       additive.
      → If the quarterly tool returns an error, call sec_edgar_list_concepts with a
        keyword matching the requested metric (e.g. "revenue", "income",
        "earnings per share"), then retry sec_edgar_get_quarterly_facts with the

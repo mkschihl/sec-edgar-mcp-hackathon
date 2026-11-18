@@ -358,6 +358,109 @@ async def test_aapl_quarterly_revenues_candidate():
     )
 
 
+async def test_msft_net_income_q4_derived():
+    print("\n[13] MSFT NetIncomeLoss via get_quarterly_facts(limit=6) — Q4 derived row")
+    result = await sec_edgar_get_quarterly_facts("MSFT", "us-gaap", "NetIncomeLoss", limit=6)
+    if "error" in result:
+        check("no error", False, result["error"])
+        return
+
+    obs = result.get("observations", [])
+    if not check("returned observations", len(obs) > 0, f"got {len(obs)}"):
+        return
+
+    # Must include a Q4 row ending 2026-06-30 with derived=True
+    q4_row = next(
+        (o for o in obs if o.get("fiscal_quarter") == "Q4" and o.get("period_end") == "2026-06-30"),
+        None,
+    )
+    check(
+        "Q4 row ending 2026-06-30 present",
+        q4_row is not None,
+        f"available rows: {[(o.get('fiscal_quarter'), o.get('period_end')) for o in obs]}",
+    )
+    if q4_row:
+        check("Q4 row is derived", q4_row.get("derived") is True,
+              f"got derived={q4_row.get('derived')!r}")
+        check("Q4 row has derivation note", bool(q4_row.get("derivation")),
+              "no derivation key")
+        # Q4 value should be annual(133749000000) - nine-month YTD(97983000000) = 35766000000
+        check(
+            "Q4 value == 35766000000",
+            q4_row.get("value") == 35766000000,
+            f"got {q4_row.get('value')}",
+        )
+
+    # Six distinct period_end values across the 6 observations
+    period_ends = [o.get("period_end") for o in obs]
+    check(
+        "six distinct period_end values",
+        len(period_ends) == len(set(period_ends)),
+        f"duplicates in {period_ends}",
+    )
+    check("exactly 6 observations", len(obs) == 6, f"got {len(obs)}")
+
+    # Non-derived rows must have derived=False
+    for o in obs:
+        if not o.get("derived"):
+            check(
+                f"non-derived row {o.get('period_label')} has derived==False",
+                o.get("derived") is False,
+                f"got derived={o.get('derived')!r}",
+            )
+
+
+async def test_aapl_revenues_q4_sum():
+    print("\n[14] AAPL Revenues via get_quarterly_facts(limit=8) — Q4 derived; FY2025 Q1+Q2+Q3+Q4 == annual")
+    result = await sec_edgar_get_quarterly_facts("AAPL", "us-gaap", "Revenues", limit=8)
+    if "error" in result:
+        check("no error", False, result["error"])
+        return
+
+    obs = result.get("observations", [])
+    if not check("returned observations", len(obs) > 0, f"got {len(obs)}"):
+        return
+
+    # Must include at least one Q4 derived row
+    q4_rows = [o for o in obs if o.get("fiscal_quarter") == "Q4" and o.get("derived") is True]
+    check("at least one Q4 derived row present", len(q4_rows) >= 1,
+          f"q4_rows={q4_rows}")
+
+    # For FY2025, verify Q1+Q2+Q3+Q4 == annual (416161000000) within $1M
+    fy2025_rows = [o for o in obs if o.get("fiscal_year") == 2025]
+    if check("FY2025 rows present", len(fy2025_rows) >= 4,
+             f"got {len(fy2025_rows)} FY2025 rows"):
+        total_fy2025 = sum(o.get("value", 0) for o in fy2025_rows)
+        annual_fy2025 = 416161000000
+        check(
+            f"FY2025 Q1+Q2+Q3+Q4 == annual within $1M (got {total_fy2025:,})",
+            abs(total_fy2025 - annual_fy2025) <= 1_000_000,
+            f"diff={abs(total_fy2025 - annual_fy2025):,}",
+        )
+
+
+async def test_aapl_eps_no_derived():
+    print("\n[15] AAPL EarningsPerShareBasic via get_quarterly_facts — no derived Q4 rows")
+    result = await sec_edgar_get_quarterly_facts("AAPL", "us-gaap", "EarningsPerShareBasic", limit=6)
+    if "error" in result:
+        check("no error", False, result["error"])
+        return
+
+    obs = result.get("observations", [])
+    if not check("returned observations", len(obs) > 0, f"got {len(obs)}"):
+        return
+
+    derived_rows = [o for o in obs if o.get("derived") is True]
+    check("no derived Q4 rows for EPS", len(derived_rows) == 0,
+          f"unexpected derived rows: {[(o.get('period_label'), o.get('value')) for o in derived_rows]}")
+
+    # Note must explain why Q4 was not derived
+    note = result.get("note", "")
+    check("note explains Q4 not derived (mentions unit or per-share)",
+          "per-share" in note.lower() or "not additive" in note.lower() or "usd/shares" in note.lower(),
+          f"note='{note}'")
+
+
 async def test_pfe_compare_companies_revenue():
     print("\n[12] compare_companies(['PFE'], 'us-gaap', 'Revenues') — period_end 2025-12-31")
     result = await sec_edgar_compare_companies(["PFE"], "us-gaap", "Revenues")
@@ -430,6 +533,9 @@ async def main():
     await test_pfe_annual_revenue_candidate()
     await test_aapl_quarterly_revenues_candidate()
     await test_pfe_compare_companies_revenue()
+    await test_msft_net_income_q4_derived()
+    await test_aapl_revenues_q4_sum()
+    await test_aapl_eps_no_derived()
 
     print(f"\n{'=' * 50}")
     if failures == 0:

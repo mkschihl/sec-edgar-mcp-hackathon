@@ -113,7 +113,9 @@ BENCHMARK_QUESTIONS = [
             "values are labelled with fiscal years; "
             "FY2024 (ended 2024-09-28) net income is $93.7B and "
             "FY2023 (ended 2023-09-30) net income is $97.0B. "
-            "Additional fiscal years beyond FY2023/2024 are acceptable. "
+            "Additional fiscal years beyond FY2023/2024 are acceptable and common: "
+            "FY2025 ended 2025-09-27 (~$112B) and FY2026 ended 2026-09-26 (~$132B) "
+            "are both historical (period ends before 2026-11-18) and correct if present. "
             "No two distinct fiscal years may share the same reported value."
         ),
         "numeric_checks": {
@@ -171,9 +173,16 @@ BENCHMARK_QUESTIONS = [
             "values in USD. "
             "Microsoft uses a fiscal year that starts in July — 'FY2027 Q1' label "
             "with period end 2026-09-30 is correct and historical, not a forecast. "
-            "Mark correct if each row has a distinct period end date and a quarter label."
+            "Values must be single-quarter (not year-to-date) amounts. "
+            "Most recent quarter (Q1 FY2027, ended 2026-09-30) net income ≈ $36.6B; "
+            "Q3 FY2026 (ended 2026-03-31) ≈ $31.8B; "
+            "Q2 FY2026 (ended 2025-12-31) ≈ $38.5B."
         ),
-        "numeric_checks": None,
+        "numeric_checks": {
+            "must_include": [36.629e9, 31.778e9, 38.458e9],
+            "rel_tol": 0.005,
+            "max_value": None,
+        },
     },
     # ------------------------------------------------------------------
     # Category 6 — Concept discovery (sec_edgar_list_concepts)
@@ -284,10 +293,10 @@ BENCHMARK_QUESTIONS = [
             "values in USD with fiscal years; "
             "FY2025 (ended 2025-12-31) revenue is approximately $62.6B; "
             "FY2024 (ended 2024-12-31) revenue is approximately $63.6B; "
-            "FY2023 (ended 2023-12-31) revenue is approximately $62.6B OR $59.6B — "
-            "FY2023 may show a recast note; the ORIGINAL filing reported $58.5B, "
-            "but the recast value is $59.6B; either value is acceptable provided it is "
-            "labelled as FY2023. "
+            "FY2023 (ended 2023-12-31) revenue is approximately $59.6B (recast) or "
+            "$58.5B (as originally filed); either value is acceptable provided it is "
+            "labelled as FY2023. Do NOT accept $62.6B for FY2023 — that is the FY2025 "
+            "value; reporting it for FY2023 is a year-mislabeling error. "
             "FY2022 (ended 2022-12-31) revenue is approximately $100.3B (original) or "
             "$101.2B (recast); either value is acceptable provided it is labelled as FY2022. "
             "The question asks for the LAST 4 annual figures, so the window may start from "

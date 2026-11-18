@@ -178,32 +178,33 @@ CASES = [
     # --- BQ-07 fixture (scope fix validation) ---
     {
         "id": "BQ-07f",
-        "label": "BQ-07 ACTUAL WXO response — all period ends ≤ today, expect within_scope",
+        "label": "BQ-07 ACTUAL WXO response — FY2022–FY2026, all period ends ≤ today, expect correct + within_scope",
         "bq_id": "BQ-07",
         "question": BQ07["question"],
         "response": _BQ07_ACTUAL_RESPONSE,
-        # Content: returns FY2022-FY2026; FY2025 ($112B) and FY2026 ($132B) ARE new
-        # historical data, and the reference says "additional fiscal years beyond
-        # FY2023/2024 are acceptable." The judge correctly marks this correct.
-        # Primary goal of this case: scope must be within_scope (all period ends ≤ today).
+        # Returns FY2022-FY2026. Period ends: 2022-09-24, 2023-09-30, 2024-09-28,
+        # 2025-09-27, 2026-09-26 — all before today (2026-11-18).
+        # Reference now explicitly names FY2025/FY2026 period ends as historical.
+        # $93.7B and $97.0B present → numeric 1.0.
         "expect_correctness": "correct",
         "expect_scope": "within_scope",
-        "expect_numeric": ("==", 1.0),  # $93.7B and $97.0B both present → 1.0
+        "expect_numeric": ("==", 1.0),
     },
-    # --- BQ-10 fixture (fiscal-year label scope fix) ---
+    # --- BQ-10 fixture (fiscal-year label scope fix + numeric) ---
     {
         "id": "BQ-10f",
-        "label": "BQ-10 ACTUAL WXO response — FY2027 Q1 label but period end 2026-09-30 ≤ today, expect within_scope",
+        "label": "BQ-10 ACTUAL WXO response — FY2027 Q1 label but period end 2026-09-30 ≤ today, expect within_scope + numeric 1.0",
         "bq_id": "BQ-10",
         "question": BQ10["question"],
         "response": _BQ10_ACTUAL_RESPONSE,
         # Content: 'FY2027 Q1' label is a Microsoft fiscal-year convention;
         # period end 2026-09-30 ≤ today → historical, not a forecast.
-        # The reference only requires quarter labels + 4+ quarters in USD; the agent
-        # returns 6 quarters → judge correctly marks correct.
+        # The reference requires 4+ quarters in USD; the agent returns 6 quarters.
+        # numeric_checks now has must_include=[36.629B, 31.778B, 38.458B] rel_tol=0.5%.
+        # Fixture contains $36.63B, $31.78B, $38.46B → all within 0.5% → score 1.0.
         "expect_correctness": "correct",
         "expect_scope": "within_scope",
-        "expect_numeric": ("any", None),
+        "expect_numeric": ("==", 1.0),
     },
     # --- BQ-17 cases ---
     {
@@ -233,19 +234,21 @@ CASES = [
     },
     {
         "id": "BQ-17e",
-        "label": "BQ-17 WRONG — shifted values (62.579→60.0, 63.627→61.5)",
+        "label": "BQ-17 WRONG — clearly shifted values (63.627→58.0, 62.579→55.0, 59.553→52.0)",
         "bq_id": "BQ-17",
         "question": BQ17["question"],
         "response": (
             "PFIZER INC (PFE, CIK 0000078003) annual revenue (concept: Revenues):\n"
-            "- FY2024 (ended 2024-12-31): $61.5B\n"
-            "- FY2023 (ended 2023-12-31): $60.0B\n"
+            "- FY2025 (ended 2025-12-31): $55.0B\n"
+            "- FY2024 (ended 2024-12-31): $58.0B\n"
+            "- FY2023 (ended 2023-12-31): $52.0B\n"
             "- FY2022 (ended 2022-12-31): $100.3B\n"
-            "- FY2021 (ended 2021-12-31): $81.3B\n"
         ),
         "expect_correctness": "incorrect",
-        # $62.579B ± 0.5% = [62.26B, 62.89B]; $60.0B outside → miss
-        # $63.627B ± 0.5% = [63.31B, 63.94B]; $61.5B outside → miss
+        # $62.579B ± 0.5%: closest $55.0B, diff 12% → miss
+        # $63.627B ± 0.5%: closest $58.0B, diff 9% → miss
+        # $59.553B ± 0.5%: closest $55.0B, diff 8% → miss
+        # All 3 must_include values clearly absent → numeric 0.0
         "expect_numeric": ("<", 1.0),
     },
 ]

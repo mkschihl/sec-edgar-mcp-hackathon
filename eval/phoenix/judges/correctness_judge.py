@@ -15,6 +15,7 @@ from __future__ import annotations
 import os
 import sys
 import time
+from datetime import date as _date
 
 from dotenv import load_dotenv
 
@@ -35,6 +36,10 @@ if _judge_model == _agent_model:
     )
 
 _TEMPLATE = """\
+Today's date is {today}. SEC filings dated up to today are real historical data, \
+not forecasts. Do not mark data incorrect or out of scope because its dates are \
+later than your training data.
+
 You are a financial-data accuracy judge for an SEC EDGAR research assistant.
 
 ## Task
@@ -101,9 +106,11 @@ def match_expected_response():
         # WATSONX_URL / WATSONX_API_KEY / WATSONX_PROJECT_ID are read from env by LiteLLM
         temperature=0.0,
     )
+    # Fill {today} at classifier-build time (once per experiment run)
+    prompt = _TEMPLATE.replace("{today}", _date.today().isoformat())
     classifier = create_classifier(
         name="correctness",
-        prompt_template=_TEMPLATE,
+        prompt_template=prompt,
         llm=llm,
         choices={"correct": 1, "incorrect": 0},
         direction="maximize",

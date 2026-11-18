@@ -23,3 +23,17 @@ datasets:
       Extends sec-edgar-eval-0 with 3 out-of-scope refusal questions (BQ-21/22/23)
       and adds a metadata column containing numeric_checks (for the numeric judge),
       category, and difficulty. Build this CSV with: python build_dataset.py
+
+  sec-edgar-eval-2:
+    csv_path: datasets/sec-edgar-eval-2/examples/sec-edgar-eval-2.csv
+    input_keys:
+      - query
+    output_keys:
+      - responses
+    metadata_keys:
+      - metadata
+    description: >
+      23 questions — same as sec-edgar-eval-1 but rebuilt with the corrected
+      numeric_checks schema ({must_include, rel_tol, max_value} dicts instead of
+      the old list-of-dicts). Also incorporates updated BQ-15/16/17 pass_criteria.
+      Build this CSV with: python build_dataset.py --dataset-name sec-edgar-eval-2

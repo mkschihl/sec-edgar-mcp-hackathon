@@ -3,12 +3,15 @@
 Extracts every $-prefixed number (with optional scale words T/B/M or
 trillion/billion/million) from the agent response, then:
 
-  1. If any extracted value exceeds numeric_checks["max_value"], returns 0.0
+  1. If numeric_checks is None/empty/absent, returns label "numeric_na" with
+     score None so the question is excluded from averages.
+  2. If numeric_checks has an unrecognised format (e.g. old list-of-dicts),
+     returns label "numeric_config_error" with score 0.0.
+  3. If any extracted value exceeds numeric_checks["max_value"], returns 0.0
      immediately (guards against YTD totals / clearly wrong magnitudes).
-  2. For each value in numeric_checks["must_include"], checks whether at least
+  4. For each value in numeric_checks["must_include"], checks whether at least
      one extracted number is within rel_tol of it.  Score = fraction matched.
-  3. Returns 1.0 if no must_include values are defined (nothing to check).
-  4. Returns 1.0 (no-op) if numeric_checks is None/empty/absent.
+  5. Returns 1.0 if no must_include values are defined (nothing to check).
 
 numeric_checks schema (dict):
   {
@@ -16,10 +19,6 @@ numeric_checks schema (dict):
     "rel_tol":      float,          # relative tolerance, e.g. 0.05 for ±5%
     "max_value":    float | None,   # if any extracted value exceeds this → 0.0
   }
-
-Backward compat: the old list-of-dicts format (with "description"/"threshold_pct"
-keys) is accepted but treated as no-op (returns 1.0) — migrate callers to the
-new dict schema to get real checks.
 
 The evaluator is wired into run_experiment.py via check_numeric_accuracy() which
 returns a @create_evaluator-decorated function for Phoenix compatibility.
@@ -70,20 +69,29 @@ def extract_dollar_values(text: str) -> list[float]:
 # Core scoring logic
 # ---------------------------------------------------------------------------
 
-def _score_numeric(response_text: str, checks: dict | list | None) -> tuple[float, str]:
+# Sentinel so callers can distinguish None-score (na) from 0.0-score (fail)
+_NA_SCORE: float | None = None
+
+
+def _score_numeric(response_text: str, checks: dict | list | None) -> tuple[float | None, str]:
     """Return (score, explanation).
 
-    score is in [0.0, 1.0]:
-      1.0  — all must_include values matched (or no checks defined)
-      0.0  — a max_value violation was found
-      frac — fraction of must_include values matched
+    score meaning:
+      None — numeric_checks absent/None → excluded from averages (numeric_na)
+      0.0  — config error or max_value violation
+      frac — fraction of must_include values matched (1.0 = all matched)
     """
     if not checks:
-        return 1.0, "No numeric checks defined."
+        return _NA_SCORE, "No numeric checks defined for this question."
 
-    # Backward compat: old list format → no-op
+    # Unrecognised format (e.g. old list-of-dicts with description/threshold_pct)
     if isinstance(checks, list):
-        return 1.0, "Old-style list checks (description/threshold_pct) — no-op; migrate to dict schema."
+        return 0.0, (
+            "numeric_config_error: checks is a list (old description/threshold_pct format). "
+            "Migrate to dict schema {must_include, rel_tol, max_value}."
+        )
+    if not isinstance(checks, dict):
+        return 0.0, f"numeric_config_error: unexpected checks type {type(checks).__name__}."
 
     must_include: list[float] = checks.get("must_include") or []
     rel_tol: float = float(checks.get("rel_tol", 0.05))
@@ -148,14 +156,35 @@ def check_numeric_accuracy():
 
     @create_evaluator(name="numeric_accuracy")
     def _judge(input, output, metadata=None) -> dict:  # noqa: A002
+        import json as _json
+
         response_text = (
             output.get("result", "") if isinstance(output, dict) else str(output)
         )
-        checks = (
-            metadata.get("numeric_checks") if isinstance(metadata, dict) else None
-        )
+        # Phoenix passes metadata as {"metadata": "<json-string>"} when the CSV
+        # has a "metadata" column.  Unpack one level if needed.
+        if isinstance(metadata, dict):
+            if "numeric_checks" in metadata:
+                checks = metadata.get("numeric_checks")
+            elif "metadata" in metadata:
+                try:
+                    inner = _json.loads(metadata["metadata"])
+                    checks = inner.get("numeric_checks") if isinstance(inner, dict) else None
+                except (ValueError, TypeError):
+                    checks = None
+            else:
+                checks = None
+        else:
+            checks = None
         score, explanation = _score_numeric(response_text, checks)
-        label = "numeric_pass" if score >= 1.0 else "numeric_fail"
+        if score is None:
+            label = "numeric_na"
+        elif score == 0.0 and "numeric_config_error" in explanation:
+            label = "numeric_config_error"
+        elif score >= 1.0:
+            label = "numeric_pass"
+        else:
+            label = "numeric_fail"
         return {"label": label, "score": score, "explanation": explanation}
 
     return _judge

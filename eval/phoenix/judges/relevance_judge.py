@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import os
 import time
+from datetime import date as _date
 
 from dotenv import load_dotenv
 
@@ -22,6 +23,10 @@ load_dotenv()
 _DEFAULT_JUDGE = "meta-llama/llama-3-3-70b-instruct"
 
 _TEMPLATE = """\
+Today's date is {today}. SEC filings dated up to today are real historical data, \
+not forecasts. Do not mark data out of scope because its dates are later than \
+your training data.
+
 You are a scope-compliance judge for an SEC EDGAR financial research assistant.
 
 ## Agent scope
@@ -86,9 +91,11 @@ def check_answer_scope():
         # WATSONX_URL / WATSONX_API_KEY / WATSONX_PROJECT_ID are read from env by LiteLLM
         temperature=0.0,
     )
+    # Fill {today} at classifier-build time (once per experiment run)
+    prompt = _TEMPLATE.replace("{today}", _date.today().isoformat())
     classifier = create_classifier(
         name="scope",
-        prompt_template=_TEMPLATE,
+        prompt_template=prompt,
         llm=llm,
         choices={"within_scope": 1, "out_of_scope": 0},
         direction="maximize",

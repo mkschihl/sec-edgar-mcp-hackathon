@@ -227,10 +227,11 @@ BENCHMARK_QUESTIONS = [
             "BAC total assets are approximately $3.3T USD (±10%); "
             "includes fiscal year end dates."
         ),
-        "numeric_checks": [
-            {"description": "JPMorgan Chase total assets ~$4.0T USD", "threshold_pct": 10},
-            {"description": "Bank of America total assets ~$3.3T USD", "threshold_pct": 10},
-        ],
+        "numeric_checks": {
+            "must_include": [4.0e12, 3.3e12],
+            "rel_tol": 0.10,
+            "max_value": None,
+        },
     },
     # ------------------------------------------------------------------
     # Category 8 — Source filing attribution (sec_edgar_get_filing_metadata)
@@ -240,11 +241,13 @@ BENCHMARK_QUESTIONS = [
         "category": "filing_attribution",
         "difficulty": "hard",
         "question": "Which SEC filing reported Apple's most recent annual revenue? Give me the accession number and a link to the filing.",
-        "expected_tools": ["sec_edgar_get_company_fact", "sec_edgar_get_filing_metadata"],
+        "expected_tools": ["sec_edgar_get_company_fact"],
+        "optional_tools": ["sec_edgar_get_filing_metadata"],
         "pass_criteria": (
             "Response identifies the most recent annual revenue figure; "
             "includes the accession number of the source 10-K; "
-            "includes an edgar_viewer_url or direct link pointing to sec.gov."
+            "includes an edgar_viewer_url or direct link pointing to sec.gov; "
+            "the link must be a sec.gov URL returned by a tool."
         ),
         "numeric_checks": None,
     },
@@ -330,12 +333,13 @@ BENCHMARK_QUESTIONS = [
             "if EPS values are returned, they are in the range $1.0–$2.5 per share; "
             "response does not fabricate numbers."
         ),
-        "numeric_checks": [
-            {
-                "description": "Apple quarterly EPS values are in range $1.0–$2.5 per share (if returned)",
-                "threshold_pct": 25,
-            },
-        ],
+        # EPS values are small ($1–$2.50/share); no must_include since the exact
+        # value varies. Use max_value only to guard against clearly wrong magnitudes.
+        "numeric_checks": {
+            "must_include": [],
+            "rel_tol": 0.05,
+            "max_value": 10.0,  # EPS > $10/share would be clearly wrong for AAPL
+        },
     },
     # ------------------------------------------------------------------
     # Category 11 — Out-of-scope questions (agent should refuse)

@@ -1,25 +1,17 @@
-"""Build the sec-edgar-eval-1 Phoenix dataset CSV from the benchmark questions.
+"""Build the sec-edgar-eval-* Phoenix dataset CSV from the benchmark questions.
 
-sec-edgar-eval-1 is an extended dataset based on the 23-question benchmark
-(BQ-01 … BQ-23). It differs from sec-edgar-eval-0 in two ways:
-
-  1. Includes BQ-21/22/23 (out-of-scope questions) with appropriate reference
-     answers.
-  2. Adds a `metadata` column containing a JSON-encoded dict with:
-       - `numeric_checks`: list of {description, threshold_pct} dicts (or null)
-       - `category`: question category string
-       - `difficulty`: easy | medium | hard
-
-This metadata is consumed by the numeric_judge and can be used to filter
-experiments by category or difficulty.
+The default target is sec-edgar-eval-2, which fixes the numeric_checks schema
+so the numeric judge uses the new {must_include, rel_tol, max_value} format
+instead of the old list-of-dicts.
 
 Usage (from eval/phoenix/):
-    python build_dataset.py
-    python build_dataset.py --dry-run         # validate only, no file write
-    python build_dataset.py --output-dir datasets/sec-edgar-eval-1/examples
+    python build_dataset.py                                   # → sec-edgar-eval-2
+    python build_dataset.py --dry-run                         # validate only
+    python build_dataset.py --output-dir datasets/sec-edgar-eval-2/examples
+    python build_dataset.py --dataset-name sec-edgar-eval-1   # legacy compat
 
 Output:
-    datasets/sec-edgar-eval-1/examples/sec-edgar-eval-1.csv
+    datasets/sec-edgar-eval-2/examples/sec-edgar-eval-2.csv
 
 The CSV has columns: query, responses, metadata
   - query    : the natural-language question (input)
@@ -39,8 +31,9 @@ from pathlib import Path
 # ---------------------------------------------------------------------------
 EVAL_PHOENIX_DIR = Path(__file__).resolve().parent
 EVAL_DIR         = EVAL_PHOENIX_DIR.parent.parent / "evaluation"
-DEFAULT_OUT_DIR  = EVAL_PHOENIX_DIR / "datasets" / "sec-edgar-eval-1" / "examples"
-OUTPUT_CSV_NAME  = "sec-edgar-eval-1.csv"
+_DEFAULT_DATASET = "sec-edgar-eval-2"
+DEFAULT_OUT_DIR  = EVAL_PHOENIX_DIR / "datasets" / _DEFAULT_DATASET / "examples"
+OUTPUT_CSV_NAME  = f"{_DEFAULT_DATASET}.csv"
 
 sys.path.insert(0, str(EVAL_DIR))
 from benchmark_questions import BENCHMARK_QUESTIONS  # noqa: E402
@@ -216,7 +209,7 @@ def validate_rows(rows: list[dict]) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Build sec-edgar-eval-1 dataset CSV from benchmark_questions.py."
+        description="Build sec-edgar-eval-* dataset CSV from benchmark_questions.py."
     )
     parser.add_argument(
         "--dry-run",
@@ -229,7 +222,15 @@ def main() -> None:
         metavar="DIR",
         help=f"Directory for the output CSV (default: {DEFAULT_OUT_DIR}).",
     )
+    parser.add_argument(
+        "--dataset-name",
+        default=_DEFAULT_DATASET,
+        metavar="NAME",
+        help=f"Dataset name used in the output filename (default: {_DEFAULT_DATASET}).",
+    )
     args = parser.parse_args()
+    global OUTPUT_CSV_NAME
+    OUTPUT_CSV_NAME = f"{args.dataset_name}.csv"
 
     rows = build_rows()
     validate_rows(rows)
@@ -266,7 +267,7 @@ def main() -> None:
     print(f"Columns: query, responses, metadata")
     print(f"Rows: {total}")
     print(f"\nTo upload to Phoenix:")
-    print(f"  python create_dataset.py --dataset-name sec-edgar-eval-1")
+    print(f"  python create_dataset.py --dataset-name {args.dataset_name}")
 
 
 if __name__ == "__main__":

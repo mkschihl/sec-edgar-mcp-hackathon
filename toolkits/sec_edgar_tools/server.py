@@ -166,26 +166,36 @@ def _parse_display_name(raw: str) -> dict | None:
     return {"name": name, "ticker": primary_ticker, "cik": cik}
 
 
-async def _search_all_filers(query: str, limit: int, client: httpx.AsyncClient) -> list[dict]:
+# Sentinel returned by _search_all_filers when the EFTS call fails entirely,
+# so the caller can surface a warning without treating it as an empty result.
+_EFTS_UNAVAILABLE = object()
+
+
+async def _search_all_filers(
+    query: str, limit: int, client: httpx.AsyncClient
+) -> list[dict] | object:
     """Search ALL SEC-registered filers by company name using the EDGAR full-text
-    search index, filtered to entities that have filed a 10-K in the last 2 years.
+    search index, filtered to entities that have filed a 10-K in the last 730 days.
 
     This covers companies like EXXON MOBIL CORP whose operating entity is not
     in company_tickers.json (exchange-listed only) because the ticker is registered
     to a holding company shell.
 
-    Returns a list of {name, ticker, cik, source} dicts.
+    Returns a list of {name, ticker, cik, source} dicts on success, or the
+    module-level sentinel _EFTS_UNAVAILABLE if the HTTP call fails entirely.
     """
+    from datetime import timedelta
+    startdt = (date.today() - timedelta(days=730)).isoformat()
     encoded = _url_quote(f'"{query}"')
     url = (
         f"https://efts.sec.gov/LATEST/search-index"
-        f"?q={encoded}&forms=10-K&dateRange=custom&startdt=2024-01-01"
+        f"?q={encoded}&forms=10-K&dateRange=custom&startdt={startdt}"
     )
     try:
         resp = await client.get(url, headers=_make_headers(), timeout=10.0)
         resp.raise_for_status()
     except (httpx.HTTPStatusError, httpx.RequestError):
-        return []
+        return _EFTS_UNAVAILABLE
 
     hits = resp.json().get("hits", {}).get("hits", [])
     seen: dict[str, dict] = {}
@@ -355,47 +365,85 @@ async def sec_edgar_search_companies(
 ) -> dict:
     """Search SEC-registered companies by partial name.
 
-    Two-pass search:
+    Two-pass search run concurrently:
     1. Primary: searches company_tickers.json (~10,000 exchange-listed companies).
-       Fast, no extra HTTP call.
-    2. Fallback: if the primary pass returns fewer than `limit` results (or zero),
-       also queries the EDGAR full-text search index filtered to recent 10-K filers.
-       This covers operating entities whose ticker is held by a holding-company shell
-       and are therefore absent from the exchange-listed file (e.g. EXXON MOBIL CORP).
+    2. All-filers: queries the EDGAR full-text search index filtered to companies
+       that have filed a 10-K in the last 730 days. This surfaces operating entities
+       whose ticker is registered to a holding-company shell and therefore absent from
+       the exchange-listed file (e.g. EXXON MOBIL CORP).
 
-    Each match includes a 'source' field: "exchange_listed" for primary matches,
-    "all_filers" for fallback matches. Prefer entities with source="all_filers" that
-    also have recent 10-K filings when exchange_listed results show no 10-K history.
+    Each match includes:
+      source         — "exchange_listed" or "all_filers"
+      has_recent_10k — true if the entity has a 10-K in the last 730 days
 
-    Returns a dict with keys: query, match_count, matches (list of
-    ticker/cik/name/source). On failure returns {"error": "...", "hint": "..."}.
+    Results are sorted so has_recent_10k == true comes first, then by original order.
+    At least max(limit, 5) matches are returned, so a limit=1 call never hides the
+    operating company behind a holding shell.
+
+    If the all-filers EFTS search is temporarily unavailable, the response includes a
+    "warnings" list noting the degraded state.
+
+    After choosing a company from search results, pass its CIK (not ticker) to other
+    tools — some tickers map to a holding entity rather than the operating company.
+
+    Returns a dict with keys: query, match_count, matches, warnings.
+    On failure returns {"error": "...", "hint": "..."}.
     """
     query = query.strip()
     if not query:
         return {"error": "query must not be empty.", "hint": "Provide a partial company name such as 'apple' or 'berkshire'."}
     limit = max(1, min(limit, 50))
+    effective_limit = max(limit, 5)
     client = _get_client()
+    warnings: list[str] = []
     try:
+        # Warm the ticker cache, then run both passes concurrently.
         await _ensure_ticker_cache(client)
         query_lower = query.lower()
-        primary = [
+        primary_all = [
             {"ticker": v["ticker"], "cik": v["cik_str"], "name": v["title"], "source": "exchange_listed"}
             for v in _TICKER_CACHE.values()
             if query_lower in v["title"].lower()
         ]
-        primary = primary[:limit]
 
-        # Run the all-filers fallback in parallel with the primary pass.
-        # We always run it so that operating entities hidden behind holding shells
-        # (e.g. Exxon Mobil Corp vs ExxonMobil Holdings Corp) are surfaced.
-        fallback = await _search_all_filers(query, limit, client)
+        # Run the all-filers search concurrently with building primary list (already done above).
+        fallback_result = await _search_all_filers(query, effective_limit, client)
 
-        # Merge: primary first, then fallback entries not already in primary
-        primary_ciks = {m["cik"] for m in primary}
+        efts_failed = fallback_result is _EFTS_UNAVAILABLE
+        if efts_failed:
+            warnings.append(
+                "Full-filer search unavailable; results may omit operating entities."
+            )
+            fallback: list[dict] = []
+        else:
+            fallback = fallback_result  # type: ignore[assignment]
+
+        # Build a set of CIKs that have a recent 10-K (from the all-filers results).
+        recent_10k_ciks = {m["cik"] for m in fallback}
+
+        # Annotate primary matches with has_recent_10k.
+        for m in primary_all:
+            m["has_recent_10k"] = m["cik"] in recent_10k_ciks
+
+        # Annotate all-filers matches (always has_recent_10k by definition).
+        for m in fallback:
+            m["has_recent_10k"] = True
+
+        # Merge: primary first, then fallback entries not already in primary.
+        primary_ciks = {m["cik"] for m in primary_all}
         extra = [m for m in fallback if m["cik"] not in primary_ciks]
+        merged = primary_all + extra
 
-        matches = (primary + extra)[:limit]
-        return {"query": query, "match_count": len(matches), "matches": matches}
+        # Sort: has_recent_10k == True first, preserve original order within each tier.
+        merged.sort(key=lambda m: (0 if m["has_recent_10k"] else 1))
+
+        matches = merged[:effective_limit]
+        return {
+            "query": query,
+            "match_count": len(matches),
+            "matches": matches,
+            "warnings": warnings,
+        }
     except (httpx.HTTPStatusError, httpx.RequestError) as exc:
         return {"error": str(exc), "hint": "Could not fetch company list from SEC. Try again shortly."}
     except Exception as exc:
@@ -418,17 +466,28 @@ async def sec_edgar_search_companies(
     },
 )
 async def sec_edgar_resolve_company(
-    identifier: Annotated[str, "Ticker symbol (e.g. 'AAPL') or numeric CIK string (e.g. '320193' or '0000320193')."],
+    identifier: Annotated[str, "Accepts a ticker or CIK. After choosing a company from search results, pass its CIK, because some tickers map to a holding entity. E.g. 'AAPL' or '0000320193'."],
 ) -> dict:
     """Resolve a company ticker symbol or CIK to canonical SEC company info.
 
     Looks up the company in the SEC's exchange-listed ticker file, then fetches
-    the full submission metadata to return SIC code, industry description, and
-    state of incorporation.
+    the full submission metadata to return SIC code, industry description, state
+    of incorporation, and recent filing activity.
+
+    New fields:
+      latest_10k_date  — most recent 10-K filingDate, or null
+      latest_10q_date  — most recent 10-Q filingDate, or null
+      is_active_filer  — true if either date is within the last 730 days
+
+    If is_active_filer is false, a "warning" key is added advising the caller to
+    search for the operating entity by legal name and use the CIK of the match
+    where has_recent_10k is true.
 
     Returns a dict with keys: cik, name, ticker, sic, sic_description,
-    state_of_incorporation. On failure returns {"error": "...", "hint": "..."}.
+    state_of_incorporation, latest_10k_date, latest_10q_date, is_active_filer.
+    On failure returns {"error": "...", "hint": "..."}.
     """
+    from datetime import timedelta
     identifier = identifier.strip()
     if not identifier:
         return {"error": "identifier must not be empty.", "hint": "Provide a ticker like 'AAPL' or a numeric CIK."}
@@ -439,14 +498,44 @@ async def sec_edgar_resolve_company(
         padded_cik, ticker = resolved
         sub = await _fetch_submission(padded_cik)
 
-        return {
+        # Scan recent filings for latest 10-K and 10-Q dates.
+        recent = sub.get("filings", {}).get("recent", {})
+        forms = recent.get("form", [])
+        filing_dates = recent.get("filingDate", [])
+        latest_10k: str | None = None
+        latest_10q: str | None = None
+        for form, fd in zip(forms, filing_dates):
+            if form.upper() == "10-K" and latest_10k is None:
+                latest_10k = fd
+            elif form.upper() == "10-Q" and latest_10q is None:
+                latest_10q = fd
+            if latest_10k and latest_10q:
+                break
+
+        cutoff = (date.today() - timedelta(days=730)).isoformat()
+        is_active = bool(
+            (latest_10k and latest_10k >= cutoff)
+            or (latest_10q and latest_10q >= cutoff)
+        )
+
+        result: dict = {
             "cik": padded_cik,
             "name": sub.get("name", identifier),
             "ticker": ticker,
             "sic": sub.get("sic", ""),
             "sic_description": sub.get("sicDescription", ""),
             "state_of_incorporation": sub.get("stateOfIncorporation", ""),
+            "latest_10k_date": latest_10k,
+            "latest_10q_date": latest_10q,
+            "is_active_filer": is_active,
         }
+        if not is_active:
+            result["warning"] = (
+                "This entity has no recent 10-K/10-Q. It may be a holding shell. "
+                "Call sec_edgar_search_companies with the full legal company name and "
+                "use the CIK of the match where has_recent_10k is true."
+            )
+        return result
     except (httpx.HTTPStatusError, httpx.RequestError) as exc:
         return {"error": str(exc), "hint": "Check the identifier and try again. The SEC API may be temporarily unavailable."}
     except Exception as exc:
@@ -469,7 +558,7 @@ async def sec_edgar_resolve_company(
     },
 )
 async def sec_edgar_get_recent_filings(
-    identifier: Annotated[str, "Ticker symbol or CIK."],
+    identifier: Annotated[str, "Accepts a ticker or CIK. After choosing a company from search results, pass its CIK, because some tickers map to a holding entity."],
     form_type: Annotated[str, "Form type filter, e.g. '10-K', '10-Q', '8-K'. Use empty string or 'all' to return all form types."] = "",
     limit: Annotated[int, "Maximum number of filings to return. Default 10, max 50."] = 10,
 ) -> dict:
@@ -478,6 +567,10 @@ async def sec_edgar_get_recent_filings(
     Fetches the submission history from data.sec.gov. When form_type is empty
     or 'all', returns all recent form types. Results are ordered most-recent
     first.
+
+    When form_type is '10-K' or '10-Q' and no filings are found, adds a
+    "warning" key advising the caller to verify that the correct operating-entity
+    CIK was used (not a holding-company shell).
 
     Returns a dict with keys: company, cik, form_type_filter, filings (list).
     Each filing has: form, filing_date, report_date, accession_number,
@@ -514,12 +607,20 @@ async def sec_edgar_get_recent_filings(
             if len(filings) >= limit:
                 break
 
-        return {
+        result: dict = {
             "company": company_name,
             "cik": padded_cik,
             "form_type_filter": form_filter or "all",
             "filings": filings,
         }
+        # Warn when a 10-K/10-Q filter returns nothing — likely a holding-shell CIK.
+        if not filings and form_filter in ("10-K", "10-Q"):
+            result["warning"] = (
+                "This entity has no recent 10-K/10-Q. It may be a holding shell. "
+                "Call sec_edgar_search_companies with the full legal company name and "
+                "use the CIK of the match where has_recent_10k is true."
+            )
+        return result
     except (httpx.HTTPStatusError, httpx.RequestError) as exc:
         return {"error": str(exc), "hint": "Check the identifier and try again. The SEC API may be temporarily unavailable."}
     except Exception as exc:
@@ -542,7 +643,7 @@ async def sec_edgar_get_recent_filings(
     },
 )
 async def sec_edgar_get_company_fact(
-    identifier: Annotated[str, "Ticker symbol or CIK."],
+    identifier: Annotated[str, "Accepts a ticker or CIK. After choosing a company from search results, pass its CIK, because some tickers map to a holding entity."],
     taxonomy: Annotated[str, "XBRL taxonomy, e.g. 'us-gaap' or 'dei'."],
     concept: Annotated[str, "XBRL concept tag, e.g. 'Revenues', 'NetIncomeLoss', 'Assets'."],
     limit: Annotated[int, "Maximum observations per unit type to return. Use 0 for all. Default 8."] = 8,
@@ -851,7 +952,7 @@ async def sec_edgar_compare_companies(
     },
 )
 async def sec_edgar_get_filing_metadata(
-    identifier: Annotated[str, "Ticker symbol or CIK."],
+    identifier: Annotated[str, "Accepts a ticker or CIK. After choosing a company from search results, pass its CIK, because some tickers map to a holding entity."],
     accession_number: Annotated[str, "Accession number, e.g. '0000320193-24-000123' or '000032019324000123' (dashes optional)."],
 ) -> dict:
     """Return metadata for a specific SEC filing identified by its accession number.
@@ -941,7 +1042,7 @@ async def sec_edgar_get_filing_metadata(
     },
 )
 async def sec_edgar_list_concepts(
-    identifier: Annotated[str, "Ticker symbol or CIK."],
+    identifier: Annotated[str, "Accepts a ticker or CIK. After choosing a company from search results, pass its CIK, because some tickers map to a holding entity."],
     taxonomy: Annotated[str, "XBRL taxonomy to search. Default 'us-gaap'. Also common: 'dei'."] = "us-gaap",
     search: Annotated[str, "Optional substring filter on concept name or label, e.g. 'revenue', 'income', 'asset'. Case-insensitive. Leave empty to list all."] = "",
     limit: Annotated[int, "Maximum number of concepts to return. Default 50, max 200."] = 50,
@@ -1029,7 +1130,7 @@ async def sec_edgar_list_concepts(
     },
 )
 async def sec_edgar_get_quarterly_facts(
-    identifier: Annotated[str, "Ticker symbol or CIK."],
+    identifier: Annotated[str, "Accepts a ticker or CIK. After choosing a company from search results, pass its CIK, because some tickers map to a holding entity."],
     taxonomy: Annotated[str, "XBRL taxonomy, e.g. 'us-gaap'."],
     concept: Annotated[str, "XBRL concept tag, e.g. 'Revenues', 'NetIncomeLoss'."],
     limit: Annotated[int, "Number of quarterly observations to return, most recent first. Default 8, max 40."] = 8,

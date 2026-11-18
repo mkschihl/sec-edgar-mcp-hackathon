@@ -15,6 +15,9 @@ from server import (
     sec_edgar_get_company_fact,
     sec_edgar_get_quarterly_facts,
     sec_edgar_compare_companies,
+    sec_edgar_search_companies,
+    sec_edgar_resolve_company,
+    sec_edgar_get_recent_filings,
 )
 
 PASS = "\033[32mPASS\033[0m"
@@ -204,6 +207,51 @@ async def test_aapl_revenues_concept_and_values():
         )
 
 
+async def test_exxon_search():
+    print("\n[7] search_companies('Exxon', limit=1) — EXXON MOBIL CORP first")
+    result = await sec_edgar_search_companies("Exxon", limit=1)
+    if "error" in result:
+        check("no error", False, result["error"])
+        return
+
+    matches = result.get("matches", [])
+    if not check("at least one match", len(matches) > 0, f"got {len(matches)}"):
+        return
+
+    first = matches[0]
+    check(
+        "first match cik == 0000034088",
+        first.get("cik") == "0000034088",
+        f"got cik={first.get('cik')!r}, name={first.get('name')!r}",
+    )
+
+
+async def test_holding_shell_resolve():
+    # CIK 0000101830 = SPRINT LLC — last 10-K 2019, last 10-Q 2020; well past 730 days.
+    print("\n[8] resolve_company('0000101830') — inactive filer has is_active_filer=False + warning")
+    result = await sec_edgar_resolve_company("0000101830")
+    if "error" in result:
+        check("no error", False, result["error"])
+        return
+
+    check("is_active_filer == False", result.get("is_active_filer") is False,
+          f"got {result.get('is_active_filer')!r}")
+    check("warning present", "warning" in result,
+          "no 'warning' key in result")
+
+
+async def test_exxon_10k_filings():
+    print("\n[9] get_recent_filings('0000034088', '10-K', 5) — at least 3 filings")
+    result = await sec_edgar_get_recent_filings("0000034088", "10-K", 5)
+    if "error" in result:
+        check("no error", False, result["error"])
+        return
+
+    filings = result.get("filings", [])
+    check("at least 3 10-K filings", len(filings) >= 3,
+          f"got {len(filings)}")
+
+
 async def _run_company_fact():
     return await sec_edgar_get_company_fact("AAPL", "us-gaap", "NetIncomeLoss", limit=1)
 
@@ -234,6 +282,9 @@ async def main():
     await test_aapl_eps()
     await test_compare_jpm_bac()
     await test_aapl_revenues_concept_and_values()
+    await test_exxon_search()
+    await test_holding_shell_resolve()
+    await test_exxon_10k_filings()
 
     print(f"\n{'=' * 50}")
     if failures == 0:

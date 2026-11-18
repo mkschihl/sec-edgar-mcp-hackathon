@@ -78,17 +78,39 @@ def _make_headers() -> dict[str, str]:
 # follow_redirects=True: SEC APIs occasionally redirect http:// → https://
 # or move endpoints; following silently is correct here.
 _http_client: httpx.AsyncClient | None = None
+_http_client_loop: asyncio.AbstractEventLoop | None = None
 
 
 def _get_client() -> httpx.AsyncClient:
-    """Return the process-level shared AsyncClient, creating it if needed."""
-    global _http_client
-    if _http_client is None:
+    """Return a shared AsyncClient bound to the current running event loop.
+
+    When a script calls asyncio.run() multiple times (e.g. in tests), each call
+    creates a new event loop and closes the previous one.  An AsyncClient created
+    on the first loop raises "Event loop is closed" on the second loop.  We detect
+    this by storing the loop the client was created on and rebuilding the client
+    whenever the current loop differs or the stored loop is closed.
+
+    Production servers run a single persistent loop, so this check is effectively
+    free there (one pointer comparison per call).
+    """
+    global _http_client, _http_client_loop
+    try:
+        current_loop = asyncio.get_running_loop()
+    except RuntimeError:
+        current_loop = None
+    # Rebuild if: no client yet, loop mismatch, or stored loop has been closed.
+    if (
+        _http_client is None
+        or _http_client_loop is None
+        or _http_client_loop is not current_loop
+        or (_http_client_loop is not None and _http_client_loop.is_closed())
+    ):
         _http_client = httpx.AsyncClient(
             timeout=20.0,
             follow_redirects=True,
             trust_env=False,
         )
+        _http_client_loop = current_loop
     return _http_client
 
 
@@ -253,6 +275,38 @@ def _days_between(date_str_a: str, date_str_b: str) -> int:
         return 0
 
 
+def _fiscal_year_for(end: str, fye_mmdd: str | None) -> int:
+    """Fiscal year a period belongs to, using the company's fiscalYearEnd ("MMDD")
+    from the submissions JSON.  Handles 52/53-week years (±7 days)."""
+    from datetime import timedelta
+    e = datetime.strptime(end, "%Y-%m-%d").date()
+    if not fye_mmdd or len(fye_mmdd) != 4:
+        return e.year
+    mm, dd = int(fye_mmdd[:2]), int(fye_mmdd[2:])
+    dd = min(dd, 28) if mm == 2 else dd
+    this_fye = date(e.year, mm, dd)
+    prev_fye = date(e.year - 1, mm, dd)
+    if e <= prev_fye + timedelta(days=7):
+        return e.year - 1
+    if e > this_fye + timedelta(days=7):
+        return e.year + 1
+    return e.year
+
+
+def _duration_days(o: dict) -> int | None:
+    """Return (end - start).days for a flow observation, or None for instant facts."""
+    start = o.get("start")
+    end = o.get("end")
+    if not start or not end:
+        return None
+    try:
+        s = datetime.strptime(start, "%Y-%m-%d").date()
+        e = datetime.strptime(end, "%Y-%m-%d").date()
+        return (e - s).days
+    except ValueError:
+        return None
+
+
 def _check_comparability(results: list[dict], warnings: list[str]) -> None:
     """Append comparability warnings to the warnings list in-place.
 
@@ -344,6 +398,9 @@ async def sec_edgar_search_companies(
         return {"query": query, "match_count": len(matches), "matches": matches}
     except (httpx.HTTPStatusError, httpx.RequestError) as exc:
         return {"error": str(exc), "hint": "Could not fetch company list from SEC. Try again shortly."}
+    except Exception as exc:
+        return {"error": f"Unexpected error: {type(exc).__name__}: {exc}",
+                "hint": "Report this to the toolkit maintainer; do not retry with the same arguments."}
 
 
 # ---------------------------------------------------------------------------
@@ -392,6 +449,9 @@ async def sec_edgar_resolve_company(
         }
     except (httpx.HTTPStatusError, httpx.RequestError) as exc:
         return {"error": str(exc), "hint": "Check the identifier and try again. The SEC API may be temporarily unavailable."}
+    except Exception as exc:
+        return {"error": f"Unexpected error: {type(exc).__name__}: {exc}",
+                "hint": "Report this to the toolkit maintainer; do not retry with the same arguments."}
 
 
 # ---------------------------------------------------------------------------
@@ -462,6 +522,9 @@ async def sec_edgar_get_recent_filings(
         }
     except (httpx.HTTPStatusError, httpx.RequestError) as exc:
         return {"error": str(exc), "hint": "Check the identifier and try again. The SEC API may be temporarily unavailable."}
+    except Exception as exc:
+        return {"error": f"Unexpected error: {type(exc).__name__}: {exc}",
+                "hint": "Report this to the toolkit maintainer; do not retry with the same arguments."}
 
 
 # ---------------------------------------------------------------------------
@@ -486,16 +549,18 @@ async def sec_edgar_get_company_fact(
 ) -> dict:
     """Return the XBRL fact time series for a single concept and company.
 
-    Fetches all XBRL-tagged values for the given taxonomy/concept from the
-    SEC companyfacts endpoint. Returns all unit types as separate lists under
-    a 'units' dict (e.g. {'USD': [...], 'shares': [...]}). When limit > 0,
+    Fetches all full-year (FY) XBRL-tagged values for the given taxonomy/concept
+    from the SEC companyfacts endpoint. Returns all unit types as separate lists
+    under a 'units' dict (e.g. {'USD': [...], 'shares': [...]}).  When limit > 0,
     each list is trimmed to the last N entries (most recent last).
 
-    For full-year (FY) observations, deduplicates by fiscal year end date,
-    keeping only the entry with the latest 'filed' date.  This removes
-    comparative-period restated values that the SEC API stores alongside
-    the original filing (e.g. a 10-K amendment that restates FY2023 figures
-    inside the FY2024 filing), which previously caused ~$1-3B inaccuracies.
+    Each row is one fiscal year. Label rows with fiscal_year / fiscal_year_end.
+    filing_fiscal_year is the fiscal year of the filing that supplied the value
+    and must NOT be used as the period label.  If recast is true, the value was
+    revised in a later filing; as_originally_filed shows the first value.
+
+    Non-FY observations (Q1/Q2/Q3) are excluded; use sec_edgar_get_quarterly_facts
+    for quarterly data.
 
     Returns a dict with keys: company, cik, taxonomy, concept, label,
     description, units. On failure returns {"error": "...", "hint": "..."}.
@@ -507,12 +572,17 @@ async def sec_edgar_get_company_fact(
         padded_cik, _ = resolved
 
         client = _get_client()
-        resp = await client.get(
-            f"https://data.sec.gov/api/xbrl/companyfacts/CIK{padded_cik}.json",
-            headers=_make_headers(),
+        # Fetch submission and companyfacts concurrently to reduce latency.
+        sub, resp = await asyncio.gather(
+            _fetch_submission(padded_cik),
+            client.get(
+                f"https://data.sec.gov/api/xbrl/companyfacts/CIK{padded_cik}.json",
+                headers=_make_headers(),
+            ),
         )
         resp.raise_for_status()
         facts = resp.json()
+        fye_mmdd: str | None = sub.get("fiscalYearEnd")
 
         company_name = facts.get("entityName", identifier)
         taxonomy_data = facts.get("facts", {}).get(taxonomy)
@@ -536,25 +606,63 @@ async def sec_edgar_get_company_fact(
         raw_units = concept_data.get("units", {})
 
         def _dedup_fy(obs_list: list) -> list:
-            """For FY-labelled observations, keep only the latest-filed entry per
-            fiscal year end date.  This removes comparative-period restated values
-            that the SEC API stores alongside the original filing's figure (e.g. a
-            10-K amendment that restates FY2023 net income inside the FY2024 filing).
-            Non-FY observations (Q1/Q2/Q3/Q4, etc.) are returned unchanged."""
-            # Separate FY from non-FY; deduplicate FY by (end date → latest filed)
-            best: dict[str, dict] = {}  # end_date → observation with max filed
-            non_fy: list = []
+            """Keep only fp=='FY' observations with annual duration (350-380 days)
+            or no start (instant/balance-sheet facts).  Group by 'end' date;
+            within each group pick latest 'filed' as the winner; record the
+            earliest-filed value as as_originally_filed and flag recast if different.
+            Returns rows with renamed/additional keys; no raw 'fy' key."""
+            # Pass 1: collect FY observations that satisfy duration filter
+            candidates: list[dict] = []
             for o in obs_list:
-                if o.get("fp") == "FY":
-                    end = o.get("end", "")
-                    filed = o.get("filed", "")
-                    if end not in best or filed > best[end].get("filed", ""):
-                        best[end] = o
+                if o.get("fp") != "FY":
+                    continue
+                dur = _duration_days(o)
+                if dur is not None and not (350 <= dur <= 380):
+                    continue
+                candidates.append(o)
+
+            # Pass 2: group by end date; track winner (latest filed) and
+            # earliest filed value (as_originally_filed)
+            groups: dict[str, dict] = {}   # end → {"winner": o, "first_val": val, "first_filed": filed}
+            for o in candidates:
+                end = o.get("end", "")
+                filed = o.get("filed", "")
+                val = o.get("val")
+                if end not in groups:
+                    groups[end] = {"winner": o, "first_val": val, "first_filed": filed}
                 else:
-                    non_fy.append(o)
-            # Merge back; preserve original chronological order (sort by end date)
-            deduped_fy = sorted(best.values(), key=lambda o: o.get("end", ""))
-            return non_fy + deduped_fy
+                    g = groups[end]
+                    # update winner if this filing is later
+                    if filed > g["winner"].get("filed", ""):
+                        g["winner"] = o
+                    # update earliest if this filing is earlier
+                    if filed < g["first_filed"]:
+                        g["first_val"] = val
+                        g["first_filed"] = filed
+
+            # Pass 3: build output rows
+            rows: list[dict] = []
+            for end, g in sorted(groups.items()):
+                o = g["winner"]
+                orig_val = g["first_val"]
+                winner_val = o.get("val")
+                try:
+                    fy = _fiscal_year_for(end, fye_mmdd)
+                except Exception:
+                    fy = o.get("fy") or datetime.strptime(end, "%Y-%m-%d").year
+                rows.append({
+                    "fiscal_year": fy,
+                    "fiscal_year_end": end,
+                    "period_start": o.get("start") or None,
+                    "value": winner_val,
+                    "as_originally_filed": orig_val,
+                    "recast": winner_val != orig_val,
+                    "form": o.get("form", ""),
+                    "filed": o.get("filed", ""),
+                    "accession_number": o.get("accn", ""),
+                    "filing_fiscal_year": o.get("fy"),
+                })
+            return rows
 
         units_out: dict[str, list] = {}
         for unit_label, obs in raw_units.items():
@@ -572,6 +680,9 @@ async def sec_edgar_get_company_fact(
         }
     except (httpx.HTTPStatusError, httpx.RequestError) as exc:
         return {"error": str(exc), "hint": "Check the identifier and concept, and try again."}
+    except Exception as exc:
+        return {"error": f"Unexpected error: {type(exc).__name__}: {exc}",
+                "hint": "Report this to the toolkit maintainer; do not retry with the same arguments."}
 
 
 # ---------------------------------------------------------------------------
@@ -613,6 +724,7 @@ async def sec_edgar_compare_companies(
 
     try:
         client = _get_client()
+        today = date.today()
         for idx, identifier in enumerate(identifiers):
             if idx > 0:
                 await asyncio.sleep(0.12)  # respect SEC 10 req/s limit
@@ -624,6 +736,7 @@ async def sec_edgar_compare_companies(
             padded_cik, ticker = resolved
 
             try:
+                sub = await _fetch_submission(padded_cik)
                 resp = await client.get(
                     f"https://data.sec.gov/api/xbrl/companyfacts/CIK{padded_cik}.json",
                     headers=_make_headers(),
@@ -634,7 +747,10 @@ async def sec_edgar_compare_companies(
                 warnings.append(f"Could not fetch facts for '{identifier}': {exc} — skipped.")
                 continue
 
-            company_name = facts.get("entityName", identifier)
+            # Prefer canonical name from submissions JSON over entityName
+            company_name = sub.get("name") or facts.get("entityName", identifier)
+            fye_mmdd: str | None = sub.get("fiscalYearEnd")
+
             concept_data = (
                 facts.get("facts", {})
                 .get(taxonomy, {})
@@ -654,30 +770,60 @@ async def sec_edgar_compare_companies(
 
             observations = raw_units[best_unit]
 
-            # Find the most recent full-year (fp == "FY") observation
-            fy_obs = [o for o in observations if o.get("fp") == "FY" and o.get("form", "").startswith("10-")]
-            if not fy_obs:
-                # Fall back to any FY observation
-                fy_obs = [o for o in observations if o.get("fp") == "FY"]
-            if not fy_obs:
-                warnings.append(f"{company_name}: no full-year (FY) observations found for '{concept}' — using most recent available.")
-                fy_obs = observations
+            # Filter to FY observations with annual duration or instant (no start)
+            fy_obs = []
+            for o in observations:
+                if o.get("fp") != "FY":
+                    continue
+                dur = _duration_days(o)
+                if dur is not None and not (350 <= dur <= 380):
+                    continue
+                fy_obs.append(o)
 
-            latest = next(reversed(fy_obs))
+            if not fy_obs:
+                warnings.append(f"{company_name}: no full-year (FY) annual observations found for '{concept}' — skipped.")
+                continue
+
+            # Pick the observation with the maximum period end date; break ties by latest filed
+            best = max(fy_obs, key=lambda o: (o.get("end", ""), o.get("filed", "")))
+
+            period_end = best.get("end", "")
+            try:
+                fiscal_year = _fiscal_year_for(period_end, fye_mmdd)
+            except Exception:
+                fiscal_year = best.get("fy")
+
+            # Staleness warning: period_end more than 548 days before today
+            if period_end:
+                try:
+                    pe_date = datetime.strptime(period_end, "%Y-%m-%d").date()
+                    if (today - pe_date).days > 548:
+                        warnings.append(
+                            f"{ticker}: most recent value for {concept} is from "
+                            f"{period_end}; the company may report this metric under "
+                            "a different concept."
+                        )
+                except ValueError:
+                    pass
+
             results.append({
                 "company": company_name,
                 "cik": padded_cik,
                 "ticker": ticker,
-                "value": latest.get("val"),
+                "value": best.get("val"),
                 "unit": best_unit,
-                "period_end": latest.get("end", ""),
-                "fiscal_year": latest.get("fy"),
-                "accession_number": latest.get("accn", ""),
-                "form": latest.get("form", ""),
+                "period_end": period_end,
+                "fiscal_year": fiscal_year,
+                "filing_fiscal_year": best.get("fy"),
+                "accession_number": best.get("accn", ""),
+                "form": best.get("form", ""),
             })
 
     except (httpx.HTTPStatusError, httpx.RequestError) as exc:
         return {"error": str(exc), "hint": "A network error occurred. Check identifiers and try again."}
+    except Exception as exc:
+        return {"error": f"Unexpected error: {type(exc).__name__}: {exc}",
+                "hint": "Report this to the toolkit maintainer; do not retry with the same arguments."}
 
     # --- Post-collection comparability checks ---
     _check_comparability(results, warnings)
@@ -775,6 +921,9 @@ async def sec_edgar_get_filing_metadata(
         }
     except (httpx.HTTPStatusError, httpx.RequestError) as exc:
         return {"error": str(exc), "hint": "Check the identifier and accession number and try again."}
+    except Exception as exc:
+        return {"error": f"Unexpected error: {type(exc).__name__}: {exc}",
+                "hint": "Report this to the toolkit maintainer; do not retry with the same arguments."}
 
 
 # ---------------------------------------------------------------------------
@@ -860,10 +1009,13 @@ async def sec_edgar_list_concepts(
         }
     except (httpx.HTTPStatusError, httpx.RequestError) as exc:
         return {"error": str(exc), "hint": "Check the identifier and try again."}
+    except Exception as exc:
+        return {"error": f"Unexpected error: {type(exc).__name__}: {exc}",
+                "hint": "Report this to the toolkit maintainer; do not retry with the same arguments."}
 
 
 # ---------------------------------------------------------------------------
-# Tool 8 — Quarterly XBRL observations (Q1/Q2/Q3/Q4)
+# Tool 8 — Quarterly XBRL observations (Q1/Q2/Q3)
 # ---------------------------------------------------------------------------
 
 @mcp.tool(
@@ -882,11 +1034,16 @@ async def sec_edgar_get_quarterly_facts(
     concept: Annotated[str, "XBRL concept tag, e.g. 'Revenues', 'NetIncomeLoss'."],
     limit: Annotated[int, "Number of quarterly observations to return, most recent first. Default 8, max 40."] = 8,
 ) -> dict:
-    """Return quarterly (Q1/Q2/Q3/Q4) XBRL observations for a single concept and company.
+    """Return quarterly (Q1/Q2/Q3) XBRL observations for a single concept and company.
 
-    Filters to observations where the fiscal period (fp) is Q1, Q2, Q3, or Q4
-    and the source form is a 10-Q filing. Results are returned most-recent-first.
-    Each observation includes a human-readable period_label (e.g. 'Q3 FY2025').
+    IMPORTANT: This tool returns Q1, Q2, and Q3 only.  Q4 figures are NOT available
+    here because companies do not file a 10-Q for Q4; Q4 data appears only in the
+    annual 10-K or an earnings 8-K.  Use sec_edgar_get_company_fact for full-year (FY)
+    annual figures.
+
+    Filters to 10-Q observations with a single-quarter duration of 80–100 days.
+    This eliminates year-to-date (YTD) cumulative values (e.g. a nine-month total
+    tagged fp=Q3 would exceed the duration window and is excluded).
 
     Revenue concept auto-retry: if concept='Revenues' returns zero quarterly
     observations, the tool automatically retries with
@@ -894,9 +1051,14 @@ async def sec_edgar_get_quarterly_facts(
     many other companies switched to after 2018). The result includes a 'concept'
     field showing which concept name was actually used.
 
-    Use this tool when the user asks about quarterly trends, specific quarters,
-    or wants to compare quarters. For annual (full-year) data, use
-    sec_edgar_get_company_fact instead.
+    Each observation key reference:
+      fiscal_quarter  — the SEC fp value (Q1/Q2/Q3)
+      fiscal_year     — derived from the period end date (not the filing year)
+      period_label    — human-readable, e.g. "Q3 FY2024"
+      period_start / period_end — ISO dates bounding the quarter
+      value           — the numeric fact value
+      accession_number, filing_fiscal_year — filing provenance (do NOT use
+        filing_fiscal_year as the period label)
 
     Returns a dict with keys: company, cik, taxonomy, concept, unit, label,
     observations (list), note. On failure returns {"error": "...", "hint": "..."}.
@@ -917,12 +1079,17 @@ async def sec_edgar_get_quarterly_facts(
         padded_cik, _ = resolved
 
         client = _get_client()
-        resp = await client.get(
-            f"https://data.sec.gov/api/xbrl/companyfacts/CIK{padded_cik}.json",
-            headers=_make_headers(),
+        # Fetch submission and companyfacts concurrently to reduce latency.
+        sub, resp = await asyncio.gather(
+            _fetch_submission(padded_cik),
+            client.get(
+                f"https://data.sec.gov/api/xbrl/companyfacts/CIK{padded_cik}.json",
+                headers=_make_headers(),
+            ),
         )
         resp.raise_for_status()
         facts = resp.json()
+        fye_mmdd: str | None = sub.get("fiscalYearEnd")
 
         company_name = facts.get("entityName", identifier)
         taxonomy_data = facts.get("facts", {}).get(taxonomy)
@@ -947,7 +1114,12 @@ async def sec_edgar_get_quarterly_facts(
                 sample = list(taxonomy_data.keys())[:10]
                 return {
                     "error": f"Concept '{concept}' not found in taxonomy '{taxonomy}' for {company_name}.",
-                    "hint": f"Sample available concepts (first 10): {sample}. Use sec_edgar_list_concepts to search.",
+                    "hint": (
+                        f"Sample available concepts (first 10): {sample}. "
+                        "Try concept='RevenueFromContractWithCustomerExcludingAssessedTax' for revenue, "
+                        "or call sec_edgar_list_concepts with search='<keyword>'. "
+                        "Do not retry with the same arguments."
+                    ),
                 }
 
         label = concept_data.get("label", effective_concept)
@@ -967,18 +1139,15 @@ async def sec_edgar_get_quarterly_facts(
         #
         # XBRL stores BOTH three-month and year-to-date (YTD) values under the same
         # fp label (e.g. fp=Q3 covers both "three months ended Sep 30" AND "nine months
-        # ended Sep 30"). We distinguish them by duration: a genuine single quarter
-        # spans ~59–104 days; a YTD period is longer. Filter to duration ≤ 104 days so
-        # we never surface a 6- or 9-month cumulative as a quarterly figure.
+        # ended Sep 30"). Genuine single quarters span 80–100 days; YTD periods are
+        # longer.  Tightened from ≤104 to 80–100 to exclude edge-case YTD values.
         quarterly_fps = {"Q1", "Q2", "Q3", "Q4"}
 
         def _is_single_quarter(obs: dict) -> bool:
-            start = obs.get("start", "")
-            end = obs.get("end", "")
-            if not start or not end:
+            dur = _duration_days(obs)
+            if dur is None:
                 return True  # can't determine — keep it
-            days = _days_between(start, end)
-            return days <= 104  # ~3.5 months max for a true single quarter
+            return 80 <= dur <= 100
 
         quarterly_obs = [
             o for o in all_obs
@@ -1028,10 +1197,12 @@ async def sec_edgar_get_quarterly_facts(
                 return {
                     "error": f"No single-quarter (Q1/Q2/Q3/Q4) observations found for '{effective_concept}' for {company_name}.",
                     "hint": (
-                        "This concept may only be reported annually. Use sec_edgar_get_company_fact for annual data. "
-                        "Note: Q4 figures are not in 10-Qs — they appear in 10-K or 8-K earnings releases."
+                        "Try concept='RevenueFromContractWithCustomerExcludingAssessedTax' for revenue, "
+                        "or call sec_edgar_list_concepts with search='<keyword>'. "
+                        "Do not retry with the same arguments."
                     ),
                 }
+
         note_parts = []
         if len(quarterly_obs) < limit:
             note_parts.append(
@@ -1043,32 +1214,39 @@ async def sec_edgar_get_quarterly_facts(
             note_parts.append(note)
         note = " ".join(note_parts)
 
-        # Deduplicate: keep only the observation with the latest accession per (fp, fy) pair
-        # (same period may appear in multiple filings; prefer the most-recently-filed one)
+        # Deduplicate: keep only the latest-filed observation per (start, end) pair.
+        # This correctly collapses restatements of the same period window, even when
+        # (fp, fy) tags differ across filings.
         seen: dict[tuple, dict] = {}
         for o in quarterly_obs:  # already sorted most-recent end date first
-            key = (o.get("fp"), o.get("fy"))
-            if key not in seen:
+            key = (o.get("start", ""), o.get("end", ""))
+            if key not in seen or o.get("filed", "") > seen[key].get("filed", ""):
                 seen[key] = o
         quarterly_obs = list(seen.values())
         # Re-sort after dedup
         quarterly_obs.sort(key=lambda o: o.get("end", ""), reverse=True)
 
-        # Slice and annotate with human-readable period label
+        # Slice and annotate
         sliced = quarterly_obs[:limit]
         observations = []
         for o in sliced:
             fp = o.get("fp", "")
-            fy = o.get("fy")
-            period_label = f"{fp} FY{fy}" if fp and fy else fp
+            end = o.get("end", "")
+            try:
+                fiscal_year = _fiscal_year_for(end, fye_mmdd)
+            except Exception:
+                fiscal_year = o.get("fy")
+            period_label = f"{fp} FY{fiscal_year}" if fp and fiscal_year else fp
             observations.append({
                 "period_label": period_label,
-                "end": o.get("end", ""),
-                "val": o.get("val"),
+                "fiscal_quarter": fp,
+                "fiscal_year": fiscal_year,
+                "period_start": o.get("start") or None,
+                "period_end": end,
+                "value": o.get("val"),
                 "form": o.get("form", ""),
-                "accn": o.get("accn", ""),
-                "fy": fy,
-                "fp": fp,
+                "accession_number": o.get("accn", ""),
+                "filing_fiscal_year": o.get("fy"),
             })
 
         return {
@@ -1083,6 +1261,9 @@ async def sec_edgar_get_quarterly_facts(
         }
     except (httpx.HTTPStatusError, httpx.RequestError) as exc:
         return {"error": str(exc), "hint": "Check the identifier and concept, and try again."}
+    except Exception as exc:
+        return {"error": f"Unexpected error: {type(exc).__name__}: {exc}",
+                "hint": "Report this to the toolkit maintainer; do not retry with the same arguments."}
 
 
 if __name__ == "__main__":

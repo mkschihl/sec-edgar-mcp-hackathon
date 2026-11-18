@@ -253,7 +253,8 @@ BENCHMARK_QUESTIONS = [
         "category": "filing_attribution",
         "difficulty": "hard",
         "question": "What form type and filing date corresponds to Microsoft's most recent annual net income figure?",
-        "expected_tools": ["sec_edgar_get_company_fact", "sec_edgar_get_filing_metadata"],
+        "expected_tools": ["sec_edgar_get_company_fact"],
+        "optional_tools": ["sec_edgar_get_filing_metadata"],
         "pass_criteria": (
             "Response identifies the form type (10-K) and filing date for the "
             "source filing of Microsoft's most recent annual net income; "

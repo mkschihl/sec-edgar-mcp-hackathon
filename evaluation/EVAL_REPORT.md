@@ -2,8 +2,8 @@
 
 **Agent:** `sec_edgar_agent`  
 **Environment:** `gsa-hackathon` (IBM Cloud Toronto)  
-**Run date:** 2026-11-18 03:45  
-**Duration:** 35s for 3 questions  
+**Run date:** 2026-11-18 04:36  
+**Duration:** 5s for 4 questions  
 
 ---
 
@@ -11,10 +11,10 @@
 
 | Metric | Value |
 |---|---|
-| Total questions | 3 |
-| ✅ Pass | 2 (67%) |
-| ⚠️ Partial | 1 (33%) |
-| ❌ Fail | 0 (0%) |
+| Total questions | 4 |
+| ✅ Pass | 2 (50%) |
+| ⚠️ Partial | 1 (25%) |
+| ❌ Fail | 1 (25%) |
 
 ---
 
@@ -25,6 +25,7 @@
 | BQ-09 | 🟡 medium | quarterly_facts | ✅ pass | `get_quarterly_facts` | `get_quarterly_facts` | All expected tools fired. |
 | BQ-15 | 🔴 hard | filing_attribution | ⚠️ partial | `get_company_fact`, `get_filing_metadata` | `resolve_company`, `get_company_fact` | Some tools fired. Missing: ['sec_edgar_get_filing_metadata']. |
 | BQ-17 | 🔴 hard | multi_step_discovery | ✅ pass | `search_companies`, `get_company_fact` | `search_companies`, `get_company_fact` | All expected tools fired. |
+| BQ-19 | 🟢 easy | edge_cases | ❌ fail | `get_recent_filings` | `resolve_company` | No expected tools fired. Missing: ['sec_edgar_get_recent_filings']. |
 
 ---
 
@@ -106,6 +107,19 @@ https://www.sec.gov/Archives/edgar/data/320193/0000320193-26-000026.txt
 
 </details>
 
+### BQ-19 — ❌ FAIL
+**Question:** What SEC filings has the company with ticker ZZZZNOTREAL submitted recently?  
+**Expected tools:** sec_edgar_get_recent_filings  
+**Tools fired:** sec_edgar_resolve_company  
+
+<details><summary>Agent response</summary>
+
+```
+The ticker **ZZZZNOTREAL** could not be found in the SEC’s exchange‑listed company database. Please verify the ticker spelling or provide a different identifier (e.g., a company name, CIK, or correct ticker) so I can locate the correct entity and retrieve its recent filings.
+```
+
+</details>
+
 ---
 
 ## Tool Utilisation
@@ -115,6 +129,7 @@ https://www.sec.gov/Archives/edgar/data/320193/0000320193-26-000026.txt
 | `sec_edgar_get_company_fact` | 2 | 2 | 100% | 2 |
 | `sec_edgar_get_filing_metadata` | 1 | 0 | 0% | 0 |
 | `sec_edgar_get_quarterly_facts` | 1 | 1 | 100% | 1 |
+| `sec_edgar_get_recent_filings` | 1 | 0 | 0% | 0 |
 | `sec_edgar_search_companies` | 1 | 1 | 100% | 1 |
 
 ---
@@ -123,6 +138,7 @@ https://www.sec.gov/Archives/edgar/data/320193/0000320193-26-000026.txt
 
 | Category | Questions | Pass | Partial | Fail |
 |---|---|---|---|---|
+| edge_cases | 1 | 0 | 0 | 1 |
 | filing_attribution | 1 | 0 | 1 | 0 |
 | multi_step_discovery | 1 | 1 | 0 | 0 |
 | quarterly_facts | 1 | 1 | 0 | 0 |

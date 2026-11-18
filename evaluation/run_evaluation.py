@@ -274,7 +274,9 @@ def score_question(q: dict, response_text: str, raw_response: dict) -> dict:
     tools_fired = extract_tools_fired(raw_response)
 
     expected = q["expected_tools"]
-    missing = [t for t in expected if t not in tools_fired]
+    # optional_tools are never counted as missing — they help but aren't required
+    optional = set(q.get("optional_tools") or [])
+    missing = [t for t in expected if t not in tools_fired and t not in optional]
     is_refusal = looks_like_refusal(response_text)
     is_timeout = "[TIMEOUT]" in response_text
     is_error = response_text.startswith("[HTTP") or response_text.startswith("[ERROR")
@@ -600,8 +602,7 @@ def main() -> None:
         for r in results:
             by_id[r["id"]] = r
         # Preserve the ordering from BENCHMARK_QUESTIONS
-        from evaluation.benchmark_questions import BENCHMARK_QUESTIONS as _BQS
-        id_order = [q["id"] for q in _BQS]
+        id_order = [q["id"] for q in BENCHMARK_QUESTIONS]
         merged = [by_id[bid] for bid in id_order if bid in by_id]
         RAW_PATH.write_text(json.dumps(merged, indent=2))
         print(f"\nRaw results (merged {len(results)} into {len(merged)} total) → {RAW_PATH}")

@@ -1,6 +1,6 @@
 """SEC EDGAR MCP Toolkit — stdio transport.
 
-Nine tools exposed to watsonx Orchestrate:
+Ten tools exposed to watsonx Orchestrate:
   - sec_edgar_resolve_synonym       : map a common company nickname/alias to canonical EDGAR name + ticker
   - sec_edgar_search_companies      : search all SEC-registered companies by partial name
   - sec_edgar_resolve_company       : resolve ticker or CIK to canonical company info
@@ -8,6 +8,7 @@ Nine tools exposed to watsonx Orchestrate:
   - sec_edgar_get_company_fact      : XBRL concept time series for one company
   - sec_edgar_compare_companies     : compare one XBRL concept across multiple companies
   - sec_edgar_get_filing_metadata   : filing doc list and EDGAR URL for an accession number
+  - sec_edgar_get_filing_text       : extract readable text from an SEC filing document
   - sec_edgar_list_concepts         : discover available XBRL concepts for a company
   - sec_edgar_get_quarterly_facts   : quarterly XBRL observations (Q1/Q2/Q3/Q4) for one company
 
@@ -55,7 +56,7 @@ REVENUE_CANDIDATES = [
 mcp = FastMCP(
     "sec_edgar_tools",
     instructions=(
-        "SEC EDGAR toolkit with nine tools for authoritative SEC filing data.\n\n"
+        "SEC EDGAR toolkit with ten tools for authoritative SEC filing data.\n\n"
         "TOOL SELECTION GUIDE:\n"
         "- Resolve a common nickname/alias to canonical name + ticker → sec_edgar_resolve_synonym\n"
         "- Find companies by partial name → sec_edgar_search_companies\n"
@@ -65,6 +66,7 @@ mcp = FastMCP(
         "- Fetch quarterly (Q1/Q2/Q3/Q4) observations → sec_edgar_get_quarterly_facts\n"
         "- Compare a concept across multiple companies → sec_edgar_compare_companies\n"
         "- Look up a specific filing by accession number → sec_edgar_get_filing_metadata\n"
+        "- Read narrative text from a filing document → sec_edgar_get_filing_text\n"
         "- Discover what XBRL concepts a company reports → sec_edgar_list_concepts\n\n"
         "No authentication required. All tools return dicts; errors include "
         "an 'error' key and a 'hint' key with recovery guidance."
@@ -1340,7 +1342,259 @@ async def sec_edgar_get_filing_metadata(
 
 
 # ---------------------------------------------------------------------------
-# Tool 7 — Discover available XBRL concepts for a company
+# Tool 7 — Read narrative text from a filing document
+# ---------------------------------------------------------------------------
+
+# EDGAR HTML filing documents can be large (100–500 KB).  We fetch the filing
+# index JSON first to find the primary document filename, then fetch and
+# strip the HTML from that document.  No external HTML-parsing library is
+# needed — the standard-library `re` module (already imported) is sufficient
+# for EDGAR's well-structured HTML.
+
+_HTML_TAG_RE = re.compile(r"<[^>]+>")
+_MULTI_SPACE_RE = re.compile(r"[ \t]+")
+_MULTI_NEWLINE_RE = re.compile(r"\n{3,}")
+
+# Common section heading keywords → representative text that appears near
+# the start of that section in 10-K/10-Q filings.  Used for best-effort
+# section seeking only — not a parser.
+_SECTION_KEYWORDS: dict[str, list[str]] = {
+    "risk_factors":    ["risk factors", "item 1a"],
+    "mda":             ["management", "discussion and analysis", "item 7"],
+    "business":        ["item 1.", "item 1 ", "business overview", "our business"],
+    "financials":      ["financial statements", "item 8", "consolidated balance"],
+    "legal":           ["legal proceedings", "item 3"],
+    "controls":        ["controls and procedures", "item 9a"],
+    "8k_items":        ["item 1.", "item 2.", "item 5.", "item 7.", "item 8.", "item 9."],
+}
+
+_FILING_TEXT_MAX_CHARS = 32_000
+_FILING_TEXT_DEFAULT_CHARS = 8_000
+
+
+def _strip_html(raw: str) -> str:
+    """Strip HTML tags and normalize whitespace from a filing document."""
+    text = _HTML_TAG_RE.sub(" ", raw)
+    # Collapse runs of spaces/tabs to a single space per line
+    lines = [_MULTI_SPACE_RE.sub(" ", line).strip() for line in text.splitlines()]
+    # Rejoin and collapse excessive blank lines
+    text = "\n".join(lines)
+    text = _MULTI_NEWLINE_RE.sub("\n\n", text)
+    return text.strip()
+
+
+# Matches a lowercase letter or digit followed by a period then a space and
+# an uppercase letter — a heuristic for a sentence-ending full stop, e.g.
+# "operations. The" vs a section-number dot like "Item 1B. Unresolved".
+_PROSE_PERIOD_RE = re.compile(r"[a-z]\. [A-Z]")
+
+
+def _find_section_offset(text: str, section: str) -> int:
+    """Return the character offset of the best-matching section heading, or 0.
+
+    EDGAR filings have a Table of Contents that lists every section heading
+    before the actual content.  The TOC and the real section both contain the
+    same keyword, but only the real section is followed by prose.  We walk
+    through up to 4 occurrences and pick the first whose following 400-char
+    context contains a sentence-ending period (lowercase word + ". " + upper).
+    """
+    keywords = _SECTION_KEYWORDS.get(section.lower().strip(), [section.lower()])
+    best = len(text)  # sentinel: not found
+
+    for kw in keywords:
+        kw_lower = kw.lower()
+        text_lower = text.lower()
+        pos = 0
+        found_prose = False
+        for _ in range(4):  # examine up to 4 occurrences per keyword
+            p = text_lower.find(kw_lower, pos)
+            if p < 0:
+                break
+            ctx = text[p: p + 400]
+            if _PROSE_PERIOD_RE.search(ctx):
+                if p < best:
+                    best = p
+                found_prose = True
+                break
+            pos = p + len(kw_lower)
+        if not found_prose:
+            # No prose-like context found — fall back to first occurrence
+            p0 = text_lower.find(kw_lower)
+            if 0 <= p0 < best:
+                best = p0
+
+    return 0 if best == len(text) else best
+
+
+@mcp.tool(
+    name="sec_edgar_get_filing_text",
+    annotations={
+        "title": "Get SEC Filing Text",
+        "readOnlyHint": True,
+        "destructiveHint": False,
+        "idempotentHint": True,
+        "openWorldHint": True,
+    },
+)
+async def sec_edgar_get_filing_text(
+    identifier: Annotated[str, "Company ticker or CIK. Used together with accession_number."],
+    accession_number: Annotated[str, "Accession number of the filing, e.g. '0000320193-24-000123' (dashes optional)."],
+    section: Annotated[str, (
+        "Optional section of the filing to seek to before extracting text. "
+        "Supported hints: 'risk_factors', 'mda', 'business', 'financials', 'legal', 'controls', '8k_items'. "
+        "Leave empty to start from the beginning of the document."
+    )] = "",
+    max_chars: Annotated[int, (
+        "Maximum number of characters to return (default 8000, max 32000). "
+        "Increase for longer sections; decrease for a quick overview."
+    )] = _FILING_TEXT_DEFAULT_CHARS,
+) -> dict:
+    """Extract readable plain text from an SEC filing's primary HTML document.
+
+    Workflow:
+      1. Use sec_edgar_get_recent_filings or sec_edgar_get_filing_metadata to
+         find an accession number.
+      2. Call this tool with that accession number to read the filing's text.
+
+    The tool fetches the filing index from EDGAR, identifies the primary
+    document, downloads it, strips HTML tags, and returns the plain text.
+
+    Use the optional ``section`` parameter to skip to a named section
+    (risk_factors, mda, business, financials, legal, controls) before
+    extracting text — useful for long 10-K filings where the section of
+    interest is deep in the document.
+
+    Use ``max_chars`` to control how much text is returned.  The default
+    (8 000) is enough for most single-section reads.  Set to 32 000 for
+    a broader pass over a whole document.
+
+    Returns a dict with keys:
+      company           — company name
+      cik               — zero-padded 10-digit CIK
+      accession_number  — dashed accession number
+      form              — form type (10-K, 10-Q, 8-K, …)
+      filing_date       — YYYY-MM-DD filing date
+      primary_document  — filename of the primary HTML document
+      section_sought    — section hint used (empty string if none)
+      section_offset    — character offset where extraction began
+      text              — extracted plain text (up to max_chars characters)
+      truncated         — true if the document was longer than max_chars
+      document_url      — direct URL to the primary document on EDGAR
+
+    On failure returns {"error": "...", "hint": "..."}.
+    """
+    max_chars = max(100, min(max_chars, _FILING_TEXT_MAX_CHARS))
+
+    try:
+        resolved = await _resolve_identifier(identifier)
+        if isinstance(resolved, dict):
+            return resolved
+        padded_cik, _ = resolved
+
+        sub = await _fetch_submission(padded_cik)
+        company_name = sub.get("name", identifier)
+        accession_dashed = _normalize_accession(accession_number.strip())
+        accession_path = _accession_to_path(accession_dashed)
+        numeric_cik = str(int(padded_cik))
+        base_url = (
+            f"https://www.sec.gov/Archives/edgar/data/{numeric_cik}/{accession_path}"
+        )
+
+        # --- Step 1: resolve metadata from submissions JSON -------------------
+        recent = sub.get("filings", {}).get("recent", {})
+        accessions = recent.get("accessionNumber", [])
+        accession_index = {
+            _normalize_accession(acc): i for i, acc in enumerate(accessions)
+        }
+        idx = accession_index.get(accession_dashed)
+
+        form = ""
+        filing_date = ""
+        primary_doc = ""
+        if idx is not None:
+            forms = recent.get("form", [])
+            filing_dates = recent.get("filingDate", [])
+            primary_docs = recent.get("primaryDocument", [])
+            form = forms[idx] if idx < len(forms) else ""
+            filing_date = filing_dates[idx] if idx < len(filing_dates) else ""
+            primary_doc = primary_docs[idx] if idx < len(primary_docs) else ""
+
+        # --- Step 2: fall back to index.json if primary_doc not in submissions --
+        client = _get_client()
+        if not primary_doc:
+            index_resp = await client.get(
+                f"{base_url}/index.json",
+                headers=_make_headers(),
+            )
+            index_resp.raise_for_status()
+            index_data = index_resp.json()
+            # index.json has {"directory": {"item": [{"name": "...", "type": "..."}]}}
+            items = index_data.get("directory", {}).get("item", [])
+            # Prefer the first .htm/.html file that isn't the index itself
+            for item in items:
+                name = item.get("name", "")
+                if name.lower().endswith((".htm", ".html")) and "index" not in name.lower():
+                    primary_doc = name
+                    break
+            if not primary_doc:
+                # Accept any .txt file as a fallback
+                for item in items:
+                    name = item.get("name", "")
+                    if name.lower().endswith(".txt") and "index" not in name.lower():
+                        primary_doc = name
+                        break
+
+        if not primary_doc:
+            return {
+                "error": f"Could not identify a primary document for accession '{accession_dashed}'.",
+                "hint": (
+                    "The filing index did not contain an .htm/.html document. "
+                    "Try sec_edgar_get_filing_metadata to inspect available files."
+                ),
+            }
+
+        document_url = f"{base_url}/{primary_doc}"
+
+        # --- Step 3: fetch the primary document --------------------------------
+        doc_resp = await client.get(document_url, headers=_make_headers())
+        doc_resp.raise_for_status()
+        raw_content = doc_resp.text
+
+        # --- Step 4: strip HTML and extract text window -----------------------
+        plain_text = _strip_html(raw_content)
+
+        section_offset = 0
+        if section.strip():
+            section_offset = _find_section_offset(plain_text, section)
+
+        window = plain_text[section_offset:]
+        truncated = len(window) > max_chars
+        text_out = window[:max_chars]
+
+        return {
+            "company": company_name,
+            "cik": padded_cik,
+            "accession_number": accession_dashed,
+            "form": form,
+            "filing_date": filing_date,
+            "primary_document": primary_doc,
+            "section_sought": section.strip(),
+            "section_offset": section_offset,
+            "text": text_out,
+            "truncated": truncated,
+            "document_url": document_url,
+        }
+    except (httpx.HTTPStatusError, httpx.RequestError) as exc:
+        return {"error": str(exc), "hint": "Check the identifier and accession number and try again."}
+    except Exception as exc:
+        return {
+            "error": f"Unexpected error: {type(exc).__name__}: {exc}",
+            "hint": "Report this to the toolkit maintainer; do not retry with the same arguments.",
+        }
+
+
+# ---------------------------------------------------------------------------
+# Tool 8 — Discover available XBRL concepts for a company
 # ---------------------------------------------------------------------------
 
 @mcp.tool(

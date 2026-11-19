@@ -21,6 +21,9 @@ from server import (
     sec_edgar_resolve_company,
     sec_edgar_get_recent_filings,
     sec_edgar_resolve_synonym,
+    sec_edgar_get_filing_text,
+    _strip_html,
+    _find_section_offset,
     SEC_USER_AGENT,
 )
 
@@ -583,8 +586,67 @@ async def test_synonym_tool():
     check("Twitter ticker is empty string (not exchange-listed)", r.get("ticker") == "", str(r))
 
 
+async def test_filing_text():
+    print("\n[17] sec_edgar_get_filing_text — Apple 10-K text extraction")
+
+    # --- offline unit tests for helpers (no network) -------------------------
+    # _strip_html: tags removed, whitespace normalized
+    raw = "<p>Hello  <b>World</b>!</p>\n\n\n<p>Second.</p>"
+    stripped = _strip_html(raw)
+    check("_strip_html removes tags", "<" not in stripped and ">" not in stripped, stripped)
+    check("_strip_html contains content", "Hello" in stripped and "World" in stripped, stripped)
+    check("_strip_html collapses 3+ newlines", stripped.count("\n\n\n") == 0, repr(stripped))
+
+    # _find_section_offset: known keyword found
+    text = "Cover page text\n\nITEM 1A. RISK FACTORS\nBlah blah risk"
+    off = _find_section_offset(text, "risk_factors")
+    check("_find_section_offset finds 'risk factors'", off > 0, f"offset={off}")
+
+    # _find_section_offset: unknown section returns 0
+    off_unknown = _find_section_offset(text, "nonexistent_section_xyz")
+    check("_find_section_offset unknown section → 0", off_unknown == 0, f"offset={off_unknown}")
+
+    # --- live network tests (Apple 10-K, known accession) --------------------
+    # Apple FY2023 10-K — accession 0000320193-23-000106 (filed 2023-11-03)
+    AAPL_10K_ACCESSION = "0000320193-23-000106"
+    r = await sec_edgar_get_filing_text("AAPL", AAPL_10K_ACCESSION)
+    check("10-K: no error key", "error" not in r, str(r.get("error", "")))
+    check("10-K: company is Apple", "Apple" in r.get("company", ""), r.get("company", ""))
+    check("10-K: form is 10-K", r.get("form") == "10-K", r.get("form"))
+    check("10-K: accession_number normalised", r.get("accession_number") == AAPL_10K_ACCESSION, r.get("accession_number"))
+    check("10-K: text non-empty", len(r.get("text", "")) > 100, f"len={len(r.get('text',''))}")
+    check("10-K: text has no HTML tags", "<html" not in r.get("text", "").lower(), r.get("text", "")[:200])
+    check("10-K: primary_document set", bool(r.get("primary_document")), r.get("primary_document"))
+    check("10-K: document_url is https", r.get("document_url", "").startswith("https://"), r.get("document_url"))
+    check("10-K: truncated key present", "truncated" in r, str(r.keys()))
+    check("10-K: section_offset key present", "section_offset" in r, str(r.keys()))
+
+    # max_chars clamping
+    r_small = await sec_edgar_get_filing_text("AAPL", AAPL_10K_ACCESSION, max_chars=200)
+    check("max_chars=200: text ≤ 200 chars", len(r_small.get("text", "")) <= 200, f"len={len(r_small.get('text',''))}")
+
+    # section seek: risk_factors should jump past the cover page
+    r_rf = await sec_edgar_get_filing_text("AAPL", AAPL_10K_ACCESSION, section="risk_factors", max_chars=2000)
+    check("section=risk_factors: no error", "error" not in r_rf, str(r_rf.get("error", "")))
+    check("section=risk_factors: offset > 0", r_rf.get("section_offset", 0) > 0, f"offset={r_rf.get('section_offset')}")
+    check("section=risk_factors: section_sought preserved", r_rf.get("section_sought") == "risk_factors", r_rf.get("section_sought"))
+
+    # 8-K filing (Apple 8-K, FY2026 Q4 results) — no section hint
+    # Accession 0000320193-26-000024 (Apple FY2026 Q4 results 8-K, filed 2026-11-02)
+    AAPL_8K_ACCESSION = "0000320193-26-000024"
+    r8k = await sec_edgar_get_filing_text("AAPL", AAPL_8K_ACCESSION)
+    check("8-K: no error", "error" not in r8k, str(r8k.get("error", "")))
+    check("8-K: form is 8-K", r8k.get("form") == "8-K", r8k.get("form"))
+    check("8-K: text non-empty", len(r8k.get("text", "")) > 50, f"len={len(r8k.get('text',''))}")
+
+    # bad accession → error dict
+    r_bad = await sec_edgar_get_filing_text("AAPL", "0000000000-00-000000")
+    check("bad accession: returns error key", "error" in r_bad, str(r_bad))
+
+
 async def main():
     await test_synonym_tool()
+    await test_filing_text()
     await test_aapl_net_income()
     await test_aapl_revenues_quarterly()
     await test_aapl_eps()

@@ -3,7 +3,7 @@
 **Author:** Michael Schihl  
 **Environment:** IBM watsonx Orchestrate — `gsa-hackathon` (IBM Cloud Toronto, `ca-tor`)  
 **Submission date:** 2026-11-14  
-**Last updated:** 2026-11-18
+**Last updated:** 2026-11-19
 
 ---
 
@@ -24,7 +24,7 @@ The answer, demonstrated across 23 evaluation questions, is yes. The agent
 enforces this through structural guards: the agent instructions explicitly
 prohibit constructing or guessing URLs, stating values from memory, or answering
 financial questions without a tool call. These guards are measured in the
-evaluation: 23/23 scope (the agent refused every out-of-scope question), 21/23
+evaluation: 23/23 scope (the agent refused every out-of-scope question), 22/23
 correctness, and 8/8 numeric anchors — all values confirmed against live SEC
 API responses.
 
@@ -189,21 +189,23 @@ be used for quantitative comparison.
 > all question types; the 20/20 figure reflects only the 20 in-scope questions
 > evaluated. These results are unreliable as a scope benchmark.
 
-#### Production WXO agent scoring (2026-11-18)
+#### Production WXO agent scoring (2026-11-19)
 
 The production `sec_edgar_agent` on `gsa-hackathon` was scored against 23 benchmark
 questions using `mistralai/mistral-small-3-1-24b-instruct-2503` as the judge with a
-**3-vote majority** per question. Run date: 2026-11-18, against commit `571f523`.
+**3-vote majority** per question. Run date: 2026-11-19, against commit `329b46c`.
 
 | Dimension | Score | Notes |
 |---|---|---|
-| Correctness | **21 / 23** | 2 unstable (2-of-3 split): BQ-18, BQ-22 |
+| Correctness | **22 / 23** | 1 unstable (2-of-3 split): BQ-20 |
 | Scope | **23 / 23** | Agent never answered out-of-scope questions from training data |
 | Numeric | **8 / 8** | All 8 questions with numeric anchors pass within stated tolerances (0.5–2%) |
 
-21 questions were unanimous (3-of-3 correct). The 2 unstable questions (BQ-18,
-BQ-22) were manually reviewed; the agent responses were correct. No question was
-classified incorrect.
+22 questions were unanimous (3-of-3 correct). The 1 unstable question (BQ-20 —
+Apple EPS) had a 2-of-3 split because one judge vote flagged a Q1 FY2026 value
+($2.85/share) as outside the reference range; that value is correct — it is a
+historical period that ended before today. Manual review confirms the response
+is correct. No question was classified incorrect.
 
 **Root causes of remaining failures (Llama-agent runs):**
 
@@ -272,9 +274,9 @@ The LLM-as-judge runs provided two complementary quality signals:
    correctness or scope benchmark. The Llama agent fabricated a stock price and a
    forecast in Experiment 6 (RXhwZXJpbWVudDo2, sec-edgar-eval-1).
 
-2. **Production WXO agent scoring (2026-11-18, commit `571f523`):** 21/23 correct
-   (2 unstable: BQ-18, BQ-22), 23/23 scope, 8/8 numeric, using Mistral Small
-   3-vote majority judge on cached production responses. The 21 unanimous-correct
+2. **Production WXO agent scoring (2026-11-19, commit `329b46c`):** 22/23 correct
+   (1 unstable: BQ-20), 23/23 scope, 8/8 numeric, using Mistral Small
+   3-vote majority judge on cached production responses. The 22 unanimous-correct
    questions span all 8 tools and all difficulty levels. No question was scored incorrect.
 
 3. **Scope: 23/23 (100%)** in production scoring — the agent never answered
@@ -324,7 +326,7 @@ What revenue-related XBRL concepts does Apple report?
 |-----------|--------|
 | M1 — 8-tool MCP server built and deployed to Code Engine | ✅ Complete |
 | M2 — Agent deployed to WXO; toolkit re-imported as remote streamable-HTTP | ✅ Complete |
-| M3 — Evaluation: REST run (20/20 routing), human audit, Phoenix LLM-as-judge (17–18/20 Llama-agent; 21/23 correct + 2 unstable production WXO, 23/23 scope, 8/8 numeric) | ✅ Complete |
+| M3 — Evaluation: REST run (20/20 routing), human audit, Phoenix LLM-as-judge (17–18/20 Llama-agent; 22/23 correct + 1 unstable production WXO, 23/23 scope, 8/8 numeric) | ✅ Complete |
 
 ---
 
@@ -367,4 +369,4 @@ docs/
 
 ---
 
-*Submitted: 2026-11-14 | Updated: 2026-11-18 | Author: Michael Schihl*
+*Submitted: 2026-11-14 | Updated: 2026-11-19 | Author: Michael Schihl*

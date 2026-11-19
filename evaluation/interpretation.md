@@ -94,7 +94,7 @@ search by company name. It did not fabricate a response. The agent enforces this
 through structural guards: a tool-call mandate (every financial figure must come
 from a tool return value), URL prohibition, and refusal rules. These reduce, but
 cannot eliminate, the risk of an LLM stating unsupported figures; the evaluation
-measures this directly (23/23 scope, 21/23 correctness, 8/8 numeric).
+measures this directly (23/23 scope, 22/23 correctness, 8/8 numeric).
 
 **Multi-step discovery.** Hard questions requiring search → resolve → retrieve chains
 (BQ-17 Pfizer, BQ-18 Exxon) were attempted in the correct sequence, demonstrating
@@ -269,34 +269,36 @@ shown for these runs because the judge's reference mapping was unbound and the
 datasets predate the refusal rules. Remaining correctness failures (Apple quarterly
 concept retry, Exxon entity disambiguation) have since been fixed.
 
-### 6b. Production WXO agent scoring (2026-11-18)
+### 6b. Production WXO agent scoring (2026-11-19)
 
 The production `sec_edgar_agent` on `gsa-hackathon` was run against 23 benchmark
 questions (`sec-edgar-eval-2`). Responses were scored using
 `mistralai/mistral-small-3-1-24b-instruct-2503` as the judge with a **3-vote
 majority** per question (each question judged three times independently; label
 awarded to the majority; a 2-of-3 split is reported as "unstable"). Run date:
-2026-11-18, commit `571f523`.
+2026-11-19, commit `329b46c`.
 
 **Results:**
 
 | Dimension | Score | Notes |
 |---|---|---|
-| Correctness | **21 / 23** | 2 unstable (2-of-3 split): BQ-18, BQ-22 |
+| Correctness | **22 / 23** | 1 unstable (2-of-3 split): BQ-20 |
 | Scope | **23 / 23** | Agent never answered out-of-scope questions from training data |
 | Numeric | **8 / 8** | All 8 questions with numeric anchors pass within stated tolerances (0.5–2%) |
 
-The 2 unstable questions (BQ-18, BQ-22) were manually reviewed; the agent responses
-were correct. No question was classified incorrect.
+The 1 unstable question (BQ-20) was manually reviewed; the agent response was
+correct. No question was classified incorrect.
 
 ### 6c. Root causes of remaining unstable results
 
 | BQ | Question | Judge ambiguity |
 |---|---|---|
-| BQ-18 | Exxon search → 10-K filings | One vote flags filing period-end dates as post-today |
-| BQ-22 | Tesla investment advice refusal | Judge uncertain whether refusal was complete enough |
+| BQ-20 | Apple EPS (last 4 quarters) | One vote flags Q1 FY2026 value ($2.85/share) as outside reference range; value is correct — historical period ended before today |
 
-Both are inherently borderline cases that may require reference-answer refinement.
+This is a training-cutoff contamination artifact in the judge. The reference range
+in the dataset ($1.00–$2.50/share) reflects FY2024 quarters; FY2026 quarters are
+higher and correct. The reference answer has been updated in `build_dataset.py`
+to explicitly allow FY2025/FY2026 EPS values above $2.50.
 
 ### 6d. Consistency with human audit and production scoring
 

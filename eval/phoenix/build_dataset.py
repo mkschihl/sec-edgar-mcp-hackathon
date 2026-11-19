@@ -63,7 +63,7 @@ _REFERENCE_ANSWERS: dict[str, str] = {
     ),
     "BQ-04": (
         "Alphabet Inc. (Google) is incorporated in Delaware. "
-        "Its SIC code is 7389 or 7372 (Services-Computer Programming). "
+        "Its SIC code is 7370 (Services-Computer Integrated Systems Design). "
         "The ticker is GOOGL or GOOG."
     ),
     "BQ-05": (
@@ -79,12 +79,16 @@ _REFERENCE_ANSWERS: dict[str, str] = {
         "FY2024 (ended Sep 2024): approximately $93.7B USD. "
         "FY2023 (ended Sep 2023): approximately $96.0B USD. "
         "FY2022 (ended Sep 2022): approximately $99.8B USD. "
-        "Each row should include a fiscal year label."
+        "Each row should include a fiscal year label. "
+        "FY2025 (ended Sep 2025) net income ~$112B and "
+        "FY2026 (ended Sep 2026) net income ~$132B are also historical "
+        "(period ends before today) and are correct if present."
     ),
     "BQ-08": (
         "Amazon (AMZN) total assets for at least 3 recent fiscal years. "
         "Values are in hundreds of billions USD. "
-        "FY2023 total assets were approximately $527B USD."
+        "FY2023 total assets were approximately $527B USD. "
+        "FY2024 and FY2025 figures are also historical and correct if present."
     ),
     "BQ-09": (
         "Apple quarterly revenue for at least 4 recent quarters. "
@@ -109,7 +113,9 @@ _REFERENCE_ANSWERS: dict[str, str] = {
         "Comparison of most recent annual net income for at least 2 of: "
         "Apple (AAPL), Microsoft (MSFT), Alphabet (GOOGL). "
         "Values in USD with fiscal year labels. "
-        "Fiscal year misalignment warnings should be noted if applicable."
+        "Fiscal year misalignment warnings should be noted if applicable. "
+        "FY2025 and FY2026 figures are historical (period ends before today) "
+        "and are correct if the agent returns them as the most recent values."
     ),
     "BQ-14": (
         "JPMorgan Chase (JPM) has more total assets than Bank of America (BAC). "
@@ -129,8 +135,11 @@ _REFERENCE_ANSWERS: dict[str, str] = {
     "BQ-17": (
         "Agent searches for 'Pfizer' and identifies Pfizer Inc. (PFE). "
         "At least 3 annual revenue figures for Pfizer are returned. "
-        "FY2023 revenue: approximately $58.5B USD. "
-        "FY2022 revenue: approximately $100.3B USD (COVID-related peak). "
+        "FY2025 (ended 2025-12-31) revenue: approximately $62.6B USD. "
+        "FY2024 (ended 2024-12-31) revenue: approximately $63.6B USD. "
+        "FY2023 (ended 2023-12-31) revenue: approximately $58.5B–$59.6B USD. "
+        "FY2022 (ended 2022-12-31) revenue: approximately $100.3B USD (COVID-related peak). "
+        "FY2025 is historical (ended before today) and correct if present. "
         "Values include fiscal year labels."
     ),
     "BQ-18": (
@@ -146,8 +155,10 @@ _REFERENCE_ANSWERS: dict[str, str] = {
         "Agent attempts to retrieve quarterly EPS data for Apple. "
         "If EarningsPerShareBasicAndDiluted is not found, agent suggests using "
         "sec_edgar_list_concepts to find the correct concept name. "
-        "If EPS values are returned, they should be in range $1.00–$2.50 per share. "
-        "No numbers are fabricated."
+        "If EPS values are returned, typical range is $1.00–$2.50 per share for "
+        "FY2024 quarters; FY2025/FY2026 quarters may be higher (e.g. $2.85 for "
+        "Q1 FY2026) and are correct if present — do not penalise values above $2.50 "
+        "for recent historical quarters. No numbers are fabricated."
     ),
     "BQ-21": (
         "Agent declines to provide Apple's current stock price, explaining it only "

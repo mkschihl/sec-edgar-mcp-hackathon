@@ -1,0 +1,3891 @@
+{
+  "id": "BQ-11",
+  "question": "What revenue-related XBRL concepts does Apple report in us-gaap?",
+  "score": "pass",
+  "tools_fired": [
+    "sec_edgar_list_concepts"
+  ],
+  "call_counts": {
+    "sec_edgar_list_concepts": 1
+  },
+  "sse_events": [
+    {
+      "id": "1795030029390-5",
+      "object": "thread.run.step.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030029,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "step_details": {
+              "type": "tool_calls",
+              "content": "",
+              "tool_calls": [
+                {
+                  "name": "sec_edgar_list_concepts",
+                  "args": {
+                    "identifier": "AAPL",
+                    "limit": 50,
+                    "search": "revenue",
+                    "taxonomy": "us-gaap"
+                  },
+                  "id": "fc_9af695d6-54d3-42d3-8663-d75421c2bfcd"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032325-11",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "**"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032329-12",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "Apple"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032329-13",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "\u202f"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032331-14",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "Inc"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032344-15",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "."
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032344-16",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " ("
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032345-17",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "CI"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032346-18",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "K"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032347-19",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "\u202f"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032347-20",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "000"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032348-21",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "032"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032358-22",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "019"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032358-23",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "3"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032360-24",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": ")"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032360-25",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " \u2013"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032361-26",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " us"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032361-27",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "\u2011"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032386-28",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "ga"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032386-29",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "ap"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032387-30",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " revenue"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032391-31",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "\u2011"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032391-32",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "related"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032392-33",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " X"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032392-34",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "BR"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032393-35",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "L"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032393-36",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " concepts"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032394-37",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "**\n\n"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032394-38",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "|"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032395-39",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " Concept"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032395-40",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " ("
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032401-41",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "tag"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032401-42",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": ")"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032424-43",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " |"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032425-44",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " Human"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032425-45",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "\u2011"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032426-46",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "read"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032426-47",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "able"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032427-48",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " label"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032427-49",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " |\n"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032428-50",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "|"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032428-51",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "----------------"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032429-52",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "-----------"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032429-53",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "|"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032430-54",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "--------------------------------"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032430-55",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "---------------"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032431-56",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "|\n"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032437-57",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "|"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032437-58",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " Reven"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032455-59",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "ues"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032456-60",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " |"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032457-61",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " Reven"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032457-62",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "ues"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032458-63",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " |\n"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032458-64",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "|"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032459-65",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " Revenue"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032459-66",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "From"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032463-67",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "Contract"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032464-68",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "With"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032464-69",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "Customer"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032465-70",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "Ex"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032465-71",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "cluding"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032466-72",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "Ass"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032467-73",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "essed"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032488-74",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "Tax"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032488-75",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " |"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032489-76",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " Revenue"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032489-77",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " from"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032490-78",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " Contract"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032490-79",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " with"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032491-80",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " Customer"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032491-81",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": ","
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032492-82",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " Ex"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032503-83",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "cluding"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032504-84",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " Ass"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032505-85",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "essed"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032505-86",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " Tax"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032506-87",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " |\n"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032506-88",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "|"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032521-89",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " Contract"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032521-90",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "With"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032522-91",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "Customer"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032522-92",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "Li"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032525-93",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "ability"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032525-94",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "Revenue"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032526-95",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "Recogn"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032527-96",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "ized"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032527-97",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " |"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032528-98",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " Contract"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032528-99",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " with"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032529-100",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " Customer"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032529-101",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": ","
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032530-102",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " Liability"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032530-103",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": ","
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032531-104",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " Revenue"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032554-105",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " Recogn"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032556-106",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "ized"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032557-107",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " |\n"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032557-108",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "|"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032558-109",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " Deferred"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032559-110",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "Revenue"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032559-111",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "Current"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032560-112",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " |"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032560-113",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " Deferred"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032561-114",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " Revenue"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032561-115",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": ","
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032562-116",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " Current"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032562-117",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " |\n"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032585-118",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "|"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032585-119",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " Deferred"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032596-120",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "Revenue"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032603-121",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "Non"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032605-122",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "current"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032607-123",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " |"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032609-124",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " Deferred"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032611-125",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " Revenue"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032613-126",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": ","
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032615-127",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " Non"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032617-128",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "\u2011"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032622-129",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "current"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032622-130",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " |\n"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032623-131",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "|"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032625-132",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " Increase"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032628-133",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "Decrease"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032629-134",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "In"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032631-135",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "Deferred"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032635-136",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "Revenue"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032636-137",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " |"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032639-138",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " Increase"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032641-139",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " ("
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032642-140",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "Decrease"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032644-141",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": ")"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032648-142",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " in"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032649-143",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " Deferred"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032651-144",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " Revenue"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032652-145",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " |\n"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032656-146",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "|"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032657-147",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " Sales"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032659-148",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "Revenue"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032661-149",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "Net"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032663-150",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " |"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032665-151",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " Revenue"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032667-152",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": ","
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032669-153",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " Net"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032672-154",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " ("
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032674-155",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "Deprecated"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032676-156",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "\u202f"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032678-157",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "201"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032680-158",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "8"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032682-159",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "\u2011"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032684-160",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "01"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032686-161",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "\u2011"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032689-162",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "31"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032691-163",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": ")"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032693-164",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " |\n"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032697-165",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "|"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032698-166",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " Sales"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032699-167",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "Revenue"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032701-168",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "Services"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032703-169",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "Gross"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032705-170",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " |"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032708-171",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " Sales"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032709-172",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " Revenue"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032712-173",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": ","
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032714-174",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " Services"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032716-175",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": ","
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032717-176",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " Other"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032720-177",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " ("
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032723-178",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "Deprecated"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032724-179",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "\u202f"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032727-180",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "201"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032729-181",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "8"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032730-182",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "\u2011"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032732-183",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "01"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032735-184",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "\u2011"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032737-185",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "31"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032739-186",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": ")"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032741-187",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " |\n\n"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032743-188",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "These"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032747-189",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " are"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032749-190",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " the"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032750-191",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " revenue"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032751-192",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "\u2011"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032755-193",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "related"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032756-194",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " tags"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032758-195",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " that"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032761-196",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " Apple"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032763-197",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " reports"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032765-198",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " under"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032766-199",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " the"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032768-200",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " **"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032773-201",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "us"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032773-202",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "\u2011"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032775-203",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "ga"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032777-204",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "ap"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032778-205",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "**"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032782-206",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " taxonomy"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032783-207",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": ","
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032787-208",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " as"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032788-209",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " returned"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032790-210",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " by"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032792-211",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " the"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032794-212",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " SEC"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032796-213",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "\u2019s"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032799-214",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " company"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032801-215",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "\u2011"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032804-216",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "facts"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032805-217",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " endpoint"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032808-218",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "."
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032810-219",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " If"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032812-220",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " you"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032813-221",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " need"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032816-222",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " the"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032817-223",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " actual"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032820-224",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " numeric"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032823-225",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " values"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032825-226",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " for"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032826-227",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " any"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032828-228",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " of"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032832-229",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " these"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032833-230",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " concepts"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032834-231",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": ","
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032837-232",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " let"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032840-233",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " me"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032842-234",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " know"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032844-235",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " which"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032846-236",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " one"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032847-237",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "(s"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032850-238",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": ")"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032851-239",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " and"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032854-240",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " I"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032856-241",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " can"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032857-242",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " retrieve"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032859-243",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " the"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032862-244",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " time"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032865-245",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "\u2011"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032867-246",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "series"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032869-247",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " data"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030032870-248",
+      "object": "thread.message.delta",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030032,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "."
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030033236-249",
+      "object": "thread.message.completed",
+      "thread_id": "7bf85604-4ce7-482e-b6fb-6e1262d5ab56",
+      "run_id": "5f081145-78b3-4a0c-8828-980f91d5a2b1",
+      "trace_id": "040d7074b554e7f983df43c1f28b6069",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030033,
+      "data": {
+        "message": {
+          "content": [
+            {
+              "response_type": "text",
+              "id": "1",
+              "text": "**Apple\u202fInc. (CIK\u202f0000320193) \u2013 us\u2011gaap revenue\u2011related XBRL concepts**\n\n| Concept (tag) | Human\u2011readable label |\n|---------------------------|-----------------------------------------------|\n| Revenues | Revenues |\n| RevenueFromContractWithCustomerExcludingAssessedTax | Revenue from Contract with Customer, Excluding Assessed Tax |\n| ContractWithCustomerLiabilityRevenueRecognized | Contract with Customer, Liability, Revenue Recognized |\n| DeferredRevenueCurrent | Deferred Revenue, Current |\n| DeferredRevenueNoncurrent | Deferred Revenue, Non\u2011current |\n| IncreaseDecreaseInDeferredRevenue | Increase (Decrease) in Deferred Revenue |\n| SalesRevenueNet | Revenue, Net (Deprecated\u202f2018\u201101\u201131) |\n| SalesRevenueServicesGross | Sales Revenue, Services, Other (Deprecated\u202f2018\u201101\u201131) |\n\nThese are the revenue\u2011related tags that Apple reports under the **us\u2011gaap** taxonomy, as returned by the SEC\u2019s company\u2011facts endpoint. If you need the actual numeric values for any of these concepts, let me know which one(s) and I can retrieve the time\u2011series data."
+            }
+          ],
+          "role": "assistant"
+        }
+      },
+      "choices": [
+        {
+          "message": {
+            "role": "assistant",
+            "content": "**Apple\u202fInc. (CIK\u202f0000320193) \u2013 us\u2011gaap revenue\u2011related XBRL concepts**\n\n| Concept (tag) | Human\u2011readable label |\n|---------------------------|-----------------------------------------------|\n| Revenues | Revenues |\n| RevenueFromContractWithCustomerExcludingAssessedTax | Revenue from Contract with Customer, Excluding Assessed Tax |\n| ContractWithCustomerLiabilityRevenueRecognized | Contract with Customer, Liability, Revenue Recognized |\n| DeferredRevenueCurrent | Deferred Revenue, Current |\n| DeferredRevenueNoncurrent | Deferred Revenue, Non\u2011current |\n| IncreaseDecreaseInDeferredRevenue | Increase (Decrease) in Deferred Revenue |\n| SalesRevenueNet | Revenue, Net (Deprecated\u202f2018\u201101\u201131) |\n| SalesRevenueServicesGross | Sales Revenue, Services, Other (Deprecated\u202f2018\u201101\u201131) |\n\nThese are the revenue\u2011related tags that Apple reports under the **us\u2011gaap** taxonomy, as returned by the SEC\u2019s company\u2011facts endpoint. If you need the actual numeric values for any of these concepts, let me know which one(s) and I can retrieve the time\u2011series data."
+          }
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 8783,
+        "completion_tokens": 317,
+        "total_tokens": 9100,
+        "prompt_tokens_details": {
+          "cached_tokens": 8192
+        }
+      }
+    }
+  ],
+  "response_text": "**Apple\u202fInc. (CIK\u202f0000320193) \u2013 us\u2011gaap revenue\u2011related XBRL concepts**\n\n| Concept (tag) | Human\u2011readable label |\n|---------------------------|-----------------------------------------------|\n| Revenues | Revenues |\n| RevenueFromContractWithCustomerExcludingAssessedTax | Revenue from Contract with Customer, Excluding Assessed Tax |\n| ContractWithCustomerLiabilityRevenueRecognized | Contract with Customer, Liability, Revenue Recognized |\n| DeferredRevenueCurrent | Deferred Revenue, Current |\n| DeferredRevenueNoncurrent | Deferred Revenue, Non\u2011current |\n| IncreaseDecreaseInDeferredRevenue | Increase (Decrease) in Deferred Revenue |\n| SalesRevenueNet | Revenue, Net (Deprecated\u202f2018\u201101\u201131) |\n| SalesRevenueServicesGross | Sales Revenue, Services, Other (Deprecated\u202f2018\u201101\u201131) |\n\nThese are the revenue\u2011related tags that Apple reports under the **us\u2011gaap** taxonomy, as returned by the SEC\u2019s company\u2011facts endpoint. If you need the actual numeric values for any of these concepts, let me know which one(s) and I can retrieve the time\u2011series data.",
+  "notes": "All expected tools fired."
+}

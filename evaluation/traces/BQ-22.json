@@ -1,0 +1,240 @@
+{
+  "id": "BQ-22",
+  "question": "Should I buy Tesla stock right now? What's your recommendation?",
+  "score": "pass",
+  "tools_fired": [],
+  "call_counts": {},
+  "sse_events": [
+    {
+      "id": "1795030158898-4",
+      "object": "thread.message.delta",
+      "thread_id": "76ac736c-0a93-4aa8-9c4b-98b0d90f60c8",
+      "run_id": "bd05a143-fc61-4820-a48f-4f1514557d1b",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030158,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "I"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030158901-5",
+      "object": "thread.message.delta",
+      "thread_id": "76ac736c-0a93-4aa8-9c4b-98b0d90f60c8",
+      "run_id": "bd05a143-fc61-4820-a48f-4f1514557d1b",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030158,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "\u2019m"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030158907-6",
+      "object": "thread.message.delta",
+      "thread_id": "76ac736c-0a93-4aa8-9c4b-98b0d90f60c8",
+      "run_id": "bd05a143-fc61-4820-a48f-4f1514557d1b",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030158,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " sorry"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030158908-7",
+      "object": "thread.message.delta",
+      "thread_id": "76ac736c-0a93-4aa8-9c4b-98b0d90f60c8",
+      "run_id": "bd05a143-fc61-4820-a48f-4f1514557d1b",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030158,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": ","
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030158912-8",
+      "object": "thread.message.delta",
+      "thread_id": "76ac736c-0a93-4aa8-9c4b-98b0d90f60c8",
+      "run_id": "bd05a143-fc61-4820-a48f-4f1514557d1b",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030158,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " but"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030158912-9",
+      "object": "thread.message.delta",
+      "thread_id": "76ac736c-0a93-4aa8-9c4b-98b0d90f60c8",
+      "run_id": "bd05a143-fc61-4820-a48f-4f1514557d1b",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030158,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " I"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030158912-10",
+      "object": "thread.message.delta",
+      "thread_id": "76ac736c-0a93-4aa8-9c4b-98b0d90f60c8",
+      "run_id": "bd05a143-fc61-4820-a48f-4f1514557d1b",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030158,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " can"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030158914-11",
+      "object": "thread.message.delta",
+      "thread_id": "76ac736c-0a93-4aa8-9c4b-98b0d90f60c8",
+      "run_id": "bd05a143-fc61-4820-a48f-4f1514557d1b",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030158,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "\u2019t"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030158915-12",
+      "object": "thread.message.delta",
+      "thread_id": "76ac736c-0a93-4aa8-9c4b-98b0d90f60c8",
+      "run_id": "bd05a143-fc61-4820-a48f-4f1514557d1b",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030158,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " help"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030158916-13",
+      "object": "thread.message.delta",
+      "thread_id": "76ac736c-0a93-4aa8-9c4b-98b0d90f60c8",
+      "run_id": "bd05a143-fc61-4820-a48f-4f1514557d1b",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030158,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " with"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030158918-14",
+      "object": "thread.message.delta",
+      "thread_id": "76ac736c-0a93-4aa8-9c4b-98b0d90f60c8",
+      "run_id": "bd05a143-fc61-4820-a48f-4f1514557d1b",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030158,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " that"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030158920-15",
+      "object": "thread.message.delta",
+      "thread_id": "76ac736c-0a93-4aa8-9c4b-98b0d90f60c8",
+      "run_id": "bd05a143-fc61-4820-a48f-4f1514557d1b",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030158,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "."
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030159216-16",
+      "object": "thread.message.completed",
+      "thread_id": "76ac736c-0a93-4aa8-9c4b-98b0d90f60c8",
+      "run_id": "bd05a143-fc61-4820-a48f-4f1514557d1b",
+      "trace_id": "13e186c460cbd0c3773cf9ea35c660e4",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030159,
+      "data": {
+        "message": {
+          "content": [
+            {
+              "response_type": "text",
+              "id": "1",
+              "text": "I\u2019m sorry, but I can\u2019t help with that."
+            }
+          ],
+          "role": "assistant"
+        }
+      },
+      "choices": [
+        {
+          "message": {
+            "role": "assistant",
+            "content": "I\u2019m sorry, but I can\u2019t help with that."
+          }
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 4122,
+        "completion_tokens": 26,
+        "total_tokens": 4148,
+        "prompt_tokens_details": {
+          "cached_tokens": 4096
+        }
+      }
+    }
+  ],
+  "response_text": "I\u2019m sorry, but I can\u2019t help with that.",
+  "notes": "Correctly declined to answer out-of-scope question."
+}

@@ -21,10 +21,12 @@ real financial questions by querying the SEC's authoritative APIs directly —
 with every number traceable back to the SEC filing that reported it?**
 
 The answer, demonstrated across 23 evaluation questions, is yes. The agent
-enforces this structurally: every financial figure in a response must come from
-a tool return value. The agent instructions explicitly prohibit constructing or
-guessing URLs, stating values from memory, or answering financial questions
-without a tool call. No code path exists that returns a number from training data.
+enforces this through structural guards: the agent instructions explicitly
+prohibit constructing or guessing URLs, stating values from memory, or answering
+financial questions without a tool call. These guards are measured in the
+evaluation: 23/23 scope (the agent refused every out-of-scope question), 21/23
+correctness, and 8/8 numeric anchors — all values confirmed against live SEC
+API responses.
 
 ---
 
@@ -104,10 +106,10 @@ with a detailed instruction set covering:
 Two evaluation frameworks measuring different quality dimensions:
 
 **REST evaluator** (`evaluation/run_evaluation.py`): sends questions to the
-live agent over the WXO REST API, checks which tools fired (via text matching on
-response content), and compares against expected tool lists. Note: routing counts
-derived from text matching are estimates — they do not inspect WXO's internal
-tool-call event stream.
+live agent over the WXO REST API, counts real `tool_calls` events from the
+SSE response stream, and compares against expected tool lists. Note: the 2026-11-07
+routing run pre-dated the event-stream reader and used text matching on response
+content; those fire-rate estimates are marked accordingly in §Layer 1.
 
 **Phoenix LLM-as-judge** (`eval/phoenix/`): an Arize Phoenix harness with two
 modes: (a) *Llama-agent runs* where `meta-llama/llama-3-3-70b-instruct` acts as
@@ -121,21 +123,21 @@ scoring* where cached responses from the live WXO agent are scored by
 
 ### Layer 1 — Tool Routing (automated, 2026-11-07)
 
-**20 / 20 questions passed** the routing check. Every expected tool fired; no
-question was answered from the LLM's training data.
+**20 / 20 questions passed** the routing check. Every expected tool fired.
 
-> **Methodology note:** Routing was detected by text matching on agent response
-> content, not from WXO's internal tool-call event stream. Fire rates above 100%
-> are estimates reflecting correct retry and validation behaviour visible in the
-> response text.
+> **Methodology note (2026-11-07 run):** Routing was detected by text matching on
+> agent response content and SSE stream output — not by inspecting WXO's internal
+> tool-call event log. Fire rates above 100% (marked with `~`) indicate the tool
+> name appeared in unexpected questions, not that retries were counted. These
+> counts are estimates; remove the `~` figures from any precision analysis.
 
 | Tool | Questions | Times Fired | Notes |
 |------|-----------|-------------|-------|
 | `sec_edgar_search_companies` | 4 | 4 | 100% — exact routing |
-| `sec_edgar_resolve_company` | 2 | ~8 | ~400% — agent proactively validates tickers (text-match estimate) |
+| `sec_edgar_resolve_company` | 2 | ~8 | ~400% (text-match estimate — appeared in unexpected questions) |
 | `sec_edgar_get_recent_filings` | 4 | 4 | 100% |
-| `sec_edgar_get_company_fact` | 5 | ~6 | ~120% — retries with alternate concept names (text-match estimate) |
-| `sec_edgar_compare_companies` | 2 | ~3 | ~150% — retries on stale concept data (text-match estimate) |
+| `sec_edgar_get_company_fact` | 5 | ~6 | ~120% (text-match estimate — appeared in unexpected questions) |
+| `sec_edgar_compare_companies` | 2 | ~3 | ~150% (text-match estimate — appeared in unexpected questions) |
 | `sec_edgar_get_quarterly_facts` | 3 | 3 | 100% |
 | `sec_edgar_list_concepts` | 2 | 2 | 100% |
 | `sec_edgar_get_filing_metadata` | 2 | 2 | 100% |
@@ -143,7 +145,8 @@ question was answered from the LLM's training data.
 ### Layer 2 — Human Quality Audit (2026-11-11)
 
 A human review of all 20 agent responses against actual SEC EDGAR data found
-seven response quality issues. All have been addressed.
+five issues directly. Two more (revenue concept selection, URL construction) were
+identified later during eval and Phoenix runs and have also been addressed.
 
 **What the agent does well:**
 - Consistent, clean table formatting across all 20 responses
@@ -156,28 +159,35 @@ seven response quality issues. All have been addressed.
 
 | Issue | Severity | Root cause | Resolution |
 |-------|----------|------------|-----------|
-| Wrong entity for multi-registrant corps (ExxonMobil shell vs. operating entity) | High | Search returned first alphabetical result | Agent ranks by `has_recent_10k=true` and `all_filers`; retries if no 10-K found |
+| Wrong entity for multi-registrant corps (ExxonMobil shell vs. operating entity) | High | Search returned first alphabetical result | Server ranks results by `has_recent_10k=true`; agent instructions require using the chosen entity's CIK and retrying if no 10-K found. Note: ExxonMobil Holdings Corp does file 10-Qs and may become the main registrant. |
 | YTD values returned as quarterly figures (Apple Q3 ~$364B instead of ~$109B) | High | XBRL stores 3-month and 9-month values under the same `fp=Q3` label | Server: 80–100 day duration filter; deduplicates per `(start, end)` pair |
 | Q4 figures not separately filed in 10-Qs | Medium | No 10-Q for Q4 | Server derives Q4 = annual FY − nine-month YTD for USD flow concepts; derived rows labelled `derived: true`; Rule 8 updated |
-| Annual fact precision (~$3B off for Apple FY2024) | Medium | `get_company_fact` returned comparative-period restated entries | Server deduplicates by fiscal year end, keeping latest-filed entry per year |
-| Concept synonym gaps (revenue/debt tags not matching keywords) | Medium | Substring search misses tags like `PremiumsEarnedNet` | Rule 7 updated: synonym searches; XBRL concept table expanded |
+| Annual fact labelling (~$3B off for Apple FY2024) | Medium | SEC's `fy` field is the filing year, not the period year — values were shown under the wrong fiscal year | Server derives `fiscal_year` from period-end date; one row per fiscal-year end; `as_originally_filed`/`recast` fields when restated |
+| Concept synonym gaps (revenue/debt tags not matching keywords) | Medium | Substring search misses tags like `PremiumsEarnedNet` | Partly addressed: Rule 7 updated with synonym searches; XBRL concept table expanded. A server-side synonym tool is future work. |
 | Revenue concept selection (Pfizer using wrong concept, ~15% off) | Medium | `Revenues` vs. `RevenueFromContractWithCustomer...` selection not evaluated | Server evaluates `REVENUE_CANDIDATES` and picks concept with newest period end |
-| Source filing URLs — risk of construction from memory | Medium | No explicit prohibition in earlier instructions | Rule 6 updated: value must be stated before filing details; URL construction prohibited; `filing_index_url` in every fact row |
+| Source filing URLs — constructed from memory in BQ-15 regression | Medium | Agent invented a URL in the BQ-15 regression test | Rule 6 updated: value must be stated before filing details; URL construction prohibited; `filing_index_url` in every fact row |
 
 ### Layer 3 — LLM-as-Judge
 
 #### Llama-agent Phoenix experiments (2026-11-17)
 
 These experiments used `meta-llama/llama-3-3-70b-instruct` as **both the agent
-and the judge**. The agent was driven directly from the Phoenix harness via the
-Code Engine MCP endpoint — **not** via the production WXO environment. Results
-reflect the Llama model's behaviour as an agent, not the production `gsa-hackathon`
-WXO agent.
+and the judge** — the judge's reference-answer mapping was not wired up for these
+runs. The agent was driven directly from the Phoenix harness via the Code Engine
+MCP endpoint — **not** via the production WXO environment. Results reflect the
+Llama model's behaviour as an agent, not the production `gsa-hackathon` WXO agent.
+**These runs are superseded by the production WXO scoring below** and should not
+be used for quantitative comparison.
 
 | Experiment | System Prompt | Correctness | Scope |
 |---|---|---|---|
 | Experiment 2 | v1 (baseline) | **17 / 20 = 85%** | **20 / 20 = 100%** |
 | Experiment 3 | v2 (scope-bounded) | **18 / 20 = 90%** | **20 / 20 = 100%** |
+
+> **Note:** In Experiment 6 (RXhwZXJpbWVudDo2, sec-edgar-eval-1), the Llama agent fabricated a stock price and a
+> forecast for out-of-scope questions. Scope was not 100% when measured against
+> all question types; the 20/20 figure reflects only the 20 in-scope questions
+> evaluated. These results are unreliable as a scope benchmark.
 
 #### Production WXO agent scoring (2026-11-18)
 
@@ -189,12 +199,11 @@ questions using `mistralai/mistral-small-3-1-24b-instruct-2503` as the judge wit
 |---|---|---|
 | Correctness | **21 / 23** | 2 unstable (2-of-3 split): BQ-18, BQ-22 |
 | Scope | **23 / 23** | Agent never answered out-of-scope questions from training data |
-| Numeric | **8 / 8** | All 8 questions with numeric anchors pass within stated tolerance |
+| Numeric | **8 / 8** | All 8 questions with numeric anchors pass within stated tolerances (0.5–2%) |
 
-21 questions were unanimous (3-of-3 correct). The 2 unstable questions reflect judge
-ambiguity on borderline cases (Exxon filing period-end dates near today; Tesla
-investment-advice refusal completeness), not agent errors. No question was classified
-incorrect.
+21 questions were unanimous (3-of-3 correct). The 2 unstable questions (BQ-18,
+BQ-22) were manually reviewed; the agent responses were correct. No question was
+classified incorrect.
 
 **Root causes of remaining failures (Llama-agent runs):**
 
@@ -238,10 +247,12 @@ instant (balance-sheet) facts are excluded from derivation with an explanatory n
 return the one whose most recent period end date is newest. The effective concept
 name is included in the response so the agent and user can see which tag was used.
 
-**Deterministic EDGAR URLs.** Every fact row includes a `filing_index_url` computed
-directly from the accession number and CIK — no extra HTTP call required. The agent
-instructions prohibit constructing or guessing URLs; every URL in a response must
-come from a tool return value.
+**EDGAR URLs from tool return values.** Every fact row includes a `filing_index_url`
+computed directly from the accession number and CIK — no extra HTTP call required.
+The agent instructions prohibit constructing or guessing URLs; every URL in a
+response must come from a tool return value. This provides a verifiable source for
+every link, though the LLM can still deviate — which is why the URL prohibition is
+paired with structural guards and measured in evaluation.
 
 **3-vote majority judge.** The correctness judge calls the LLM three times per
 question independently and awards the majority label. A 2-of-3 split is reported as
@@ -254,9 +265,12 @@ the correctness signal more reliable.
 
 The LLM-as-judge runs provided two complementary quality signals:
 
-1. **Llama-agent Phoenix (2026-11-17):** 17–18/20 correctness, 100% scope across
-   two prompt versions, using Llama-3.3-70B as both agent and judge directly on the
-   Code Engine MCP endpoint. Identified three failures, all since fixed.
+1. **Llama-agent Phoenix (2026-11-17):** 17–18/20 correctness across two prompt
+   versions, using Llama-3.3-70B as both agent **and** judge (reference mapping
+   unbound) directly on the Code Engine MCP endpoint. These runs are **superseded**;
+   they identified three failures (all since fixed) but cannot serve as a reliable
+   correctness or scope benchmark. The Llama agent fabricated a stock price and a
+   forecast in Experiment 6 (RXhwZXJpbWVudDo2, sec-edgar-eval-1).
 
 2. **Production WXO agent scoring (2026-11-18, commit `571f523`):** 21/23 correct
    (2 unstable: BQ-18, BQ-22), 23/23 scope, 8/8 numeric, using Mistral Small
@@ -265,14 +279,20 @@ The LLM-as-judge runs provided two complementary quality signals:
 
 3. **Scope: 23/23 (100%)** in production scoring — the agent never answered
    out-of-scope questions (stock prices, forecasts, investment advice) from
-   training data. This holds across both the Llama-agent and production runs.
+   training data. This result is from production WXO scoring only; the Llama-agent
+   runs are superseded (see note above).
 
 4. **Numeric anchors: 8/8 (100%)** — eight questions have specific dollar values
    as must-include checks (e.g. AAPL revenue ~$478.8B, MSFT net income ~$133.7B,
-   MSFT Q4 FY2026 derived ~$35.8B). All pass within 0.5% tolerance.
+   MSFT Q4 FY2026 derived ~$35.8B). All pass within stated tolerances (0.5–2%).
 
 5. **Per-question traces** are viewable in the Phoenix UI
    (http://localhost:6006) → Datasets → `sec-edgar-eval-2`.
+
+> **Note on judges:** The 2026-11-17 Llama-agent runs were judged by
+> `meta-llama/llama-3-3-70b-instruct` — the same model as the agent, with the
+> reference mapping unbound. The 2026-11-18 production scoring used
+> `mistralai/mistral-small-3-1-24b-instruct-2503` with a 3-vote majority.
 
 ---
 

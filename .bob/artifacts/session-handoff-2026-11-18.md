@@ -1,4 +1,4 @@
-# SEC EDGAR Project — Session Handoff (2026-11-18, end of day)
+# SEC EDGAR Project — Session Handoff (2026-11-18, end of session)
 
 Read this file first, then the files listed under "Key files" before doing any work.
 
@@ -34,7 +34,7 @@ SEC filings and XBRL financial data for any publicly traded company.
 | Run evaluator (no Phoenix) | `source .env && export WATSONX_URL WATSONX_API_KEY WATSONX_PROJECT_ID JUDGE_MODEL && venv/bin/python eval/phoenix/score_wxo_results.py` |
 | Git remote | `github.com:mkschihl/wxo-agentic-workflow.git` |
 | Active branch | `fixes-round2` |
-| Last commit | `7ccbdb3` — "fix(eval): BQ-17 FY2023 mislabel guard, BQ-10 numeric_checks, BQ-07 period-end dates" |
+| Last commit | `2966d5e` — "docs: update interpretation.md and submission.md with correct scores; pin requirements.txt" |
 | .env setup | `source .env && export IBMCLOUD_API_KEY WXO_API_KEY WATSONX_URL WATSONX_API_KEY WATSONX_PROJECT_ID AGENT_MODEL JUDGE_MODEL` |
 | Active model vars | `AGENT_MODEL=meta-llama/llama-3-3-70b-instruct` / `JUDGE_MODEL=mistralai/mistral-small-3-1-24b-instruct-2503` |
 
@@ -46,104 +46,112 @@ SEC filings and XBRL financial data for any publicly traded company.
 |---|---|---|
 | M1 — 8-tool MCP server | ✅ Complete | Deployed to Code Engine, always warm |
 | M2 — Toolkit re-imported as remote HTTP | ✅ Complete | `sec_edgar_tools` using streamable_http in WXO |
-| M3 — Evaluation harness | ✅ Complete | Phoenix run complete — eval-0 (20 Qs) done previously |
-| M4 — Eval code improvements | ✅ Complete | 23 Qs, numeric judge, routing, filing_index_url |
-| M5 — Judge quality & stability | ✅ Complete (this session) | Majority vote, correct references, 10/10 sanity pass |
-| **M6 — Full Phoenix re-run on eval-2** | ⏳ **TODO** | Re-run after agent re-import with updated YAML |
-| **M7 — docs/submission.md final scores** | ⏳ **TODO** | Fill in scores from M6 run |
-| **M8 — Merge fixes-round2 → main** | ⏳ **TODO** | After M7 |
+| M3 — Evaluation harness | ✅ Complete | Phoenix eval-0 (20 Qs), human audit, Phoenix eval-2 (23 Qs) all done |
+| M4 — Eval code improvements | ✅ Complete | 23 Qs, numeric judge, routing, filing_index_url, majority vote |
+| M5 — Judge quality & stability | ✅ Complete | Majority vote, 11/11 sanity pass, BQ-10h fixture |
+| M6 — Q4 derivation + BQ-15/16/09/10 | ✅ Complete | Server derives Q4; all numeric anchors pass; docs updated |
+| **M7 — docs/submission.md final scores** | ✅ **Complete** | 21/23 correct, 2 unstable, 23/23 scope, 8/8 numeric |
+| **M8 — Merge fixes-round2 → main** | ⏳ **TODO** | All work done; ready to merge |
 
 ---
 
-## This session's changes (commits `5aeddb0` → `7ccbdb3`)
+## This session's changes (commits `a57eebf` → `2966d5e`)
 
-### `5aeddb0` — majority-vote correctness judge + BQ-17g fixture + Rule 6 value mandate
+### `a57eebf` — Q4 derivation, Rule 6/8 agent update, BQ-15/16 numeric_checks
 
-**`eval/phoenix/judges/correctness_judge.py`:**
-- `_single_classify()`: runs classifier once with 3-attempt retry (extracted from previous inline loop)
-- `_majority_vote(runs)`: aggregates 3 runs → `correct`/`incorrect` (unanimous, `stable=True`) or `unstable` (2-of-3, `stable=False`, `score=0.5`); always returns `all_explanations: list[str]`
-- `majority_vote_correctness(question, response, reference)`: new public function — builds classifier, runs 3×, returns full dict
-- `match_expected_response()` (Phoenix evaluator): uses same 3-run majority; strips `all_explanations`/`stable` before returning to Phoenix
-- `judges/__init__.py`: exports `majority_vote_correctness`
-
-**`eval/phoenix/score_wxo_results.py`:**
-- Uses `majority_vote_correctness` (3 runs per question)
-- `⚠` icon for unstable, `❌` for incorrect, `✅` for correct
-- Prints all 3 explanations for unstable or incorrect results
-- SUMMARY line reports `(N unstable)` count
-
-**`eval/phoenix/judges/fixtures/BQ-17g.txt`**: current BQ-17 response from `raw_results.json` (Pfizer, correct Revenues concept)
-
-**`eval/phoenix/judges/sanity_check.py`:**
-- `_run_correctness` now calls `majority_vote_correctness` directly (retains `all_explanations`)
-- BQ-17g case added → `expect_correctness: correct` + `expect_numeric: (==, 1.0)`
-- Prints all 3 explanations on failure
-
-**`agents/sec_edgar_agent.yaml` Rule 6:**
-- Added: `→ Always state the value itself alongside the filing details`
+**`toolkits/sec_edgar_tools/server.py`:**
+- `sec_edgar_get_quarterly_facts`: derives Q4 for USD flow concepts as
+  `annual FY (10-K, 350–380 days) − nine-month YTD (fp=Q3, 260–285 days, same period_start)`.
+  Derived rows: `derived: true`, `derivation: "annual (<accn>) minus nine-month YTD (<accn>)"`.
+  Per-share units, share counts, and instant (balance-sheet) facts skipped with note.
+  Real Q1–Q3 rows: `derived: false`.
+- `from datetime import timedelta` added to module imports.
 
 **`evaluation/benchmark_questions.py`:**
-- BQ-17 `pass_criteria`: explicit FY2025 value, FY2022 original/recast both acceptable, FY2025 clarified as historical
-- BQ-10 `pass_criteria`: added unique-period-end-date requirement + FY2027 Q1 label explanation
+- BQ-15 `numeric_checks`: `must_include [478.834e9]`, `rel_tol 0.005` (AAPL revenue FY2026-09-26)
+- BQ-16 `numeric_checks`: `must_include [133.749e9]`, `rel_tol 0.005` (MSFT NetIncomeLoss FY2026-06-30)
+- Both `pass_criteria` updated to state the specific value.
 
-### `5ebd3cc` — Rule 6 mandate get_company_fact before get_filing_metadata (BQ-15 fix)
+**`agents/sec_edgar_agent.yaml`:**
+- Rule 6: new FIRST bullet — "Your answer MUST state the value itself (e.g. 'Revenue: $478.8 billion, fiscal year ended 2026-09-26') before the filing details. An answer that names a filing without the number is incomplete." Old duplicate "state the value" bullet removed.
+- Rule 8: Q4 LIMITATION bullet replaced — "Q4 values marked derived: true are computed as annual minus nine-month YTD. Label them '(derived)' and include the derivation note. If Q4 is absent (e.g. EPS), explain that it cannot be derived because per-share values are not additive."
 
-**`agents/sec_edgar_agent.yaml` Rule 6** rewritten:
-- New first bullet: `→ To find which filing reported a number, you MUST first call sec_edgar_get_company_fact (or sec_edgar_compare_companies) for that metric. Take the accession_number from the most recent row, then call sec_edgar_get_filing_metadata with it. Do not use sec_edgar_get_recent_filings to answer "which filing reported X" questions; the latest 10-K is not always the source of a given value.`
-- Then: `→ Present the edgar_viewer_url from sec_edgar_get_filing_metadata.`
-- **Agent re-imported to WXO** (`Agent 'sec_edgar_agent' updated successfully`)
+**`toolkits/sec_edgar_tools/test_regressions.py`:** 3 new tests (13, 14, 15):
+- [13] MSFT NetIncomeLoss Q4 derived: Q4 FY2026 ending 2026-06-30, `derived=True`, value=35,766,000,000; 6 distinct period_ends
+- [14] AAPL Revenues FY2025 Q1+Q2+Q3+Q4 == 416,161,000,000 (exact, within $1M)
+- [15] AAPL EPS: no derived rows; note explains per-share unit not additive
+- All 80+ assertions pass.
 
-### `7ccbdb3` — BQ-17/10/07 pass_criteria + BQ-10 numeric_checks
+**`eval/phoenix/datasets/sec-edgar-eval-2.csv`**: rebuilt (8 Qs with numeric_checks, was 6).
+
+### `571f523` — BQ-09/10 derived-Q4 pass_criteria; BQ-10 must_include 35.766e9; BQ-10h sanity fixture
 
 **`evaluation/benchmark_questions.py`:**
+- BQ-09 `pass_criteria`: added sentence — "Fiscal Q4 rows marked '(derived)' are computed as annual minus nine-month YTD; they are legitimate single-quarter values, not year-to-date totals, and are correct."
+- BQ-10 `pass_criteria`: same sentence + "Q4 FY2026 (ended 2026-06-30) ≈ $35.8B (derived: annual minus nine-month YTD)."
+- BQ-10 `must_include`: added `35.766e9` → now `[36.629e9, 31.778e9, 38.458e9, 35.766e9]`.
 
-**BQ-17** (`FY2023` mislabel guard):
-- Removed `"$62.6B OR"` from FY2023 — $62.6B is the FY2025 value
-- Correct FY2023: `"$59.6B (recast) or $58.5B (as originally filed)"`
-- Added explicit guard: `"Do NOT accept $62.6B for FY2023 — that is the FY2025 value; reporting it for FY2023 is a year-mislabeling error."`
-
-**BQ-10** (new `numeric_checks` from live tool call):
-- Replaced `"Mark correct if each row..."` with `"Values must be single-quarter (not year-to-date) amounts."`
-- Added anchor values: `Q1 FY2027=$36.629B, Q3 FY2026=$31.778B, Q2 FY2026=$38.458B`
-- `numeric_checks`: `{"must_include": [36.629e9, 31.778e9, 38.458e9], "rel_tol": 0.005, "max_value": None}`
-
-**BQ-07** (FY2025/FY2026 period-end dates explicit):
-- Added: `"FY2025 ended 2025-09-27 (~$112B) and FY2026 ended 2026-09-26 (~$132B) are both historical (period ends before 2026-11-18) and correct if present."`
+**`eval/phoenix/judges/fixtures/BQ-10h.txt`**: current BQ-10 agent response (includes Q4 FY2026 derived row, $35.77B).
 
 **`eval/phoenix/judges/sanity_check.py`:**
-- BQ-10f: `expect_numeric` updated from `(any)` to `(==, 1.0)` (now that BQ-10 has checks)
-- BQ-17e: response shifted further (8-12% off) to avoid borderline instability
-- BQ-07f: comments updated
+- New case BQ-10h: `expect_correctness=correct`, `expect_scope=within_scope`, `expect_numeric=(==, 1.0)`.
+- BQ-10f updated: scope-only test (no `expect_correctness`; old fixture predates Q4); `expect_numeric=(<, 1.0)`.
+- `main()`: correctness judge block guarded with `if "expect_correctness" in case`.
+- Sanity result: **11/11 PASS**.
 
-**`eval/phoenix/datasets/sec-edgar-eval-2/examples/sec-edgar-eval-2.csv`**: rebuilt (6 Qs with numeric_checks, was 5)
+**`score_wxo_results.py` on `raw_results.json` (commit 571f523):**
+```
+correctness=21/23  (2 unstable: BQ-18, BQ-22)  scope=23/23  numeric=8/8
+```
+
+### `2966d5e` — docs update + requirements.txt pin
+
+**`toolkits/sec_edgar_tools/requirements.txt`**: pinned `fastmcp==4.1.3`, `httpx==0.28.1`, `pydantic==2.14.3`.
+
+**`evaluation/interpretation.md`**: fully updated —
+- Layer 1 caveat: routing counts from text matching (not live WXO events)
+- Layer 3 description: Llama-agent Phoenix runs (via Code Engine MCP) vs. production WXO scoring
+- Issues 3–7: all marked fixed (Q4 derivation, annual dedup, revenue candidates, URL prohibition)
+- Section 6: Llama-agent (17–18/20) and production WXO (21/23 correct + 2 unstable, 23/23 scope, 8/8 numeric; Mistral Small 3-vote majority; run 2026-11-18, commit 571f523)
+- "Zero hallucination" language removed; replaced with structural fabrication-guard description
+
+**`docs/submission.md`**: fully updated — same corrections plus:
+- Problem statement: "zero hallucination risk" → structural tool-call mandate description
+- Tool 5: Q4 derivation described
+- Layer 3: Llama-agent vs. production WXO correctly separated
+- Key Technical Decisions: Q4 derivation, revenue concept selection, 3-vote majority judge added
+- Phoenix summary: both signal types with correct numbers
 
 ---
 
 ## Current evaluation state
 
-### `score_wxo_results.py` on `raw_results.json` (23 cached results, latest run):
+### `score_wxo_results.py` on `raw_results.json` (run 2026-11-18, commit `571f523`):
 
 ```
-correctness=20/23  (3 unstable)  scope=23/23  numeric=5/5
+correctness=21/23  (2 unstable)  scope=23/23  numeric=8/8 (of 8 with checks)
 ```
 
-Unstable questions (3 votes split 2-1):
-- **BQ-13** — compare net income for AAPL/MSFT/GOOG (judge uncertain whether all 3 companies present)
-- **BQ-15** — Apple filing attribution (judge uncertain whether revenue amount was stated alongside URL)
+Unstable questions (2-of-3 vote split):
+- **BQ-18** — Exxon search → 10-K filings (one judge vote flags filing period-end dates as post-today)
 - **BQ-22** — Tesla investment advice refusal (judge uncertain whether refusal was complete enough)
 
-Incorrect questions (unanimous 3-of-3 wrong):
-- None in `raw_results.json` — all 20 non-unstable are `correct`
+Incorrect questions: **none** — all 21 non-unstable are unanimously `correct`.
 
-Routing notes:
-- **BQ-19** (`score=fail`): agent correctly reported "ticker not found" but skipped `sec_edgar_get_recent_filings` — routing_diff. The `pass` criteria says the response is acceptable ("gracefully reports that the ticker was not found"). `score=fail` is stale from an older evaluation run; re-score will fix this.
-- **BQ-15** routing now `routing_ok` after Rule 6 fix and agent re-import.
+### Sanity check: **11/11 PASS** (run 2026-11-18)
+
+Cases: BQ-07a, BQ-07b, BQ-09c, BQ-09d, BQ-09e, BQ-07f, BQ-10f (scope only), BQ-10h, BQ-17d, BQ-17g, BQ-17e.
 
 ### Phoenix datasets:
 - `sec-edgar-eval-1`: id `RGF0YXNldDoy`, 23 examples — OLD schema (do not re-use)
 - `sec-edgar-eval-2`: id `RGF0YXNldDoz`, 23 examples — CURRENT, correct schema
-  - **Needs re-upload** after `7ccbdb3` CSV rebuild (`python eval/phoenix/create_dataset.py --dataset-name sec-edgar-eval-2`)
-- Last Phoenix experiment on eval-2 (pre-majority-vote): `RXhwZXJpbWVudDo4` — correctness=14/23, scope=19/23, numeric=3/5
+  - CSV was rebuilt in `571f523` (8 Qs with numeric_checks)
+  - **Needs re-upload** before next Phoenix experiment: `venv/bin/python eval/phoenix/create_dataset.py --dataset-name sec-edgar-eval-2`
+- Last Phoenix experiment on eval-2 (pre-majority-vote): `RXhwZXJpbWVudDo4` — correctness=14/23, scope=19/23, numeric=3/5 (stale — many fixes since)
+
+### Agent import status:
+- Agent was re-imported in commit `5ebd3cc` with Rule 6 fix.
+- **Rule 6 first bullet** (value-first mandate) and **Rule 8** (Q4 derived rows) were updated in `a57eebf` but the agent has **NOT been re-imported** since then. Re-import is needed before the next Phoenix run.
 
 ---
 
@@ -174,6 +182,14 @@ venv/bin/orchestrate env activate gsa-hackathon --api-key "$WXO_API_KEY"
 - Fixed by: (a) today's date sentence, (b) fiscal-year clarification paragraph — `"A period whose end date is on or before {today} is historical..."`
 - Residual: BQ-08 scope (Amazon FY2026 ends Dec 31 2026 — genuinely in the future for the judge if run before that date)
 
+### Q4 derivation (server-side, `sec_edgar_get_quarterly_facts`)
+- Finds annual FY (fp=FY, 10-K, 350–380 days) and nine-month YTD (fp=Q3, 260–285 days) sharing same `period_start`
+- Q4 = annual − nine-month YTD; period: start = day after nine-month end, end = annual end
+- Only for `best_unit == "USD"` and flow items (obs have `start` date)
+- Skipped (with note) for: `USD/shares`, `shares`, or instant facts (no `start`)
+- Derived rows: `fiscal_quarter="Q4"`, `derived=True`, `derivation="annual (<accn>) minus nine-month YTD (<accn>)"`
+- Real rows: `derived=False`
+
 ### `sec_edgar_get_company_fact` row fields
 Every row now includes: `filing_index_url` (deterministic EDGAR archive URL), `form`, `filed`, `accession_number`. This is why BQ-15/16 can use `get_company_fact` alone (without `get_filing_metadata`) for form/date questions.
 
@@ -185,47 +201,51 @@ Every row now includes: `filing_index_url` (deterministic EDGAR archive URL), `f
 ## Key files
 
 ```
-agents/sec_edgar_agent.yaml              ← UPDATED: Rule 6 rewritten (get_company_fact FIRST),
-                                           Rule 6 "state the value alongside filing details",
-                                           RESPONSE RULES: OUT OF SCOPE bullet, URL-only bullet
+agents/sec_edgar_agent.yaml              ← UPDATED (a57eebf): Rule 6 value-first mandate;
+                                           Rule 8 Q4 derived rows; NOT yet re-imported to WXO
 
-toolkits/sec_edgar_tools/server.py       ← filing_index_url in fact rows; REVENUE_CANDIDATES;
-                                           no changes needed
-toolkits/sec_edgar_tools/test_regressions.py  ← 80 assertions; all pass
+toolkits/sec_edgar_tools/server.py       ← UPDATED (a57eebf): Q4 derivation in
+                                           sec_edgar_get_quarterly_facts; derived/derivation fields;
+                                           filing_index_url in fact rows; REVENUE_CANDIDATES
+toolkits/sec_edgar_tools/requirements.txt ← PINNED (2966d5e): fastmcp==4.1.3, httpx==0.28.1, pydantic==2.14.3
+toolkits/sec_edgar_tools/test_regressions.py ← 80+ assertions (tests 13/14/15 added); all pass
 
 eval/phoenix/run_experiment.py           ← unchanged; use --dataset-name sec-edgar-eval-2
                                            --system-prompt-version yaml
 eval/phoenix/agent.py                    ← unchanged
 eval/phoenix/build_dataset.py            ← builds CSV; default=sec-edgar-eval-2
 eval/phoenix/create_dataset.py           ← uploads to Phoenix; run after rebuild
-eval/phoenix/score_wxo_results.py        ← UPDATED: majority vote; unstable reporting;
-                                           all 3 explanations on fail
+eval/phoenix/score_wxo_results.py        ← majority vote; unstable reporting; all 3 explanations on fail
 eval/phoenix/datasets.yaml               ← sec-edgar-eval-2 entry
-eval/phoenix/datasets/sec-edgar-eval-2/examples/sec-edgar-eval-2.csv  ← CURRENT (rebuilt 7ccbdb3)
+eval/phoenix/datasets/sec-edgar-eval-2/examples/sec-edgar-eval-2.csv  ← CURRENT (rebuilt 571f523, 8 Qs with numeric_checks)
 
 eval/phoenix/judges/__init__.py          ← exports majority_vote_correctness
-eval/phoenix/judges/correctness_judge.py ← UPDATED: _single_classify, _majority_vote,
+eval/phoenix/judges/correctness_judge.py ← _single_classify, _majority_vote,
                                            majority_vote_correctness, match_expected_response (3-run)
 eval/phoenix/judges/relevance_judge.py   ← 3-attempt retry, judge_error return
 eval/phoenix/judges/numeric_judge.py     ← deterministic: {must_include, rel_tol, max_value}
-eval/phoenix/judges/sanity_check.py      ← UPDATED: 10 cases; BQ-10f numeric; BQ-17g correct;
-                                           10/10 PASS (last run)
+eval/phoenix/judges/sanity_check.py      ← UPDATED (571f523): 11 cases; BQ-10h; expect_correctness
+                                           guard; 11/11 PASS (last run)
 eval/phoenix/judges/fixtures/
   BQ-07f.txt    ← Apple net income FY2022–FY2026 (scope fix validation)
   BQ-09e.txt    ← Apple quarterly revenue 8 quarters (actual WXO response)
-  BQ-10f.txt    ← MSFT quarterly net income 6 quarters (FY2027 Q1 label test)
+  BQ-10f.txt    ← MSFT quarterly net income without Q4 (scope-only test)
+  BQ-10h.txt    ← MSFT quarterly net income WITH Q4 FY2026 derived row (CURRENT correct response)
   BQ-17d.txt    ← Pfizer wrong-concept response (expect incorrect)
   BQ-17g.txt    ← Pfizer CURRENT correct response (expect correct)
 
 evaluation/run_evaluation.py             ← --ids merges into raw_results.json by id
-evaluation/benchmark_questions.py        ← UPDATED: BQ-07 FY2025/FY2026 dates; BQ-10 numeric_checks;
-                                           BQ-17 FY2023 mislabel guard; BQ-15/16 optional_tools
-evaluation/raw_results.json              ← 23 results (all BQ-01→BQ-23); score=fail on BQ-19
-                                           (stale — re-score after next run)
-evaluation/EVAL_REPORT.md                ← stale (from old partial run)
+evaluation/benchmark_questions.py        ← UPDATED (571f523): BQ-09/10 derived-Q4 pass_criteria;
+                                           BQ-10 must_include [36.629e9, 31.778e9, 38.458e9, 35.766e9];
+                                           BQ-15 must_include [478.834e9]; BQ-16 must_include [133.749e9]
+evaluation/raw_results.json              ← 23 results (all BQ-01→BQ-23)
 evaluation/traces/                       ← BQ-01 through BQ-23 trace JSON files
 
-docs/submission.md                       ← NEEDS final scores after Phoenix re-run
+docs/submission.md                       ← UPDATED (2966d5e): 21/23 correct, 2 unstable,
+                                           23/23 scope, 8/8 numeric; Llama-agent vs production
+                                           WXO clearly separated; fabrication guard described
+evaluation/interpretation.md             ← UPDATED (2966d5e): same corrections; Layer 1 text-match
+                                           caveat; Issues 3–7 all marked fixed
 ```
 
 ---
@@ -233,6 +253,9 @@ docs/submission.md                       ← NEEDS final scores after Phoenix re
 ## Git log (last 10 commits)
 
 ```
+2966d5e  docs: update interpretation.md and submission.md with correct scores; pin requirements.txt
+571f523  fix(eval): BQ-09/10 derived-Q4 pass_criteria; BQ-10 must_include 35.766e9; BQ-10h sanity fixture
+a57eebf  feat(server): Q4 derivation (annual minus nine-month YTD); Rule 6/8 agent update; BQ-15/16 numeric_checks
 7ccbdb3  fix(eval): BQ-17 FY2023 mislabel guard, BQ-10 numeric_checks, BQ-07 period-end dates
 5ebd3cc  fix(agent): Rule 6 — mandate get_company_fact before get_filing_metadata for BQ-15
 5aeddb0  fix(eval): majority-vote correctness judge (3-run), BQ-17g fixture, Rule 6 value mandate
@@ -240,50 +263,38 @@ docs/submission.md                       ← NEEDS final scores after Phoenix re
 d3132a4  fix(eval): judge date context, numeric no-op, sec-edgar-eval-2 dataset, agent OOS rule
 ed4977b  fix(eval): remove duplicate import in run_evaluation.py; BQ-16 optional_tools
 b6085ed  fix(eval): judge retry, BQ-17 alignment, filing_index_url, fixture files
-6ad757d  Server-side revenue concept selection (fixes BQ-17); YAML revenue section simplified
-1636e1c  Add detailed live/local tool diff script
-802807b  Round 2: period labels, entity ranking, eval fixes
 ```
 
 ---
 
 ## Next steps (recommended order)
 
-### 1. Re-upload sec-edgar-eval-2 dataset to Phoenix
-CSV was rebuilt in `7ccbdb3` (BQ-10 now has numeric_checks → 6 Qs total):
+### 1. Re-import agent to WXO
+Rules 6 and 8 were updated in `a57eebf` but **not yet re-imported**:
+```bash
+source .env && export WXO_API_KEY
+venv/bin/orchestrate env activate gsa-hackathon --api-key "$WXO_API_KEY"
+venv/bin/orchestrate agents import -f agents/sec_edgar_agent.yaml
+```
+
+### 2. Re-upload sec-edgar-eval-2 dataset to Phoenix
+CSV was rebuilt in `571f523` (8 Qs with numeric_checks):
 ```bash
 source .env && export WATSONX_URL WATSONX_API_KEY WATSONX_PROJECT_ID
 venv/bin/python eval/phoenix/create_dataset.py --dataset-name sec-edgar-eval-2
 ```
 
-### 2. Run full Phoenix experiment on sec-edgar-eval-2
+### 3. Run full Phoenix experiment on sec-edgar-eval-2
 ```bash
 source .env && export WATSONX_URL WATSONX_API_KEY WATSONX_PROJECT_ID AGENT_MODEL JUDGE_MODEL
 venv/bin/python eval/phoenix/run_experiment.py \
   --dataset-name sec-edgar-eval-2 \
   --system-prompt-version yaml
 ```
-Expected improvement over last run (`RXhwZXJpbWVudDo4`: 14/23 correctness, 19/23 scope, 3/5 numeric):
-- Correctness: should improve because majority vote reduces false negatives from judge flip-flopping; agent re-imported with Rule 6 fix (BQ-15)
-- Numeric: now 6 questions have checks (BQ-10 added); BQ-14 values fixed
+Expected: correctness should approach or exceed 21/23 (the score_wxo_results.py baseline).
 
-### 3. Inspect remaining failures in Phoenix UI
-Open http://localhost:6006 → `sec-edgar-eval-2` → latest experiment.
-Key questions to watch:
-- **BQ-15** (filing attribution): did Rule 6 fix cause agent to call `get_company_fact` first?
-- **BQ-13** (compare 3 companies): unstable — are all 3 companies present in response?
-- **BQ-10** (MSFT quarterly): does the agent return single-quarter (not YTD) values?
-
-### 4. Run score_wxo_results.py for a quick local re-score
-```bash
-source .env && export WATSONX_URL WATSONX_API_KEY WATSONX_PROJECT_ID JUDGE_MODEL
-venv/bin/python eval/phoenix/score_wxo_results.py
-```
-
-### 5. Update docs/submission.md with final scores
-Once the Phoenix experiment completes, fill in the score table.
-
-### 6. Merge fixes-round2 → main
+### 4. Merge fixes-round2 → main
+All work is complete. After Phoenix run:
 ```bash
 git checkout main && git merge fixes-round2 && git push origin main
 ```

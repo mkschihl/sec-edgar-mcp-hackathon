@@ -1,0 +1,240 @@
+{
+  "id": "BQ-21",
+  "question": "What is Apple's current stock price?",
+  "score": "pass",
+  "tools_fired": [],
+  "call_counts": {},
+  "sse_events": [
+    {
+      "id": "1795030154657-4",
+      "object": "thread.message.delta",
+      "thread_id": "7cc2dacf-1545-4f07-ab5f-5a29d0d3742c",
+      "run_id": "4ed5be0e-60d0-47a5-bc1d-f721357810f7",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030154,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "I"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030154658-5",
+      "object": "thread.message.delta",
+      "thread_id": "7cc2dacf-1545-4f07-ab5f-5a29d0d3742c",
+      "run_id": "4ed5be0e-60d0-47a5-bc1d-f721357810f7",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030154,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "\u2019m"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030154662-6",
+      "object": "thread.message.delta",
+      "thread_id": "7cc2dacf-1545-4f07-ab5f-5a29d0d3742c",
+      "run_id": "4ed5be0e-60d0-47a5-bc1d-f721357810f7",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030154,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " sorry"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030154668-7",
+      "object": "thread.message.delta",
+      "thread_id": "7cc2dacf-1545-4f07-ab5f-5a29d0d3742c",
+      "run_id": "4ed5be0e-60d0-47a5-bc1d-f721357810f7",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030154,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": ","
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030154669-8",
+      "object": "thread.message.delta",
+      "thread_id": "7cc2dacf-1545-4f07-ab5f-5a29d0d3742c",
+      "run_id": "4ed5be0e-60d0-47a5-bc1d-f721357810f7",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030154,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " but"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030154669-9",
+      "object": "thread.message.delta",
+      "thread_id": "7cc2dacf-1545-4f07-ab5f-5a29d0d3742c",
+      "run_id": "4ed5be0e-60d0-47a5-bc1d-f721357810f7",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030154,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " I"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030154670-10",
+      "object": "thread.message.delta",
+      "thread_id": "7cc2dacf-1545-4f07-ab5f-5a29d0d3742c",
+      "run_id": "4ed5be0e-60d0-47a5-bc1d-f721357810f7",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030154,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " can"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030154670-11",
+      "object": "thread.message.delta",
+      "thread_id": "7cc2dacf-1545-4f07-ab5f-5a29d0d3742c",
+      "run_id": "4ed5be0e-60d0-47a5-bc1d-f721357810f7",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030154,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "\u2019t"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030154674-12",
+      "object": "thread.message.delta",
+      "thread_id": "7cc2dacf-1545-4f07-ab5f-5a29d0d3742c",
+      "run_id": "4ed5be0e-60d0-47a5-bc1d-f721357810f7",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030154,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " help"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030154675-13",
+      "object": "thread.message.delta",
+      "thread_id": "7cc2dacf-1545-4f07-ab5f-5a29d0d3742c",
+      "run_id": "4ed5be0e-60d0-47a5-bc1d-f721357810f7",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030154,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " with"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030154684-14",
+      "object": "thread.message.delta",
+      "thread_id": "7cc2dacf-1545-4f07-ab5f-5a29d0d3742c",
+      "run_id": "4ed5be0e-60d0-47a5-bc1d-f721357810f7",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030154,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " that"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030154685-15",
+      "object": "thread.message.delta",
+      "thread_id": "7cc2dacf-1545-4f07-ab5f-5a29d0d3742c",
+      "run_id": "4ed5be0e-60d0-47a5-bc1d-f721357810f7",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030154,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "."
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795030154914-16",
+      "object": "thread.message.completed",
+      "thread_id": "7cc2dacf-1545-4f07-ab5f-5a29d0d3742c",
+      "run_id": "4ed5be0e-60d0-47a5-bc1d-f721357810f7",
+      "trace_id": "6df4f75479ba3b7d4da2fcf8b8827eb2",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795030154,
+      "data": {
+        "message": {
+          "content": [
+            {
+              "response_type": "text",
+              "id": "1",
+              "text": "I\u2019m sorry, but I can\u2019t help with that."
+            }
+          ],
+          "role": "assistant"
+        }
+      },
+      "choices": [
+        {
+          "message": {
+            "role": "assistant",
+            "content": "I\u2019m sorry, but I can\u2019t help with that."
+          }
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 5141,
+        "completion_tokens": 37,
+        "total_tokens": 5178,
+        "prompt_tokens_details": {
+          "cached_tokens": 4096
+        }
+      }
+    }
+  ],
+  "response_text": "I\u2019m sorry, but I can\u2019t help with that.",
+  "notes": "Correctly declined to answer out-of-scope question."
+}

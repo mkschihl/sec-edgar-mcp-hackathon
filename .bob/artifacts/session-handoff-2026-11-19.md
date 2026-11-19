@@ -1,4 +1,4 @@
-# SEC EDGAR Project — Session Handoff (2026-11-19, end of session 5)
+# SEC EDGAR Project — Session Handoff (2026-11-19, end of session 6)
 
 Read this file first before doing any work in a new session.
 
@@ -33,9 +33,12 @@ SEC filings and XBRL financial data for any publicly traded company.
 | Phoenix run command | `source .env && export WATSONX_URL WATSONX_API_KEY WATSONX_PROJECT_ID AGENT_MODEL JUDGE_MODEL && venv/bin/python eval/phoenix/run_experiment.py --dataset-name sec-edgar-eval-2 --system-prompt-version yaml` |
 | Run evaluator (no Phoenix) | `source .env && export WATSONX_URL WATSONX_API_KEY WATSONX_PROJECT_ID JUDGE_MODEL && venv/bin/python eval/phoenix/score_wxo_results.py` |
 | Git remote | `github.com:mkschihl/wxo-agentic-workflow.git` |
-| Active branch | `main` at `d78f787` |
-| Last commit | `d78f787` — "feat(server): add sec_edgar_full_text_search tool (11th tool, 17 tests)" |
-| Release tag | `v1.1.0` → `752e86d` (last tagged; session 5 not yet tagged) |
+| Active branch | `main` at `ed168e7` |
+| Last commit | `ed168e7` — "feat(agent): add routing rules for 3 new tools (resolve_synonym, get_filing_text, full_text_search); 11 tools total" |
+| Release tag | `v1.2.0` → `ed168e7` (latest; pushed to origin) |
+| WXO instance ID | `76b76ce7-8b9e-4f7e-885b-967fbaef80c9` |
+| WXO agent ID | `dd7fadae-34b2-478b-98c4-2fc48cbd35e5` (sec_edgar_agent) |
+| Re-import toolkit | `venv/bin/orchestrate toolkits remove --name sec_edgar_tools && venv/bin/orchestrate toolkits add --kind mcp --name sec_edgar_tools --description "SEC EDGAR toolkit: company lookup, filing history, and XBRL financial-statement facts from the SEC's public APIs." --url "https://sec-edgar-tools-mks.2flzosib5d1z.ca-tor.codeengine.appdomain.cloud/mcp" --transport streamable_http --tools "*"` |
 | .env setup | `source .env && export IBMCLOUD_API_KEY WXO_API_KEY WATSONX_URL WATSONX_API_KEY WATSONX_PROJECT_ID AGENT_MODEL JUDGE_MODEL` |
 | Active model vars | `AGENT_MODEL=meta-llama/llama-3-3-70b-instruct` / `JUDGE_MODEL=mistralai/mistral-small-3-1-24b-instruct-2503` |
 
@@ -63,15 +66,32 @@ SEC filings and XBRL financial data for any publicly traded company.
 | M16 — sec_edgar_get_filing_text tool | ✅ Complete | HTML text extraction, TOC-skip heuristic, 18 tests; commit `8f1a439` |
 | M17 — Global SEC rate limiter | ✅ Complete | asyncio.Semaphore(8) via _edgar_get(); all 6 callsites; commit `20c9357` |
 | M18 — sec_edgar_full_text_search tool | ✅ Complete | EFTS keyword search, 17 tests; commit `d78f787` |
+| M19 — CE deploy v1.2.0 + toolkit/agent re-import | ✅ Complete | 11 tools live on CE; toolkit re-imported; agent re-imported; commit `ed168e7` |
+| M20 — Agent routing rules for all 11 tools | ✅ Complete | Rule 0 (resolve_synonym), Rule 9 (get_filing_text), Rule 10 (full_text_search); smoke-tested 3/3 pass |
 
 ---
 
-## This session's changes (session 5)
+## This session's changes (session 6)
 
 ### Commits
 
 ```
-d78f787  feat(server): add sec_edgar_full_text_search tool (11th tool, 17 tests)  ← HEAD
+ed168e7  feat(agent): add routing rules for 3 new tools; 11 tools total  ← HEAD, v1.2.0
+64d30ab  chore: session handoff 2026-11-19 (session 5 complete)
+```
+
+Session 6 work: CE deploy of the 3 session-5 commits, toolkit re-import (8 → 11 tools),
+agent YAML update (routing rules + tools list + 2 starter prompts), smoke-test 3/3 pass,
+v1.2.0 tag pushed.
+
+---
+
+## Previous session's changes (session 5)
+
+### Commits
+
+```
+d78f787  feat(server): add sec_edgar_full_text_search tool (11th tool, 17 tests)
 20c9357  perf(server): add global SEC rate limiter (asyncio.Semaphore(8))
 8f1a439  feat(server): add sec_edgar_get_filing_text tool (10th tool, 18 tests)
 752e86d  perf(server): add 24h TTL cache for companyfacts JSON  ← v1.1.0
@@ -118,9 +138,9 @@ numeric=8/8 (of 8 with checks)
 
 EVAL_REPORT.md (23/23 all-pass, run 2026-11-19 03:04 against live WXO) = canonical truth.
 
-**Important**: The 3 new tools (get_filing_text, full_text_search) and the rate limiter
-are NOT yet deployed to Code Engine and NOT yet imported into WXO. The deployed server
-is still at v1.1.0 (9 tools). The eval scores above reflect the v1.1.0 agent.
+**Note**: The eval dataset (sec-edgar-eval-2, 23 Qs) covers the original 9 tools only.
+The 2 new tools (get_filing_text, full_text_search) are live but not yet in the eval
+dataset. Consider adding BQs for them in a future session.
 
 ### Phoenix datasets:
 - `sec-edgar-eval-1`: id `RGF0YXNldDoy`, 23 examples — OLD schema (do not re-use)
@@ -133,28 +153,28 @@ is still at v1.1.0 (9 tools). The eval scores above reflect the v1.1.0 agent.
 ## Git log (last 8 commits)
 
 ```
-d78f787  feat(server): add sec_edgar_full_text_search tool (11th tool, 17 tests)  ← HEAD
+ed168e7  feat(agent): add routing rules for 3 new tools; 11 tools total  ← HEAD, main, v1.2.0
+64d30ab  chore: session handoff 2026-11-19 (session 5 complete — 11 tools, 72 tests)
+d78f787  feat(server): add sec_edgar_full_text_search tool (11th tool, 17 tests)
 20c9357  perf(server): add global SEC rate limiter (asyncio.Semaphore(8))
 8f1a439  feat(server): add sec_edgar_get_filing_text tool (10th tool, 18 tests)
 752e86d  perf(server): add 24h TTL cache for companyfacts JSON  ← v1.1.0
 b9900a5  feat(server): add sec_edgar_resolve_synonym tool (75 synonyms, 22 tests); fix BQ-20 pass_criteria
 fd0a132  chore: session handoff 2026-11-19 (session 3 complete — v1.0.0 tagged, 22/23 score)
-e604b36  chore(eval): update scores to 22/23; fix Phoenix dataset stale expected answers  ← v1.0.0
-329b46c  fix(eval): BQ-19 expected_tools → [] (fictitious-ticker refusal; tool non-deterministic)
 ```
 
-Tags: `v1.0.0` → `e604b36`, `v1.1.0` → `752e86d`
+Tags: `v1.0.0` → `e604b36`, `v1.1.0` → `752e86d`, `v1.2.0` → `ed168e7`
 
 ---
 
 ## Key files
 
 ```
-agents/sec_edgar_agent.yaml              ← UPDATED (a57eebf): Rule 6 value-first mandate;
-                                           Rule 8 Q4 derived rows; re-imported (b8c4961 run confirms)
-                                           NOTE: not yet updated for new tools (get_filing_text,
-                                           full_text_search) — agent instructions may need updating
-                                           after CE deploy.
+agents/sec_edgar_agent.yaml              ← UPDATED (ed168e7): 11 tools in tools: list;
+                                           Rule 0 (resolve_synonym), Rule 6 value-first,
+                                           Rule 8 Q4 derived rows, Rule 9 (get_filing_text),
+                                           Rule 10 (full_text_search); 12 starter prompts;
+                                           re-imported and smoke-tested 3/3 (session 6).
 
 toolkits/sec_edgar_tools/server.py       ← UPDATED (d78f787):
                                            - 11 tools total (up from 9 at v1.1.0)
@@ -199,25 +219,18 @@ evaluation/interpretation.md             ← UPDATED (e604b36): same corrections
 
 ## Known remaining gaps / future work (low priority)
 
-1. **Deploy new tools to Code Engine** — `sec_edgar_get_filing_text` and
-   `sec_edgar_full_text_search` are built and tested locally but not yet deployed.
-   Run the CE deploy command (see environment facts) then re-import the toolkit in WXO.
-   After deploy, consider updating the agent instructions to guide tool selection.
+1. **Eval dataset coverage for new tools** — sec-edgar-eval-2 covers only the original
+   9 tools. Add BQs for `sec_edgar_get_filing_text` (narrative/qualitative) and
+   `sec_edgar_full_text_search` (keyword search) to properly measure the v1.2.0 agent.
 
-2. **Agent instructions update** — `agents/sec_edgar_agent.yaml` has no mention of
-   the two new tools. Add routing rules for narrative/qualitative questions
-   (→ `get_filing_text`) and keyword-across-filings questions (→ `full_text_search`).
-
-3. **Tag v1.2.0** — the three session-5 commits deserve a release tag after CE deploy.
-
-4. **sec_edgar_get_insider_transactions** — Form 4 insider buy/sell data.
+2. **sec_edgar_get_insider_transactions** — Form 4 insider buy/sell data.
    `edgar_ownership` in edgartools shows the pattern. Medium effort, interesting use case.
 
-5. **8-K earnings release tool** — cross-check Q4 derived values. Very low priority.
+3. **8-K earnings release tool** — cross-check Q4 derived values. Very low priority.
 
-6. **Synonym table expansion** — `_SYNONYM_TABLE` easy to extend; zero deploy risk.
+4. **Synonym table expansion** — `_SYNONYM_TABLE` easy to extend; zero deploy risk.
 
-7. **sec_edgar_screen** — discover companies by SIC code/exchange/state. Zero network
+5. **sec_edgar_screen** — discover companies by SIC code/exchange/state. Zero network
    calls (local reference data). Low effort.
 
 ---
@@ -296,17 +309,15 @@ FY2025/2026 questions. Canonical metric = `score_wxo_results.py`.
 
 ## Next steps (suggested order for next session)
 
-1. **(High priority) Deploy to Code Engine** — the 3 session-5 commits are not live.
-   Run CE deploy, re-import toolkit in WXO, smoke-test the new tools via chat.
+1. **(Medium) Extend eval dataset** — add 2–4 BQs for `sec_edgar_get_filing_text`
+   (e.g. "What are the main risk factors in Apple's 2025 10-K?") and
+   `sec_edgar_full_text_search` (e.g. "Which companies mentioned 'going concern' in
+   2024 10-K filings?"). Add to `evaluation/benchmark_questions.py` and
+   `eval/phoenix/build_dataset.py`; re-run `score_wxo_results.py`.
 
-2. **(High priority) Update agent instructions** — add routing rules for
-   `sec_edgar_get_filing_text` and `sec_edgar_full_text_search` to `sec_edgar_agent.yaml`.
+2. **(Medium) sec_edgar_get_insider_transactions** — Form 4 data.
 
-3. **(Medium) Tag v1.2.0** after successful CE deploy.
-
-4. **(Medium) sec_edgar_get_insider_transactions** — Form 4 data.
-
-5. **(Low) Synonym table expansion**, `sec_edgar_screen`, 8-K earnings tool.
+3. **(Low) Synonym table expansion**, `sec_edgar_screen`, 8-K earnings tool.
 
 ---
 

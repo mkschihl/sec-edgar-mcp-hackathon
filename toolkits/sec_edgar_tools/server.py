@@ -1,6 +1,7 @@
 """SEC EDGAR MCP Toolkit — stdio transport.
 
-Eight tools exposed to watsonx Orchestrate:
+Nine tools exposed to watsonx Orchestrate:
+  - sec_edgar_resolve_synonym       : map a common company nickname/alias to canonical EDGAR name + ticker
   - sec_edgar_search_companies      : search all SEC-registered companies by partial name
   - sec_edgar_resolve_company       : resolve ticker or CIK to canonical company info
   - sec_edgar_get_recent_filings    : recent filing history with optional form-type filter
@@ -53,8 +54,9 @@ REVENUE_CANDIDATES = [
 mcp = FastMCP(
     "sec_edgar_tools",
     instructions=(
-        "SEC EDGAR toolkit with eight tools for authoritative SEC filing data.\n\n"
+        "SEC EDGAR toolkit with nine tools for authoritative SEC filing data.\n\n"
         "TOOL SELECTION GUIDE:\n"
+        "- Resolve a common nickname/alias to canonical name + ticker → sec_edgar_resolve_synonym\n"
         "- Find companies by partial name → sec_edgar_search_companies\n"
         "- Resolve a ticker or CIK to canonical info → sec_edgar_resolve_company\n"
         "- List recent 10-K/10-Q/8-K filings → sec_edgar_get_recent_filings\n"
@@ -354,6 +356,167 @@ def _check_comparability(results: list[dict], warnings: list[str]) -> None:
                         f"{b['ticker']} ends {b['period_end']} "
                         f"({days} days apart — not calendar-year aligned)."
                     )
+
+
+# ---------------------------------------------------------------------------
+# Synonym / alias lookup table
+# ---------------------------------------------------------------------------
+# Maps lowercase common names / nicknames / abbreviations to a canonical
+# EDGAR-searchable name and the primary exchange ticker.  This covers the
+# most frequent cases where users refer to a company by a brand or nickname
+# rather than the SEC-registered legal name.
+#
+# Keys    : lowercase alias (may include spaces, punctuation stripped)
+# Values  : {"canonical_name": str, "ticker": str, "note": str}
+#
+# When adding entries: prefer the name that EDGAR full-text search returns
+# reliably (usually the legal name or its well-known abbreviation).
+
+_SYNONYM_TABLE: dict[str, dict] = {
+    # Big Tech ---------------------------------------------------------------
+    "google":           {"canonical_name": "Alphabet Inc.", "ticker": "GOOGL", "note": "Google is the main product brand of Alphabet Inc."},
+    "alphabet":         {"canonical_name": "Alphabet Inc.", "ticker": "GOOGL", "note": "Alphabet Inc. is the parent company of Google."},
+    "meta":             {"canonical_name": "Meta Platforms Inc.", "ticker": "META", "note": "Meta Platforms (formerly Facebook Inc.) since 2021."},
+    "facebook":         {"canonical_name": "Meta Platforms Inc.", "ticker": "META", "note": "Facebook rebranded to Meta Platforms in 2021."},
+    "instagram":        {"canonical_name": "Meta Platforms Inc.", "ticker": "META", "note": "Instagram is owned by Meta Platforms Inc."},
+    "whatsapp":         {"canonical_name": "Meta Platforms Inc.", "ticker": "META", "note": "WhatsApp is owned by Meta Platforms Inc."},
+    "apple":            {"canonical_name": "Apple Inc.", "ticker": "AAPL", "note": "Apple Inc. is the SEC-registered legal name."},
+    "microsoft":        {"canonical_name": "Microsoft Corp", "ticker": "MSFT", "note": "Microsoft Corp is the SEC-registered legal name."},
+    "amazon":           {"canonical_name": "Amazon.com Inc.", "ticker": "AMZN", "note": "Amazon.com Inc. is the SEC-registered legal name."},
+    "aws":              {"canonical_name": "Amazon.com Inc.", "ticker": "AMZN", "note": "AWS (Amazon Web Services) is a division of Amazon.com Inc."},
+    "nvidia":           {"canonical_name": "NVIDIA Corp", "ticker": "NVDA", "note": "NVIDIA Corp is the SEC-registered legal name."},
+    # Social & streaming -----------------------------------------------------
+    "twitter":          {"canonical_name": "X Holdings Corp", "ticker": "", "note": "Twitter rebranded to X; parent entity is X Holdings Corp."},
+    "x":                {"canonical_name": "X Holdings Corp", "ticker": "", "note": "X (formerly Twitter) parent is X Holdings Corp."},
+    "tiktok":           {"canonical_name": "ByteDance", "ticker": "", "note": "TikTok is a product of ByteDance Ltd; not separately SEC-registered."},
+    "youtube":          {"canonical_name": "Alphabet Inc.", "ticker": "GOOGL", "note": "YouTube is a wholly-owned subsidiary of Alphabet Inc."},
+    "linkedin":         {"canonical_name": "Microsoft Corp", "ticker": "MSFT", "note": "LinkedIn is a wholly-owned subsidiary of Microsoft Corp."},
+    "netflix":          {"canonical_name": "Netflix Inc.", "ticker": "NFLX", "note": "Netflix Inc. is the SEC-registered legal name."},
+    "spotify":          {"canonical_name": "Spotify Technology S.A.", "ticker": "SPOT", "note": "Spotify Technology S.A. is the SEC-registered legal name."},
+    # E-commerce & payments --------------------------------------------------
+    "ebay":             {"canonical_name": "eBay Inc.", "ticker": "EBAY", "note": "eBay Inc. is the SEC-registered legal name."},
+    "paypal":           {"canonical_name": "PayPal Holdings Inc.", "ticker": "PYPL", "note": "PayPal Holdings Inc. is the SEC-registered legal name."},
+    "shopify":          {"canonical_name": "Shopify Inc.", "ticker": "SHOP", "note": "Shopify Inc. is the SEC-registered legal name."},
+    "uber":             {"canonical_name": "Uber Technologies Inc.", "ticker": "UBER", "note": "Uber Technologies Inc. is the SEC-registered legal name."},
+    "lyft":             {"canonical_name": "Lyft Inc.", "ticker": "LYFT", "note": "Lyft Inc. is the SEC-registered legal name."},
+    "airbnb":           {"canonical_name": "Airbnb Inc.", "ticker": "ABNB", "note": "Airbnb Inc. is the SEC-registered legal name."},
+    # Automotive & energy ----------------------------------------------------
+    "tesla":            {"canonical_name": "Tesla Inc.", "ticker": "TSLA", "note": "Tesla Inc. is the SEC-registered legal name."},
+    "ford":             {"canonical_name": "Ford Motor Co", "ticker": "F", "note": "Ford Motor Co is the SEC-registered legal name."},
+    "gm":               {"canonical_name": "General Motors Co", "ticker": "GM", "note": "GM is the common abbreviation for General Motors Co."},
+    "general motors":   {"canonical_name": "General Motors Co", "ticker": "GM", "note": "General Motors Co is the SEC-registered legal name."},
+    "exxon":            {"canonical_name": "Exxon Mobil Corp", "ticker": "XOM", "note": "Exxon is a shorthand for Exxon Mobil Corp."},
+    "exxonmobil":       {"canonical_name": "Exxon Mobil Corp", "ticker": "XOM", "note": "ExxonMobil is a shorthand for Exxon Mobil Corp."},
+    "exxon mobil":      {"canonical_name": "Exxon Mobil Corp", "ticker": "XOM", "note": "Exxon Mobil Corp is the SEC-registered legal name."},
+    "chevron":          {"canonical_name": "Chevron Corp", "ticker": "CVX", "note": "Chevron Corp is the SEC-registered legal name."},
+    # Finance & banking ------------------------------------------------------
+    "jpmorgan":         {"canonical_name": "JPMorgan Chase & Co", "ticker": "JPM", "note": "JPMorgan is a shorthand for JPMorgan Chase & Co."},
+    "jp morgan":        {"canonical_name": "JPMorgan Chase & Co", "ticker": "JPM", "note": "JP Morgan is a shorthand for JPMorgan Chase & Co."},
+    "bank of america":  {"canonical_name": "Bank of America Corp", "ticker": "BAC", "note": "Bank of America Corp is the SEC-registered legal name."},
+    "boa":              {"canonical_name": "Bank of America Corp", "ticker": "BAC", "note": "BofA is an abbreviation for Bank of America Corp."},
+    "wells fargo":      {"canonical_name": "Wells Fargo & Co", "ticker": "WFC", "note": "Wells Fargo & Co is the SEC-registered legal name."},
+    "goldman":          {"canonical_name": "Goldman Sachs Group Inc.", "ticker": "GS", "note": "Goldman refers to The Goldman Sachs Group Inc."},
+    "goldman sachs":    {"canonical_name": "Goldman Sachs Group Inc.", "ticker": "GS", "note": "The Goldman Sachs Group Inc. is the SEC-registered legal name."},
+    "morgan stanley":   {"canonical_name": "Morgan Stanley", "ticker": "MS", "note": "Morgan Stanley is the SEC-registered legal name."},
+    "berkshire":        {"canonical_name": "Berkshire Hathaway Inc.", "ticker": "BRK-B", "note": "Berkshire is a shorthand for Berkshire Hathaway Inc."},
+    "berkshire hathaway": {"canonical_name": "Berkshire Hathaway Inc.", "ticker": "BRK-B", "note": "Berkshire Hathaway Inc. is the SEC-registered legal name."},
+    "visa":             {"canonical_name": "Visa Inc.", "ticker": "V", "note": "Visa Inc. is the SEC-registered legal name."},
+    "mastercard":       {"canonical_name": "Mastercard Inc.", "ticker": "MA", "note": "Mastercard Inc. is the SEC-registered legal name."},
+    # Healthcare & pharma ----------------------------------------------------
+    "pfizer":           {"canonical_name": "Pfizer Inc.", "ticker": "PFE", "note": "Pfizer Inc. is the SEC-registered legal name."},
+    "johnson and johnson": {"canonical_name": "Johnson & Johnson", "ticker": "JNJ", "note": "Johnson & Johnson is the SEC-registered legal name."},
+    "johnson & johnson": {"canonical_name": "Johnson & Johnson", "ticker": "JNJ", "note": "Johnson & Johnson is the SEC-registered legal name."},
+    "j&j":              {"canonical_name": "Johnson & Johnson", "ticker": "JNJ", "note": "J&J is an abbreviation for Johnson & Johnson."},
+    "abbvie":           {"canonical_name": "AbbVie Inc.", "ticker": "ABBV", "note": "AbbVie Inc. is the SEC-registered legal name."},
+    "unitedhealth":     {"canonical_name": "UnitedHealth Group Inc.", "ticker": "UNH", "note": "UnitedHealth refers to UnitedHealth Group Inc."},
+    "united health":    {"canonical_name": "UnitedHealth Group Inc.", "ticker": "UNH", "note": "UnitedHealth Group Inc. is the SEC-registered legal name."},
+    # Industrials & conglomerates --------------------------------------------
+    "ge":               {"canonical_name": "GE Aerospace", "ticker": "GE", "note": "GE is the ticker and common name for GE Aerospace (formerly General Electric Co)."},
+    "general electric": {"canonical_name": "GE Aerospace", "ticker": "GE", "note": "General Electric rebranded to GE Aerospace in 2024."},
+    "boeing":           {"canonical_name": "Boeing Co", "ticker": "BA", "note": "Boeing Co is the SEC-registered legal name."},
+    "3m":               {"canonical_name": "3M Co", "ticker": "MMM", "note": "3M Co is the SEC-registered legal name."},
+    "honeywell":        {"canonical_name": "Honeywell International Inc.", "ticker": "HON", "note": "Honeywell International Inc. is the SEC-registered legal name."},
+    # Retail & consumer ------------------------------------------------------
+    "walmart":          {"canonical_name": "Walmart Inc.", "ticker": "WMT", "note": "Walmart Inc. is the SEC-registered legal name."},
+    "costco":           {"canonical_name": "Costco Wholesale Corp", "ticker": "COST", "note": "Costco Wholesale Corp is the SEC-registered legal name."},
+    "home depot":       {"canonical_name": "Home Depot Inc.", "ticker": "HD", "note": "Home Depot Inc. is the SEC-registered legal name."},
+    "mcdonalds":        {"canonical_name": "McDonald's Corp", "ticker": "MCD", "note": "McDonald's Corp is the SEC-registered legal name."},
+    "mcdonald's":       {"canonical_name": "McDonald's Corp", "ticker": "MCD", "note": "McDonald's Corp is the SEC-registered legal name."},
+    "starbucks":        {"canonical_name": "Starbucks Corp", "ticker": "SBUX", "note": "Starbucks Corp is the SEC-registered legal name."},
+    "nike":             {"canonical_name": "Nike Inc.", "ticker": "NKE", "note": "Nike Inc. is the SEC-registered legal name."},
+    # Telecom ----------------------------------------------------------------
+    "at&t":             {"canonical_name": "AT&T Inc.", "ticker": "T", "note": "AT&T Inc. is the SEC-registered legal name."},
+    "att":              {"canonical_name": "AT&T Inc.", "ticker": "T", "note": "AT&T Inc. is the SEC-registered legal name."},
+    "verizon":          {"canonical_name": "Verizon Communications Inc.", "ticker": "VZ", "note": "Verizon Communications Inc. is the SEC-registered legal name."},
+    "t-mobile":         {"canonical_name": "T-Mobile US Inc.", "ticker": "TMUS", "note": "T-Mobile US Inc. is the SEC-registered legal name."},
+    "tmobile":          {"canonical_name": "T-Mobile US Inc.", "ticker": "TMUS", "note": "T-Mobile US Inc. is the SEC-registered legal name."},
+    # Semiconductor ----------------------------------------------------------
+    "intel":            {"canonical_name": "Intel Corp", "ticker": "INTC", "note": "Intel Corp is the SEC-registered legal name."},
+    "amd":              {"canonical_name": "Advanced Micro Devices Inc.", "ticker": "AMD", "note": "AMD is an abbreviation for Advanced Micro Devices Inc."},
+    "advanced micro devices": {"canonical_name": "Advanced Micro Devices Inc.", "ticker": "AMD", "note": "Advanced Micro Devices Inc. is the SEC-registered legal name."},
+    "qualcomm":         {"canonical_name": "QUALCOMM Inc.", "ticker": "QCOM", "note": "QUALCOMM Inc. is the SEC-registered legal name."},
+    "tsmc":             {"canonical_name": "Taiwan Semiconductor Manufacturing Co", "ticker": "TSM", "note": "TSMC is an abbreviation for Taiwan Semiconductor Manufacturing Co."},
+}
+
+
+# ---------------------------------------------------------------------------
+# Tool 0 — Resolve company synonym / alias
+# ---------------------------------------------------------------------------
+
+@mcp.tool(
+    name="sec_edgar_resolve_synonym",
+    annotations={
+        "title": "Resolve Company Synonym or Alias",
+        "readOnlyHint": True,
+        "destructiveHint": False,
+        "idempotentHint": True,
+        "openWorldHint": False,
+    },
+)
+async def sec_edgar_resolve_synonym(
+    name: Annotated[str, "Common company name, nickname, or alias to look up, e.g. 'Google', 'Meta', 'GE', 'Goldman'. Case-insensitive."],
+) -> dict:
+    """Resolve a common company nickname or alias to its canonical EDGAR name and primary ticker.
+
+    Use this tool BEFORE sec_edgar_search_companies or sec_edgar_resolve_company when the
+    user refers to a company by a brand name, nickname, or abbreviation rather than its
+    SEC-registered legal name.  Examples:
+      "Google"          → Alphabet Inc.  / GOOGL
+      "Meta"            → Meta Platforms Inc. / META
+      "Facebook"        → Meta Platforms Inc. / META
+      "GE"              → GE Aerospace / GE
+      "General Electric"→ GE Aerospace / GE
+      "Goldman"         → Goldman Sachs Group Inc. / GS
+
+    Returns a dict with keys:
+      input           — the alias as supplied
+      canonical_name  — SEC-registered or best-known EDGAR name to use in searches
+      ticker          — primary exchange ticker (empty string if not exchange-listed)
+      note            — brief explanation of the mapping
+
+    If the alias is not found in the synonym table, returns:
+      {"error": "...", "hint": "...", "input": "..."}
+    In that case, pass the original name directly to sec_edgar_search_companies.
+    """
+    key = name.strip().lower()
+    # Strip trailing punctuation that users sometimes include (e.g. "Apple,")
+    key = key.rstrip(".,;:!?")
+    match = _SYNONYM_TABLE.get(key)
+    if match is None:
+        return {
+            "error": f"No synonym mapping found for '{name}'.",
+            "hint": (
+                "Pass the company name directly to sec_edgar_search_companies to find it, "
+                "or use the canonical SEC-registered name if known."
+            ),
+            "input": name,
+        }
+    return {
+        "input": name,
+        "canonical_name": match["canonical_name"],
+        "ticker": match["ticker"],
+        "note": match["note"],
+    }
 
 
 # ---------------------------------------------------------------------------

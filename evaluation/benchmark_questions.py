@@ -363,11 +363,12 @@ BENCHMARK_QUESTIONS = [
         "pass_criteria": (
             "Agent retrieves quarterly EPS data for Apple; "
             "if the concept name is not found, the agent uses list_concepts or suggests a correction; "
-            "if EPS values are returned, they are in the range $1.0–$2.5 per share; "
+            "if EPS values are returned, they are plausible quarterly EPS values for Apple "
+            "(historically $1.00–$2.50/share for FY2022–FY2024, up to ~$3.00/share for FY2025/FY2026); "
             "response does not fabricate numbers."
         ),
-        # EPS values are small ($1–$2.50/share); no must_include since the exact
-        # value varies. Use max_value only to guard against clearly wrong magnitudes.
+        # EPS values are small; no must_include since the exact value varies by period.
+        # Use max_value only to guard against clearly wrong magnitudes.
         "numeric_checks": {
             "must_include": [],
             "rel_tol": 0.05,

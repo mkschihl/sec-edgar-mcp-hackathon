@@ -20,6 +20,7 @@ from server import (
     sec_edgar_search_companies,
     sec_edgar_resolve_company,
     sec_edgar_get_recent_filings,
+    sec_edgar_resolve_synonym,
     SEC_USER_AGENT,
 )
 
@@ -521,7 +522,69 @@ def test_multi_event_loop():
           r2.get("error", ""))
 
 
+async def test_synonym_tool():
+    print("\n[16] sec_edgar_resolve_synonym — offline dict lookups (no network)")
+
+    # -- Known hits -----------------------------------------------------------
+    r = await sec_edgar_resolve_synonym("Google")
+    check("Google → Alphabet Inc.", r.get("canonical_name") == "Alphabet Inc.", str(r))
+    check("Google → GOOGL ticker", r.get("ticker") == "GOOGL", str(r))
+    check("Google result has note", bool(r.get("note")), str(r))
+
+    r = await sec_edgar_resolve_synonym("google")          # lowercase
+    check("google (lowercase) → Alphabet Inc.", r.get("canonical_name") == "Alphabet Inc.", str(r))
+
+    r = await sec_edgar_resolve_synonym("GOOGLE")          # uppercase passthrough
+    check("GOOGLE (upper) → Alphabet Inc.", r.get("canonical_name") == "Alphabet Inc.", str(r))
+
+    r = await sec_edgar_resolve_synonym("Facebook")
+    check("Facebook → Meta Platforms Inc.", r.get("canonical_name") == "Meta Platforms Inc.", str(r))
+    check("Facebook → META ticker", r.get("ticker") == "META", str(r))
+
+    r = await sec_edgar_resolve_synonym("Meta")
+    check("Meta → Meta Platforms Inc.", r.get("canonical_name") == "Meta Platforms Inc.", str(r))
+
+    r = await sec_edgar_resolve_synonym("GE")
+    check("GE → GE Aerospace", r.get("canonical_name") == "GE Aerospace", str(r))
+    check("GE → GE ticker", r.get("ticker") == "GE", str(r))
+
+    r = await sec_edgar_resolve_synonym("General Electric")
+    check("General Electric → GE Aerospace", r.get("canonical_name") == "GE Aerospace", str(r))
+
+    r = await sec_edgar_resolve_synonym("Goldman")
+    check("Goldman → Goldman Sachs Group Inc.", "Goldman Sachs" in r.get("canonical_name", ""), str(r))
+
+    r = await sec_edgar_resolve_synonym("berkshire hathaway")
+    check("berkshire hathaway → Berkshire Hathaway Inc.", r.get("canonical_name") == "Berkshire Hathaway Inc.", str(r))
+
+    r = await sec_edgar_resolve_synonym("Apple,")          # trailing comma stripped
+    check("'Apple,' (trailing comma) → Apple Inc.", r.get("canonical_name") == "Apple Inc.", str(r))
+
+    r = await sec_edgar_resolve_synonym("exxon mobil")
+    check("exxon mobil → Exxon Mobil Corp", r.get("canonical_name") == "Exxon Mobil Corp", str(r))
+
+    r = await sec_edgar_resolve_synonym("J&J")
+    check("J&J → Johnson & Johnson", r.get("canonical_name") == "Johnson & Johnson", str(r))
+
+    # -- input field preserved ------------------------------------------------
+    r = await sec_edgar_resolve_synonym("Pfizer")
+    check("input field preserved on hit", r.get("input") == "Pfizer", str(r))
+
+    # -- Miss: unknown alias --------------------------------------------------
+    r = await sec_edgar_resolve_synonym("ACME Corp")
+    check("unknown alias returns error key", "error" in r, str(r))
+    check("unknown alias returns hint key", "hint" in r, str(r))
+    check("unknown alias preserves input", r.get("input") == "ACME Corp", str(r))
+
+    # -- No network calls: verify no 'ticker' in _TICKER_CACHE side-effects ---
+    # (Synonym tool must not trigger _ensure_ticker_cache; check runs fine offline)
+    r = await sec_edgar_resolve_synonym("Twitter")
+    check("Twitter → X Holdings Corp", r.get("canonical_name") == "X Holdings Corp", str(r))
+    check("Twitter ticker is empty string (not exchange-listed)", r.get("ticker") == "", str(r))
+
+
 async def main():
+    await test_synonym_tool()
     await test_aapl_net_income()
     await test_aapl_revenues_quarterly()
     await test_aapl_eps()

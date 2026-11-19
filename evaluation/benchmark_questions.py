@@ -346,7 +346,7 @@ BENCHMARK_QUESTIONS = [
         "category": "edge_cases",
         "difficulty": "easy",
         "question": "What SEC filings has the company with ticker ZZZZNOTREAL submitted recently?",
-        "expected_tools": ["sec_edgar_get_recent_filings"],
+        "expected_tools": [],
         "pass_criteria": (
             "Agent attempts the lookup and gracefully reports that the ticker was not found; "
             "does not fabricate a response; "

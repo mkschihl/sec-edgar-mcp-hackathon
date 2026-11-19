@@ -2,16 +2,17 @@
   "id": "BQ-21",
   "question": "What is Apple's current stock price?",
   "score": "pass",
+  "routing": "routing_ok",
   "tools_fired": [],
   "call_counts": {},
   "sse_events": [
     {
-      "id": "1795030154657-4",
+      "id": "1795057448399-4",
       "object": "thread.message.delta",
-      "thread_id": "7cc2dacf-1545-4f07-ab5f-5a29d0d3742c",
-      "run_id": "4ed5be0e-60d0-47a5-bc1d-f721357810f7",
+      "thread_id": "1cb03cf0-69f0-4067-b7c1-d116fc2c9c08",
+      "run_id": "42447097-4b1a-41fd-92d1-3b1e5ddce2f7",
       "model": "groq/openai/gpt-oss-120b",
-      "created": 1795030154,
+      "created": 1795057448,
       "choices": [
         {
           "delta": {
@@ -22,12 +23,12 @@
       ]
     },
     {
-      "id": "1795030154658-5",
+      "id": "1795057448401-5",
       "object": "thread.message.delta",
-      "thread_id": "7cc2dacf-1545-4f07-ab5f-5a29d0d3742c",
-      "run_id": "4ed5be0e-60d0-47a5-bc1d-f721357810f7",
+      "thread_id": "1cb03cf0-69f0-4067-b7c1-d116fc2c9c08",
+      "run_id": "42447097-4b1a-41fd-92d1-3b1e5ddce2f7",
       "model": "groq/openai/gpt-oss-120b",
-      "created": 1795030154,
+      "created": 1795057448,
       "choices": [
         {
           "delta": {
@@ -38,156 +39,108 @@
       ]
     },
     {
-      "id": "1795030154662-6",
+      "id": "1795057448402-6",
       "object": "thread.message.delta",
-      "thread_id": "7cc2dacf-1545-4f07-ab5f-5a29d0d3742c",
-      "run_id": "4ed5be0e-60d0-47a5-bc1d-f721357810f7",
+      "thread_id": "1cb03cf0-69f0-4067-b7c1-d116fc2c9c08",
+      "run_id": "42447097-4b1a-41fd-92d1-3b1e5ddce2f7",
       "model": "groq/openai/gpt-oss-120b",
-      "created": 1795030154,
+      "created": 1795057448,
       "choices": [
         {
           "delta": {
             "role": "assistant",
-            "content": " sorry"
+            "content": " unable"
           }
         }
       ]
     },
     {
-      "id": "1795030154668-7",
+      "id": "1795057448405-7",
       "object": "thread.message.delta",
-      "thread_id": "7cc2dacf-1545-4f07-ab5f-5a29d0d3742c",
-      "run_id": "4ed5be0e-60d0-47a5-bc1d-f721357810f7",
+      "thread_id": "1cb03cf0-69f0-4067-b7c1-d116fc2c9c08",
+      "run_id": "42447097-4b1a-41fd-92d1-3b1e5ddce2f7",
       "model": "groq/openai/gpt-oss-120b",
-      "created": 1795030154,
+      "created": 1795057448,
       "choices": [
         {
           "delta": {
             "role": "assistant",
-            "content": ","
+            "content": " to"
           }
         }
       ]
     },
     {
-      "id": "1795030154669-8",
+      "id": "1795057448406-8",
       "object": "thread.message.delta",
-      "thread_id": "7cc2dacf-1545-4f07-ab5f-5a29d0d3742c",
-      "run_id": "4ed5be0e-60d0-47a5-bc1d-f721357810f7",
+      "thread_id": "1cb03cf0-69f0-4067-b7c1-d116fc2c9c08",
+      "run_id": "42447097-4b1a-41fd-92d1-3b1e5ddce2f7",
       "model": "groq/openai/gpt-oss-120b",
-      "created": 1795030154,
+      "created": 1795057448,
       "choices": [
         {
           "delta": {
             "role": "assistant",
-            "content": " but"
+            "content": " provide"
           }
         }
       ]
     },
     {
-      "id": "1795030154669-9",
+      "id": "1795057448408-9",
       "object": "thread.message.delta",
-      "thread_id": "7cc2dacf-1545-4f07-ab5f-5a29d0d3742c",
-      "run_id": "4ed5be0e-60d0-47a5-bc1d-f721357810f7",
+      "thread_id": "1cb03cf0-69f0-4067-b7c1-d116fc2c9c08",
+      "run_id": "42447097-4b1a-41fd-92d1-3b1e5ddce2f7",
       "model": "groq/openai/gpt-oss-120b",
-      "created": 1795030154,
+      "created": 1795057448,
       "choices": [
         {
           "delta": {
             "role": "assistant",
-            "content": " I"
+            "content": " current"
           }
         }
       ]
     },
     {
-      "id": "1795030154670-10",
+      "id": "1795057448411-10",
       "object": "thread.message.delta",
-      "thread_id": "7cc2dacf-1545-4f07-ab5f-5a29d0d3742c",
-      "run_id": "4ed5be0e-60d0-47a5-bc1d-f721357810f7",
+      "thread_id": "1cb03cf0-69f0-4067-b7c1-d116fc2c9c08",
+      "run_id": "42447097-4b1a-41fd-92d1-3b1e5ddce2f7",
       "model": "groq/openai/gpt-oss-120b",
-      "created": 1795030154,
+      "created": 1795057448,
       "choices": [
         {
           "delta": {
             "role": "assistant",
-            "content": " can"
+            "content": " stock"
           }
         }
       ]
     },
     {
-      "id": "1795030154670-11",
+      "id": "1795057448412-11",
       "object": "thread.message.delta",
-      "thread_id": "7cc2dacf-1545-4f07-ab5f-5a29d0d3742c",
-      "run_id": "4ed5be0e-60d0-47a5-bc1d-f721357810f7",
+      "thread_id": "1cb03cf0-69f0-4067-b7c1-d116fc2c9c08",
+      "run_id": "42447097-4b1a-41fd-92d1-3b1e5ddce2f7",
       "model": "groq/openai/gpt-oss-120b",
-      "created": 1795030154,
+      "created": 1795057448,
       "choices": [
         {
           "delta": {
             "role": "assistant",
-            "content": "\u2019t"
+            "content": " prices"
           }
         }
       ]
     },
     {
-      "id": "1795030154674-12",
+      "id": "1795057448415-12",
       "object": "thread.message.delta",
-      "thread_id": "7cc2dacf-1545-4f07-ab5f-5a29d0d3742c",
-      "run_id": "4ed5be0e-60d0-47a5-bc1d-f721357810f7",
+      "thread_id": "1cb03cf0-69f0-4067-b7c1-d116fc2c9c08",
+      "run_id": "42447097-4b1a-41fd-92d1-3b1e5ddce2f7",
       "model": "groq/openai/gpt-oss-120b",
-      "created": 1795030154,
-      "choices": [
-        {
-          "delta": {
-            "role": "assistant",
-            "content": " help"
-          }
-        }
-      ]
-    },
-    {
-      "id": "1795030154675-13",
-      "object": "thread.message.delta",
-      "thread_id": "7cc2dacf-1545-4f07-ab5f-5a29d0d3742c",
-      "run_id": "4ed5be0e-60d0-47a5-bc1d-f721357810f7",
-      "model": "groq/openai/gpt-oss-120b",
-      "created": 1795030154,
-      "choices": [
-        {
-          "delta": {
-            "role": "assistant",
-            "content": " with"
-          }
-        }
-      ]
-    },
-    {
-      "id": "1795030154684-14",
-      "object": "thread.message.delta",
-      "thread_id": "7cc2dacf-1545-4f07-ab5f-5a29d0d3742c",
-      "run_id": "4ed5be0e-60d0-47a5-bc1d-f721357810f7",
-      "model": "groq/openai/gpt-oss-120b",
-      "created": 1795030154,
-      "choices": [
-        {
-          "delta": {
-            "role": "assistant",
-            "content": " that"
-          }
-        }
-      ]
-    },
-    {
-      "id": "1795030154685-15",
-      "object": "thread.message.delta",
-      "thread_id": "7cc2dacf-1545-4f07-ab5f-5a29d0d3742c",
-      "run_id": "4ed5be0e-60d0-47a5-bc1d-f721357810f7",
-      "model": "groq/openai/gpt-oss-120b",
-      "created": 1795030154,
+      "created": 1795057448,
       "choices": [
         {
           "delta": {
@@ -198,20 +151,372 @@
       ]
     },
     {
-      "id": "1795030154914-16",
-      "object": "thread.message.completed",
-      "thread_id": "7cc2dacf-1545-4f07-ab5f-5a29d0d3742c",
-      "run_id": "4ed5be0e-60d0-47a5-bc1d-f721357810f7",
-      "trace_id": "6df4f75479ba3b7d4da2fcf8b8827eb2",
+      "id": "1795057448417-13",
+      "object": "thread.message.delta",
+      "thread_id": "1cb03cf0-69f0-4067-b7c1-d116fc2c9c08",
+      "run_id": "42447097-4b1a-41fd-92d1-3b1e5ddce2f7",
       "model": "groq/openai/gpt-oss-120b",
-      "created": 1795030154,
+      "created": 1795057448,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " I"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795057448418-14",
+      "object": "thread.message.delta",
+      "thread_id": "1cb03cf0-69f0-4067-b7c1-d116fc2c9c08",
+      "run_id": "42447097-4b1a-41fd-92d1-3b1e5ddce2f7",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795057448,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " can"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795057448421-15",
+      "object": "thread.message.delta",
+      "thread_id": "1cb03cf0-69f0-4067-b7c1-d116fc2c9c08",
+      "run_id": "42447097-4b1a-41fd-92d1-3b1e5ddce2f7",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795057448,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " help"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795057448423-16",
+      "object": "thread.message.delta",
+      "thread_id": "1cb03cf0-69f0-4067-b7c1-d116fc2c9c08",
+      "run_id": "42447097-4b1a-41fd-92d1-3b1e5ddce2f7",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795057448,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " retrieve"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795057448425-17",
+      "object": "thread.message.delta",
+      "thread_id": "1cb03cf0-69f0-4067-b7c1-d116fc2c9c08",
+      "run_id": "42447097-4b1a-41fd-92d1-3b1e5ddce2f7",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795057448,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " Apple"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795057448427-18",
+      "object": "thread.message.delta",
+      "thread_id": "1cb03cf0-69f0-4067-b7c1-d116fc2c9c08",
+      "run_id": "42447097-4b1a-41fd-92d1-3b1e5ddce2f7",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795057448,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "\u2019s"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795057448430-19",
+      "object": "thread.message.delta",
+      "thread_id": "1cb03cf0-69f0-4067-b7c1-d116fc2c9c08",
+      "run_id": "42447097-4b1a-41fd-92d1-3b1e5ddce2f7",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795057448,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " historical"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795057448431-20",
+      "object": "thread.message.delta",
+      "thread_id": "1cb03cf0-69f0-4067-b7c1-d116fc2c9c08",
+      "run_id": "42447097-4b1a-41fd-92d1-3b1e5ddce2f7",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795057448,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " SEC"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795057448433-21",
+      "object": "thread.message.delta",
+      "thread_id": "1cb03cf0-69f0-4067-b7c1-d116fc2c9c08",
+      "run_id": "42447097-4b1a-41fd-92d1-3b1e5ddce2f7",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795057448,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " filings"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795057448436-22",
+      "object": "thread.message.delta",
+      "thread_id": "1cb03cf0-69f0-4067-b7c1-d116fc2c9c08",
+      "run_id": "42447097-4b1a-41fd-92d1-3b1e5ddce2f7",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795057448,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " or"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795057448440-23",
+      "object": "thread.message.delta",
+      "thread_id": "1cb03cf0-69f0-4067-b7c1-d116fc2c9c08",
+      "run_id": "42447097-4b1a-41fd-92d1-3b1e5ddce2f7",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795057448,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " financial"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795057448440-24",
+      "object": "thread.message.delta",
+      "thread_id": "1cb03cf0-69f0-4067-b7c1-d116fc2c9c08",
+      "run_id": "42447097-4b1a-41fd-92d1-3b1e5ddce2f7",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795057448,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " data"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795057448442-25",
+      "object": "thread.message.delta",
+      "thread_id": "1cb03cf0-69f0-4067-b7c1-d116fc2c9c08",
+      "run_id": "42447097-4b1a-41fd-92d1-3b1e5ddce2f7",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795057448,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " reported"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795057448444-26",
+      "object": "thread.message.delta",
+      "thread_id": "1cb03cf0-69f0-4067-b7c1-d116fc2c9c08",
+      "run_id": "42447097-4b1a-41fd-92d1-3b1e5ddce2f7",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795057448,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " to"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795057448447-27",
+      "object": "thread.message.delta",
+      "thread_id": "1cb03cf0-69f0-4067-b7c1-d116fc2c9c08",
+      "run_id": "42447097-4b1a-41fd-92d1-3b1e5ddce2f7",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795057448,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " the"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795057448449-28",
+      "object": "thread.message.delta",
+      "thread_id": "1cb03cf0-69f0-4067-b7c1-d116fc2c9c08",
+      "run_id": "42447097-4b1a-41fd-92d1-3b1e5ddce2f7",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795057448,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " SEC"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795057448450-29",
+      "object": "thread.message.delta",
+      "thread_id": "1cb03cf0-69f0-4067-b7c1-d116fc2c9c08",
+      "run_id": "42447097-4b1a-41fd-92d1-3b1e5ddce2f7",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795057448,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " if"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795057448452-30",
+      "object": "thread.message.delta",
+      "thread_id": "1cb03cf0-69f0-4067-b7c1-d116fc2c9c08",
+      "run_id": "42447097-4b1a-41fd-92d1-3b1e5ddce2f7",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795057448,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " that"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795057448455-31",
+      "object": "thread.message.delta",
+      "thread_id": "1cb03cf0-69f0-4067-b7c1-d116fc2c9c08",
+      "run_id": "42447097-4b1a-41fd-92d1-3b1e5ddce2f7",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795057448,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " would"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795057448457-32",
+      "object": "thread.message.delta",
+      "thread_id": "1cb03cf0-69f0-4067-b7c1-d116fc2c9c08",
+      "run_id": "42447097-4b1a-41fd-92d1-3b1e5ddce2f7",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795057448,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " be"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795057448459-33",
+      "object": "thread.message.delta",
+      "thread_id": "1cb03cf0-69f0-4067-b7c1-d116fc2c9c08",
+      "run_id": "42447097-4b1a-41fd-92d1-3b1e5ddce2f7",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795057448,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " useful"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795057448461-34",
+      "object": "thread.message.delta",
+      "thread_id": "1cb03cf0-69f0-4067-b7c1-d116fc2c9c08",
+      "run_id": "42447097-4b1a-41fd-92d1-3b1e5ddce2f7",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795057448,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "."
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795057448646-35",
+      "object": "thread.message.completed",
+      "thread_id": "1cb03cf0-69f0-4067-b7c1-d116fc2c9c08",
+      "run_id": "42447097-4b1a-41fd-92d1-3b1e5ddce2f7",
+      "trace_id": "226431c765fb4926d1388be47e588995",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795057448,
       "data": {
         "message": {
           "content": [
             {
               "response_type": "text",
               "id": "1",
-              "text": "I\u2019m sorry, but I can\u2019t help with that."
+              "text": "I\u2019m unable to provide current stock prices. I can help retrieve Apple\u2019s historical SEC filings or financial data reported to the SEC if that would be useful."
             }
           ],
           "role": "assistant"
@@ -221,20 +526,20 @@
         {
           "message": {
             "role": "assistant",
-            "content": "I\u2019m sorry, but I can\u2019t help with that."
+            "content": "I\u2019m unable to provide current stock prices. I can help retrieve Apple\u2019s historical SEC filings or financial data reported to the SEC if that would be useful."
           }
         }
       ],
       "usage": {
-        "prompt_tokens": 5141,
-        "completion_tokens": 37,
-        "total_tokens": 5178,
+        "prompt_tokens": 4230,
+        "completion_tokens": 45,
+        "total_tokens": 4275,
         "prompt_tokens_details": {
           "cached_tokens": 4096
         }
       }
     }
   ],
-  "response_text": "I\u2019m sorry, but I can\u2019t help with that.",
-  "notes": "Correctly declined to answer out-of-scope question."
+  "response_text": "I\u2019m unable to provide current stock prices. I can help retrieve Apple\u2019s historical SEC filings or financial data reported to the SEC if that would be useful.",
+  "notes": "routing_ok \u2014 correctly declined out-of-scope question."
 }

@@ -2,6 +2,7 @@
   "id": "BQ-04",
   "question": "Tell me about Alphabet Inc. \u2014 what state is it incorporated in and what SIC code does it use?",
   "score": "pass",
+  "routing": "routing_ok",
   "tools_fired": [
     "sec_edgar_resolve_company"
   ],
@@ -10,12 +11,12 @@
   },
   "sse_events": [
     {
-      "id": "1795029945234-5",
+      "id": "1795057251480-5",
       "object": "thread.run.step.delta",
-      "thread_id": "5684f48b-4037-4885-92d2-1f7eee8b38ba",
-      "run_id": "bf87099c-f659-459f-af4a-8079739b9612",
+      "thread_id": "248fcc97-3a18-4cc4-85ca-9f059c16f0ae",
+      "run_id": "8a6202b7-27c4-4a64-adb5-b13d617d91d3",
       "model": "groq/openai/gpt-oss-120b",
-      "created": 1795029945,
+      "created": 1795057251,
       "choices": [
         {
           "delta": {
@@ -27,9 +28,9 @@
                 {
                   "name": "sec_edgar_resolve_company",
                   "args": {
-                    "identifier": "GOOGL"
+                    "identifier": "GOOG"
                   },
-                  "id": "fc_647ee232-27cd-444f-b42e-c84fd4b2e23e"
+                  "id": "fc_576bc55f-61cd-4105-b39d-b8d1c624623a"
                 }
               ]
             }
@@ -38,12 +39,12 @@
       ]
     },
     {
-      "id": "1795029948098-11",
+      "id": "1795057254652-11",
       "object": "thread.message.delta",
-      "thread_id": "5684f48b-4037-4885-92d2-1f7eee8b38ba",
-      "run_id": "bf87099c-f659-459f-af4a-8079739b9612",
+      "thread_id": "248fcc97-3a18-4cc4-85ca-9f059c16f0ae",
+      "run_id": "8a6202b7-27c4-4a64-adb5-b13d617d91d3",
       "model": "groq/openai/gpt-oss-120b",
-      "created": 1795029948,
+      "created": 1795057254,
       "choices": [
         {
           "delta": {
@@ -54,12 +55,12 @@
       ]
     },
     {
-      "id": "1795029948101-12",
+      "id": "1795057254654-12",
       "object": "thread.message.delta",
-      "thread_id": "5684f48b-4037-4885-92d2-1f7eee8b38ba",
-      "run_id": "bf87099c-f659-459f-af4a-8079739b9612",
+      "thread_id": "248fcc97-3a18-4cc4-85ca-9f059c16f0ae",
+      "run_id": "8a6202b7-27c4-4a64-adb5-b13d617d91d3",
       "model": "groq/openai/gpt-oss-120b",
-      "created": 1795029948,
+      "created": 1795057254,
       "choices": [
         {
           "delta": {
@@ -70,12 +71,12 @@
       ]
     },
     {
-      "id": "1795029948102-13",
+      "id": "1795057254654-13",
       "object": "thread.message.delta",
-      "thread_id": "5684f48b-4037-4885-92d2-1f7eee8b38ba",
-      "run_id": "bf87099c-f659-459f-af4a-8079739b9612",
+      "thread_id": "248fcc97-3a18-4cc4-85ca-9f059c16f0ae",
+      "run_id": "8a6202b7-27c4-4a64-adb5-b13d617d91d3",
       "model": "groq/openai/gpt-oss-120b",
-      "created": 1795029948,
+      "created": 1795057254,
       "choices": [
         {
           "delta": {
@@ -86,12 +87,12 @@
       ]
     },
     {
-      "id": "1795029948103-14",
+      "id": "1795057254656-14",
       "object": "thread.message.delta",
-      "thread_id": "5684f48b-4037-4885-92d2-1f7eee8b38ba",
-      "run_id": "bf87099c-f659-459f-af4a-8079739b9612",
+      "thread_id": "248fcc97-3a18-4cc4-85ca-9f059c16f0ae",
+      "run_id": "8a6202b7-27c4-4a64-adb5-b13d617d91d3",
       "model": "groq/openai/gpt-oss-120b",
-      "created": 1795029948,
+      "created": 1795057254,
       "choices": [
         {
           "delta": {
@@ -102,252 +103,28 @@
       ]
     },
     {
-      "id": "1795029948104-15",
+      "id": "1795057254667-15",
       "object": "thread.message.delta",
-      "thread_id": "5684f48b-4037-4885-92d2-1f7eee8b38ba",
-      "run_id": "bf87099c-f659-459f-af4a-8079739b9612",
+      "thread_id": "248fcc97-3a18-4cc4-85ca-9f059c16f0ae",
+      "run_id": "8a6202b7-27c4-4a64-adb5-b13d617d91d3",
       "model": "groq/openai/gpt-oss-120b",
-      "created": 1795029948,
+      "created": 1795057254,
       "choices": [
         {
           "delta": {
             "role": "assistant",
-            "content": " ("
+            "content": "**"
           }
         }
       ]
     },
     {
-      "id": "1795029948106-16",
+      "id": "1795057254668-16",
       "object": "thread.message.delta",
-      "thread_id": "5684f48b-4037-4885-92d2-1f7eee8b38ba",
-      "run_id": "bf87099c-f659-459f-af4a-8079739b9612",
+      "thread_id": "248fcc97-3a18-4cc4-85ca-9f059c16f0ae",
+      "run_id": "8a6202b7-27c4-4a64-adb5-b13d617d91d3",
       "model": "groq/openai/gpt-oss-120b",
-      "created": 1795029948,
-      "choices": [
-        {
-          "delta": {
-            "role": "assistant",
-            "content": "ticker"
-          }
-        }
-      ]
-    },
-    {
-      "id": "1795029948108-17",
-      "object": "thread.message.delta",
-      "thread_id": "5684f48b-4037-4885-92d2-1f7eee8b38ba",
-      "run_id": "bf87099c-f659-459f-af4a-8079739b9612",
-      "model": "groq/openai/gpt-oss-120b",
-      "created": 1795029948,
-      "choices": [
-        {
-          "delta": {
-            "role": "assistant",
-            "content": "\u202f"
-          }
-        }
-      ]
-    },
-    {
-      "id": "1795029948110-18",
-      "object": "thread.message.delta",
-      "thread_id": "5684f48b-4037-4885-92d2-1f7eee8b38ba",
-      "run_id": "bf87099c-f659-459f-af4a-8079739b9612",
-      "model": "groq/openai/gpt-oss-120b",
-      "created": 1795029948,
-      "choices": [
-        {
-          "delta": {
-            "role": "assistant",
-            "content": "GO"
-          }
-        }
-      ]
-    },
-    {
-      "id": "1795029948112-19",
-      "object": "thread.message.delta",
-      "thread_id": "5684f48b-4037-4885-92d2-1f7eee8b38ba",
-      "run_id": "bf87099c-f659-459f-af4a-8079739b9612",
-      "model": "groq/openai/gpt-oss-120b",
-      "created": 1795029948,
-      "choices": [
-        {
-          "delta": {
-            "role": "assistant",
-            "content": "O"
-          }
-        }
-      ]
-    },
-    {
-      "id": "1795029948114-20",
-      "object": "thread.message.delta",
-      "thread_id": "5684f48b-4037-4885-92d2-1f7eee8b38ba",
-      "run_id": "bf87099c-f659-459f-af4a-8079739b9612",
-      "model": "groq/openai/gpt-oss-120b",
-      "created": 1795029948,
-      "choices": [
-        {
-          "delta": {
-            "role": "assistant",
-            "content": "GL"
-          }
-        }
-      ]
-    },
-    {
-      "id": "1795029948116-21",
-      "object": "thread.message.delta",
-      "thread_id": "5684f48b-4037-4885-92d2-1f7eee8b38ba",
-      "run_id": "bf87099c-f659-459f-af4a-8079739b9612",
-      "model": "groq/openai/gpt-oss-120b",
-      "created": 1795029948,
-      "choices": [
-        {
-          "delta": {
-            "role": "assistant",
-            "content": ","
-          }
-        }
-      ]
-    },
-    {
-      "id": "1795029948118-22",
-      "object": "thread.message.delta",
-      "thread_id": "5684f48b-4037-4885-92d2-1f7eee8b38ba",
-      "run_id": "bf87099c-f659-459f-af4a-8079739b9612",
-      "model": "groq/openai/gpt-oss-120b",
-      "created": 1795029948,
-      "choices": [
-        {
-          "delta": {
-            "role": "assistant",
-            "content": " C"
-          }
-        }
-      ]
-    },
-    {
-      "id": "1795029948129-23",
-      "object": "thread.message.delta",
-      "thread_id": "5684f48b-4037-4885-92d2-1f7eee8b38ba",
-      "run_id": "bf87099c-f659-459f-af4a-8079739b9612",
-      "model": "groq/openai/gpt-oss-120b",
-      "created": 1795029948,
-      "choices": [
-        {
-          "delta": {
-            "role": "assistant",
-            "content": "IK"
-          }
-        }
-      ]
-    },
-    {
-      "id": "1795029948129-24",
-      "object": "thread.message.delta",
-      "thread_id": "5684f48b-4037-4885-92d2-1f7eee8b38ba",
-      "run_id": "bf87099c-f659-459f-af4a-8079739b9612",
-      "model": "groq/openai/gpt-oss-120b",
-      "created": 1795029948,
-      "choices": [
-        {
-          "delta": {
-            "role": "assistant",
-            "content": "\u202f"
-          }
-        }
-      ]
-    },
-    {
-      "id": "1795029948130-25",
-      "object": "thread.message.delta",
-      "thread_id": "5684f48b-4037-4885-92d2-1f7eee8b38ba",
-      "run_id": "bf87099c-f659-459f-af4a-8079739b9612",
-      "model": "groq/openai/gpt-oss-120b",
-      "created": 1795029948,
-      "choices": [
-        {
-          "delta": {
-            "role": "assistant",
-            "content": "000"
-          }
-        }
-      ]
-    },
-    {
-      "id": "1795029948130-26",
-      "object": "thread.message.delta",
-      "thread_id": "5684f48b-4037-4885-92d2-1f7eee8b38ba",
-      "run_id": "bf87099c-f659-459f-af4a-8079739b9612",
-      "model": "groq/openai/gpt-oss-120b",
-      "created": 1795029948,
-      "choices": [
-        {
-          "delta": {
-            "role": "assistant",
-            "content": "165"
-          }
-        }
-      ]
-    },
-    {
-      "id": "1795029948131-27",
-      "object": "thread.message.delta",
-      "thread_id": "5684f48b-4037-4885-92d2-1f7eee8b38ba",
-      "run_id": "bf87099c-f659-459f-af4a-8079739b9612",
-      "model": "groq/openai/gpt-oss-120b",
-      "created": 1795029948,
-      "choices": [
-        {
-          "delta": {
-            "role": "assistant",
-            "content": "204"
-          }
-        }
-      ]
-    },
-    {
-      "id": "1795029948132-28",
-      "object": "thread.message.delta",
-      "thread_id": "5684f48b-4037-4885-92d2-1f7eee8b38ba",
-      "run_id": "bf87099c-f659-459f-af4a-8079739b9612",
-      "model": "groq/openai/gpt-oss-120b",
-      "created": 1795029948,
-      "choices": [
-        {
-          "delta": {
-            "role": "assistant",
-            "content": "4"
-          }
-        }
-      ]
-    },
-    {
-      "id": "1795029948133-29",
-      "object": "thread.message.delta",
-      "thread_id": "5684f48b-4037-4885-92d2-1f7eee8b38ba",
-      "run_id": "bf87099c-f659-459f-af4a-8079739b9612",
-      "model": "groq/openai/gpt-oss-120b",
-      "created": 1795029948,
-      "choices": [
-        {
-          "delta": {
-            "role": "assistant",
-            "content": ")**"
-          }
-        }
-      ]
-    },
-    {
-      "id": "1795029948135-30",
-      "object": "thread.message.delta",
-      "thread_id": "5684f48b-4037-4885-92d2-1f7eee8b38ba",
-      "run_id": "bf87099c-f659-459f-af4a-8079739b9612",
-      "model": "groq/openai/gpt-oss-120b",
-      "created": 1795029948,
+      "created": 1795057254,
       "choices": [
         {
           "delta": {
@@ -358,12 +135,12 @@
       ]
     },
     {
-      "id": "1795029948137-31",
+      "id": "1795057254669-17",
       "object": "thread.message.delta",
-      "thread_id": "5684f48b-4037-4885-92d2-1f7eee8b38ba",
-      "run_id": "bf87099c-f659-459f-af4a-8079739b9612",
+      "thread_id": "248fcc97-3a18-4cc4-85ca-9f059c16f0ae",
+      "run_id": "8a6202b7-27c4-4a64-adb5-b13d617d91d3",
       "model": "groq/openai/gpt-oss-120b",
-      "created": 1795029948,
+      "created": 1795057254,
       "choices": [
         {
           "delta": {
@@ -374,12 +151,12 @@
       ]
     },
     {
-      "id": "1795029948140-32",
+      "id": "1795057254669-18",
       "object": "thread.message.delta",
-      "thread_id": "5684f48b-4037-4885-92d2-1f7eee8b38ba",
-      "run_id": "bf87099c-f659-459f-af4a-8079739b9612",
+      "thread_id": "248fcc97-3a18-4cc4-85ca-9f059c16f0ae",
+      "run_id": "8a6202b7-27c4-4a64-adb5-b13d617d91d3",
       "model": "groq/openai/gpt-oss-120b",
-      "created": 1795029948,
+      "created": 1795057254,
       "choices": [
         {
           "delta": {
@@ -390,12 +167,12 @@
       ]
     },
     {
-      "id": "1795029948141-33",
+      "id": "1795057254670-19",
       "object": "thread.message.delta",
-      "thread_id": "5684f48b-4037-4885-92d2-1f7eee8b38ba",
-      "run_id": "bf87099c-f659-459f-af4a-8079739b9612",
+      "thread_id": "248fcc97-3a18-4cc4-85ca-9f059c16f0ae",
+      "run_id": "8a6202b7-27c4-4a64-adb5-b13d617d91d3",
       "model": "groq/openai/gpt-oss-120b",
-      "created": 1795029948,
+      "created": 1795057254,
       "choices": [
         {
           "delta": {
@@ -406,12 +183,12 @@
       ]
     },
     {
-      "id": "1795029948143-34",
+      "id": "1795057254671-20",
       "object": "thread.message.delta",
-      "thread_id": "5684f48b-4037-4885-92d2-1f7eee8b38ba",
-      "run_id": "bf87099c-f659-459f-af4a-8079739b9612",
+      "thread_id": "248fcc97-3a18-4cc4-85ca-9f059c16f0ae",
+      "run_id": "8a6202b7-27c4-4a64-adb5-b13d617d91d3",
       "model": "groq/openai/gpt-oss-120b",
-      "created": 1795029948,
+      "created": 1795057254,
       "choices": [
         {
           "delta": {
@@ -422,12 +199,12 @@
       ]
     },
     {
-      "id": "1795029948145-35",
+      "id": "1795057254672-21",
       "object": "thread.message.delta",
-      "thread_id": "5684f48b-4037-4885-92d2-1f7eee8b38ba",
-      "run_id": "bf87099c-f659-459f-af4a-8079739b9612",
+      "thread_id": "248fcc97-3a18-4cc4-85ca-9f059c16f0ae",
+      "run_id": "8a6202b7-27c4-4a64-adb5-b13d617d91d3",
       "model": "groq/openai/gpt-oss-120b",
-      "created": 1795029948,
+      "created": 1795057254,
       "choices": [
         {
           "delta": {
@@ -438,12 +215,12 @@
       ]
     },
     {
-      "id": "1795029948148-36",
+      "id": "1795057254684-22",
       "object": "thread.message.delta",
-      "thread_id": "5684f48b-4037-4885-92d2-1f7eee8b38ba",
-      "run_id": "bf87099c-f659-459f-af4a-8079739b9612",
+      "thread_id": "248fcc97-3a18-4cc4-85ca-9f059c16f0ae",
+      "run_id": "8a6202b7-27c4-4a64-adb5-b13d617d91d3",
       "model": "groq/openai/gpt-oss-120b",
-      "created": 1795029948,
+      "created": 1795057254,
       "choices": [
         {
           "delta": {
@@ -454,12 +231,12 @@
       ]
     },
     {
-      "id": "1795029948150-37",
+      "id": "1795057254684-23",
       "object": "thread.message.delta",
-      "thread_id": "5684f48b-4037-4885-92d2-1f7eee8b38ba",
-      "run_id": "bf87099c-f659-459f-af4a-8079739b9612",
+      "thread_id": "248fcc97-3a18-4cc4-85ca-9f059c16f0ae",
+      "run_id": "8a6202b7-27c4-4a64-adb5-b13d617d91d3",
       "model": "groq/openai/gpt-oss-120b",
-      "created": 1795029948,
+      "created": 1795057254,
       "choices": [
         {
           "delta": {
@@ -470,12 +247,12 @@
       ]
     },
     {
-      "id": "1795029948152-38",
+      "id": "1795057254685-24",
       "object": "thread.message.delta",
-      "thread_id": "5684f48b-4037-4885-92d2-1f7eee8b38ba",
-      "run_id": "bf87099c-f659-459f-af4a-8079739b9612",
+      "thread_id": "248fcc97-3a18-4cc4-85ca-9f059c16f0ae",
+      "run_id": "8a6202b7-27c4-4a64-adb5-b13d617d91d3",
       "model": "groq/openai/gpt-oss-120b",
-      "created": 1795029948,
+      "created": 1795057254,
       "choices": [
         {
           "delta": {
@@ -486,12 +263,12 @@
       ]
     },
     {
-      "id": "1795029948154-39",
+      "id": "1795057254692-25",
       "object": "thread.message.delta",
-      "thread_id": "5684f48b-4037-4885-92d2-1f7eee8b38ba",
-      "run_id": "bf87099c-f659-459f-af4a-8079739b9612",
+      "thread_id": "248fcc97-3a18-4cc4-85ca-9f059c16f0ae",
+      "run_id": "8a6202b7-27c4-4a64-adb5-b13d617d91d3",
       "model": "groq/openai/gpt-oss-120b",
-      "created": 1795029948,
+      "created": 1795057254,
       "choices": [
         {
           "delta": {
@@ -502,12 +279,12 @@
       ]
     },
     {
-      "id": "1795029948156-40",
+      "id": "1795057254756-26",
       "object": "thread.message.delta",
-      "thread_id": "5684f48b-4037-4885-92d2-1f7eee8b38ba",
-      "run_id": "bf87099c-f659-459f-af4a-8079739b9612",
+      "thread_id": "248fcc97-3a18-4cc4-85ca-9f059c16f0ae",
+      "run_id": "8a6202b7-27c4-4a64-adb5-b13d617d91d3",
       "model": "groq/openai/gpt-oss-120b",
-      "created": 1795029948,
+      "created": 1795057254,
       "choices": [
         {
           "delta": {
@@ -518,12 +295,12 @@
       ]
     },
     {
-      "id": "1795029948159-41",
+      "id": "1795057254773-27",
       "object": "thread.message.delta",
-      "thread_id": "5684f48b-4037-4885-92d2-1f7eee8b38ba",
-      "run_id": "bf87099c-f659-459f-af4a-8079739b9612",
+      "thread_id": "248fcc97-3a18-4cc4-85ca-9f059c16f0ae",
+      "run_id": "8a6202b7-27c4-4a64-adb5-b13d617d91d3",
       "model": "groq/openai/gpt-oss-120b",
-      "created": 1795029948,
+      "created": 1795057254,
       "choices": [
         {
           "delta": {
@@ -534,12 +311,12 @@
       ]
     },
     {
-      "id": "1795029948160-42",
+      "id": "1795057254779-28",
       "object": "thread.message.delta",
-      "thread_id": "5684f48b-4037-4885-92d2-1f7eee8b38ba",
-      "run_id": "bf87099c-f659-459f-af4a-8079739b9612",
+      "thread_id": "248fcc97-3a18-4cc4-85ca-9f059c16f0ae",
+      "run_id": "8a6202b7-27c4-4a64-adb5-b13d617d91d3",
       "model": "groq/openai/gpt-oss-120b",
-      "created": 1795029948,
+      "created": 1795057254,
       "choices": [
         {
           "delta": {
@@ -550,12 +327,12 @@
       ]
     },
     {
-      "id": "1795029948162-43",
+      "id": "1795057254781-29",
       "object": "thread.message.delta",
-      "thread_id": "5684f48b-4037-4885-92d2-1f7eee8b38ba",
-      "run_id": "bf87099c-f659-459f-af4a-8079739b9612",
+      "thread_id": "248fcc97-3a18-4cc4-85ca-9f059c16f0ae",
+      "run_id": "8a6202b7-27c4-4a64-adb5-b13d617d91d3",
       "model": "groq/openai/gpt-oss-120b",
-      "created": 1795029948,
+      "created": 1795057254,
       "choices": [
         {
           "delta": {
@@ -566,12 +343,12 @@
       ]
     },
     {
-      "id": "1795029948164-44",
+      "id": "1795057254782-30",
       "object": "thread.message.delta",
-      "thread_id": "5684f48b-4037-4885-92d2-1f7eee8b38ba",
-      "run_id": "bf87099c-f659-459f-af4a-8079739b9612",
+      "thread_id": "248fcc97-3a18-4cc4-85ca-9f059c16f0ae",
+      "run_id": "8a6202b7-27c4-4a64-adb5-b13d617d91d3",
       "model": "groq/openai/gpt-oss-120b",
-      "created": 1795029948,
+      "created": 1795057254,
       "choices": [
         {
           "delta": {
@@ -582,12 +359,12 @@
       ]
     },
     {
-      "id": "1795029948167-45",
+      "id": "1795057254789-31",
       "object": "thread.message.delta",
-      "thread_id": "5684f48b-4037-4885-92d2-1f7eee8b38ba",
-      "run_id": "bf87099c-f659-459f-af4a-8079739b9612",
+      "thread_id": "248fcc97-3a18-4cc4-85ca-9f059c16f0ae",
+      "run_id": "8a6202b7-27c4-4a64-adb5-b13d617d91d3",
       "model": "groq/openai/gpt-oss-120b",
-      "created": 1795029948,
+      "created": 1795057254,
       "choices": [
         {
           "delta": {
@@ -598,12 +375,12 @@
       ]
     },
     {
-      "id": "1795029948168-46",
+      "id": "1795057254790-32",
       "object": "thread.message.delta",
-      "thread_id": "5684f48b-4037-4885-92d2-1f7eee8b38ba",
-      "run_id": "bf87099c-f659-459f-af4a-8079739b9612",
+      "thread_id": "248fcc97-3a18-4cc4-85ca-9f059c16f0ae",
+      "run_id": "8a6202b7-27c4-4a64-adb5-b13d617d91d3",
       "model": "groq/openai/gpt-oss-120b",
-      "created": 1795029948,
+      "created": 1795057254,
       "choices": [
         {
           "delta": {
@@ -614,12 +391,12 @@
       ]
     },
     {
-      "id": "1795029948170-47",
+      "id": "1795057254796-33",
       "object": "thread.message.delta",
-      "thread_id": "5684f48b-4037-4885-92d2-1f7eee8b38ba",
-      "run_id": "bf87099c-f659-459f-af4a-8079739b9612",
+      "thread_id": "248fcc97-3a18-4cc4-85ca-9f059c16f0ae",
+      "run_id": "8a6202b7-27c4-4a64-adb5-b13d617d91d3",
       "model": "groq/openai/gpt-oss-120b",
-      "created": 1795029948,
+      "created": 1795057254,
       "choices": [
         {
           "delta": {
@@ -630,12 +407,12 @@
       ]
     },
     {
-      "id": "1795029948172-48",
+      "id": "1795057254796-34",
       "object": "thread.message.delta",
-      "thread_id": "5684f48b-4037-4885-92d2-1f7eee8b38ba",
-      "run_id": "bf87099c-f659-459f-af4a-8079739b9612",
+      "thread_id": "248fcc97-3a18-4cc4-85ca-9f059c16f0ae",
+      "run_id": "8a6202b7-27c4-4a64-adb5-b13d617d91d3",
       "model": "groq/openai/gpt-oss-120b",
-      "created": 1795029948,
+      "created": 1795057254,
       "choices": [
         {
           "delta": {
@@ -646,28 +423,28 @@
       ]
     },
     {
-      "id": "1795029948175-49",
+      "id": "1795057254797-35",
       "object": "thread.message.delta",
-      "thread_id": "5684f48b-4037-4885-92d2-1f7eee8b38ba",
-      "run_id": "bf87099c-f659-459f-af4a-8079739b9612",
+      "thread_id": "248fcc97-3a18-4cc4-85ca-9f059c16f0ae",
+      "run_id": "8a6202b7-27c4-4a64-adb5-b13d617d91d3",
       "model": "groq/openai/gpt-oss-120b",
-      "created": 1795029948,
+      "created": 1795057254,
       "choices": [
         {
           "delta": {
             "role": "assistant",
-            "content": "\u202f"
+            "content": " "
           }
         }
       ]
     },
     {
-      "id": "1795029948177-50",
+      "id": "1795057254797-36",
       "object": "thread.message.delta",
-      "thread_id": "5684f48b-4037-4885-92d2-1f7eee8b38ba",
-      "run_id": "bf87099c-f659-459f-af4a-8079739b9612",
+      "thread_id": "248fcc97-3a18-4cc4-85ca-9f059c16f0ae",
+      "run_id": "8a6202b7-27c4-4a64-adb5-b13d617d91d3",
       "model": "groq/openai/gpt-oss-120b",
-      "created": 1795029948,
+      "created": 1795057254,
       "choices": [
         {
           "delta": {
@@ -678,12 +455,12 @@
       ]
     },
     {
-      "id": "1795029948179-51",
+      "id": "1795057254799-37",
       "object": "thread.message.delta",
-      "thread_id": "5684f48b-4037-4885-92d2-1f7eee8b38ba",
-      "run_id": "bf87099c-f659-459f-af4a-8079739b9612",
+      "thread_id": "248fcc97-3a18-4cc4-85ca-9f059c16f0ae",
+      "run_id": "8a6202b7-27c4-4a64-adb5-b13d617d91d3",
       "model": "groq/openai/gpt-oss-120b",
-      "created": 1795029948,
+      "created": 1795057254,
       "choices": [
         {
           "delta": {
@@ -694,12 +471,12 @@
       ]
     },
     {
-      "id": "1795029948181-52",
+      "id": "1795057254804-38",
       "object": "thread.message.delta",
-      "thread_id": "5684f48b-4037-4885-92d2-1f7eee8b38ba",
-      "run_id": "bf87099c-f659-459f-af4a-8079739b9612",
+      "thread_id": "248fcc97-3a18-4cc4-85ca-9f059c16f0ae",
+      "run_id": "8a6202b7-27c4-4a64-adb5-b13d617d91d3",
       "model": "groq/openai/gpt-oss-120b",
-      "created": 1795029948,
+      "created": 1795057254,
       "choices": [
         {
           "delta": {
@@ -710,60 +487,28 @@
       ]
     },
     {
-      "id": "1795029948183-53",
+      "id": "1795057254805-39",
       "object": "thread.message.delta",
-      "thread_id": "5684f48b-4037-4885-92d2-1f7eee8b38ba",
-      "run_id": "bf87099c-f659-459f-af4a-8079739b9612",
+      "thread_id": "248fcc97-3a18-4cc4-85ca-9f059c16f0ae",
+      "run_id": "8a6202b7-27c4-4a64-adb5-b13d617d91d3",
       "model": "groq/openai/gpt-oss-120b",
-      "created": 1795029948,
+      "created": 1795057254,
       "choices": [
         {
           "delta": {
             "role": "assistant",
-            "content": "\u202f"
+            "content": " Services"
           }
         }
       ]
     },
     {
-      "id": "1795029948185-54",
+      "id": "1795057254812-40",
       "object": "thread.message.delta",
-      "thread_id": "5684f48b-4037-4885-92d2-1f7eee8b38ba",
-      "run_id": "bf87099c-f659-459f-af4a-8079739b9612",
+      "thread_id": "248fcc97-3a18-4cc4-85ca-9f059c16f0ae",
+      "run_id": "8a6202b7-27c4-4a64-adb5-b13d617d91d3",
       "model": "groq/openai/gpt-oss-120b",
-      "created": 1795029948,
-      "choices": [
-        {
-          "delta": {
-            "role": "assistant",
-            "content": "\u201c"
-          }
-        }
-      ]
-    },
-    {
-      "id": "1795029948187-55",
-      "object": "thread.message.delta",
-      "thread_id": "5684f48b-4037-4885-92d2-1f7eee8b38ba",
-      "run_id": "bf87099c-f659-459f-af4a-8079739b9612",
-      "model": "groq/openai/gpt-oss-120b",
-      "created": 1795029948,
-      "choices": [
-        {
-          "delta": {
-            "role": "assistant",
-            "content": "Services"
-          }
-        }
-      ]
-    },
-    {
-      "id": "1795029948190-56",
-      "object": "thread.message.delta",
-      "thread_id": "5684f48b-4037-4885-92d2-1f7eee8b38ba",
-      "run_id": "bf87099c-f659-459f-af4a-8079739b9612",
-      "model": "groq/openai/gpt-oss-120b",
-      "created": 1795029948,
+      "created": 1795057254,
       "choices": [
         {
           "delta": {
@@ -774,12 +519,12 @@
       ]
     },
     {
-      "id": "1795029948191-57",
+      "id": "1795057254813-41",
       "object": "thread.message.delta",
-      "thread_id": "5684f48b-4037-4885-92d2-1f7eee8b38ba",
-      "run_id": "bf87099c-f659-459f-af4a-8079739b9612",
+      "thread_id": "248fcc97-3a18-4cc4-85ca-9f059c16f0ae",
+      "run_id": "8a6202b7-27c4-4a64-adb5-b13d617d91d3",
       "model": "groq/openai/gpt-oss-120b",
-      "created": 1795029948,
+      "created": 1795057254,
       "choices": [
         {
           "delta": {
@@ -790,12 +535,12 @@
       ]
     },
     {
-      "id": "1795029948194-58",
+      "id": "1795057254813-42",
       "object": "thread.message.delta",
-      "thread_id": "5684f48b-4037-4885-92d2-1f7eee8b38ba",
-      "run_id": "bf87099c-f659-459f-af4a-8079739b9612",
+      "thread_id": "248fcc97-3a18-4cc4-85ca-9f059c16f0ae",
+      "run_id": "8a6202b7-27c4-4a64-adb5-b13d617d91d3",
       "model": "groq/openai/gpt-oss-120b",
-      "created": 1795029948,
+      "created": 1795057254,
       "choices": [
         {
           "delta": {
@@ -806,12 +551,12 @@
       ]
     },
     {
-      "id": "1795029948198-59",
+      "id": "1795057254814-43",
       "object": "thread.message.delta",
-      "thread_id": "5684f48b-4037-4885-92d2-1f7eee8b38ba",
-      "run_id": "bf87099c-f659-459f-af4a-8079739b9612",
+      "thread_id": "248fcc97-3a18-4cc4-85ca-9f059c16f0ae",
+      "run_id": "8a6202b7-27c4-4a64-adb5-b13d617d91d3",
       "model": "groq/openai/gpt-oss-120b",
-      "created": 1795029948,
+      "created": 1795057254,
       "choices": [
         {
           "delta": {
@@ -822,12 +567,12 @@
       ]
     },
     {
-      "id": "1795029948199-60",
+      "id": "1795057254815-44",
       "object": "thread.message.delta",
-      "thread_id": "5684f48b-4037-4885-92d2-1f7eee8b38ba",
-      "run_id": "bf87099c-f659-459f-af4a-8079739b9612",
+      "thread_id": "248fcc97-3a18-4cc4-85ca-9f059c16f0ae",
+      "run_id": "8a6202b7-27c4-4a64-adb5-b13d617d91d3",
       "model": "groq/openai/gpt-oss-120b",
-      "created": 1795029948,
+      "created": 1795057254,
       "choices": [
         {
           "delta": {
@@ -838,12 +583,12 @@
       ]
     },
     {
-      "id": "1795029948201-61",
+      "id": "1795057254815-45",
       "object": "thread.message.delta",
-      "thread_id": "5684f48b-4037-4885-92d2-1f7eee8b38ba",
-      "run_id": "bf87099c-f659-459f-af4a-8079739b9612",
+      "thread_id": "248fcc97-3a18-4cc4-85ca-9f059c16f0ae",
+      "run_id": "8a6202b7-27c4-4a64-adb5-b13d617d91d3",
       "model": "groq/openai/gpt-oss-120b",
-      "created": 1795029948,
+      "created": 1795057254,
       "choices": [
         {
           "delta": {
@@ -854,12 +599,12 @@
       ]
     },
     {
-      "id": "1795029948202-62",
+      "id": "1795057254820-46",
       "object": "thread.message.delta",
-      "thread_id": "5684f48b-4037-4885-92d2-1f7eee8b38ba",
-      "run_id": "bf87099c-f659-459f-af4a-8079739b9612",
+      "thread_id": "248fcc97-3a18-4cc4-85ca-9f059c16f0ae",
+      "run_id": "8a6202b7-27c4-4a64-adb5-b13d617d91d3",
       "model": "groq/openai/gpt-oss-120b",
-      "created": 1795029948,
+      "created": 1795057254,
       "choices": [
         {
           "delta": {
@@ -870,12 +615,12 @@
       ]
     },
     {
-      "id": "1795029948204-63",
+      "id": "1795057254821-47",
       "object": "thread.message.delta",
-      "thread_id": "5684f48b-4037-4885-92d2-1f7eee8b38ba",
-      "run_id": "bf87099c-f659-459f-af4a-8079739b9612",
+      "thread_id": "248fcc97-3a18-4cc4-85ca-9f059c16f0ae",
+      "run_id": "8a6202b7-27c4-4a64-adb5-b13d617d91d3",
       "model": "groq/openai/gpt-oss-120b",
-      "created": 1795029948,
+      "created": 1795057254,
       "choices": [
         {
           "delta": {
@@ -886,36 +631,52 @@
       ]
     },
     {
-      "id": "1795029948206-64",
+      "id": "1795057254832-48",
       "object": "thread.message.delta",
-      "thread_id": "5684f48b-4037-4885-92d2-1f7eee8b38ba",
-      "run_id": "bf87099c-f659-459f-af4a-8079739b9612",
+      "thread_id": "248fcc97-3a18-4cc4-85ca-9f059c16f0ae",
+      "run_id": "8a6202b7-27c4-4a64-adb5-b13d617d91d3",
       "model": "groq/openai/gpt-oss-120b",
-      "created": 1795029948,
+      "created": 1795057254,
       "choices": [
         {
           "delta": {
             "role": "assistant",
-            "content": ".\u201d"
+            "content": "."
           }
         }
       ]
     },
     {
-      "id": "1795029948440-65",
-      "object": "thread.message.completed",
-      "thread_id": "5684f48b-4037-4885-92d2-1f7eee8b38ba",
-      "run_id": "bf87099c-f659-459f-af4a-8079739b9612",
-      "trace_id": "fa8cb449d8f45042bec63f1e3f10bdde",
+      "id": "1795057254832-49",
+      "object": "thread.message.delta",
+      "thread_id": "248fcc97-3a18-4cc4-85ca-9f059c16f0ae",
+      "run_id": "8a6202b7-27c4-4a64-adb5-b13d617d91d3",
       "model": "groq/openai/gpt-oss-120b",
-      "created": 1795029948,
+      "created": 1795057254,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "  "
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795057255187-50",
+      "object": "thread.message.completed",
+      "thread_id": "248fcc97-3a18-4cc4-85ca-9f059c16f0ae",
+      "run_id": "8a6202b7-27c4-4a64-adb5-b13d617d91d3",
+      "trace_id": "8a37e60d229f8815a5229f3a064b61a6",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795057255,
       "data": {
         "message": {
           "content": [
             {
               "response_type": "text",
               "id": "1",
-              "text": "**Alphabet Inc. (ticker\u202fGOOGL, CIK\u202f0001652044)**  \n\n- **State of Incorporation:** Delaware (DE)  \n- **SIC Code:**\u202f7370 \u2013\u202f\u201cServices\u2011Computer Programming, Data Processing, Etc.\u201d"
+              "text": "**Alphabet Inc.**  \n\n- **State of Incorporation:** Delaware (DE)  \n- **SIC Code:** 7370 \u2013 Services\u2011Computer Programming, Data Processing, Etc.  "
             }
           ],
           "role": "assistant"
@@ -925,20 +686,20 @@
         {
           "message": {
             "role": "assistant",
-            "content": "**Alphabet Inc. (ticker\u202fGOOGL, CIK\u202f0001652044)**  \n\n- **State of Incorporation:** Delaware (DE)  \n- **SIC Code:**\u202f7370 \u2013\u202f\u201cServices\u2011Computer Programming, Data Processing, Etc.\u201d"
+            "content": "**Alphabet Inc.**  \n\n- **State of Incorporation:** Delaware (DE)  \n- **SIC Code:** 7370 \u2013 Services\u2011Computer Programming, Data Processing, Etc.  "
           }
         }
       ],
       "usage": {
-        "prompt_tokens": 8523,
-        "completion_tokens": 104,
-        "total_tokens": 8627,
+        "prompt_tokens": 8753,
+        "completion_tokens": 95,
+        "total_tokens": 8848,
         "prompt_tokens_details": {
-          "cached_tokens": 0
+          "cached_tokens": 8192
         }
       }
     }
   ],
-  "response_text": "**Alphabet Inc. (ticker\u202fGOOGL, CIK\u202f0001652044)**  \n\n- **State of Incorporation:** Delaware (DE)  \n- **SIC Code:**\u202f7370 \u2013\u202f\u201cServices\u2011Computer Programming, Data Processing, Etc.\u201d",
-  "notes": "All expected tools fired."
+  "response_text": "**Alphabet Inc.**  \n\n- **State of Incorporation:** Delaware (DE)  \n- **SIC Code:** 7370 \u2013 Services\u2011Computer Programming, Data Processing, Etc.",
+  "notes": "routing_ok \u2014 all expected tools fired."
 }

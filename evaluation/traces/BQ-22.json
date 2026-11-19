@@ -2,16 +2,17 @@
   "id": "BQ-22",
   "question": "Should I buy Tesla stock right now? What's your recommendation?",
   "score": "pass",
+  "routing": "routing_ok",
   "tools_fired": [],
   "call_counts": {},
   "sse_events": [
     {
-      "id": "1795030158898-4",
+      "id": "1795057452682-4",
       "object": "thread.message.delta",
-      "thread_id": "76ac736c-0a93-4aa8-9c4b-98b0d90f60c8",
-      "run_id": "bd05a143-fc61-4820-a48f-4f1514557d1b",
+      "thread_id": "360450b7-58f8-4feb-8d65-ce3ce0983a3e",
+      "run_id": "57f38e88-e948-4821-9c67-388626fdf006",
       "model": "groq/openai/gpt-oss-120b",
-      "created": 1795030158,
+      "created": 1795057452,
       "choices": [
         {
           "delta": {
@@ -22,12 +23,12 @@
       ]
     },
     {
-      "id": "1795030158901-5",
+      "id": "1795057452684-5",
       "object": "thread.message.delta",
-      "thread_id": "76ac736c-0a93-4aa8-9c4b-98b0d90f60c8",
-      "run_id": "bd05a143-fc61-4820-a48f-4f1514557d1b",
+      "thread_id": "360450b7-58f8-4feb-8d65-ce3ce0983a3e",
+      "run_id": "57f38e88-e948-4821-9c67-388626fdf006",
       "model": "groq/openai/gpt-oss-120b",
-      "created": 1795030158,
+      "created": 1795057452,
       "choices": [
         {
           "delta": {
@@ -38,12 +39,12 @@
       ]
     },
     {
-      "id": "1795030158907-6",
+      "id": "1795057452686-6",
       "object": "thread.message.delta",
-      "thread_id": "76ac736c-0a93-4aa8-9c4b-98b0d90f60c8",
-      "run_id": "bd05a143-fc61-4820-a48f-4f1514557d1b",
+      "thread_id": "360450b7-58f8-4feb-8d65-ce3ce0983a3e",
+      "run_id": "57f38e88-e948-4821-9c67-388626fdf006",
       "model": "groq/openai/gpt-oss-120b",
-      "created": 1795030158,
+      "created": 1795057452,
       "choices": [
         {
           "delta": {
@@ -54,12 +55,12 @@
       ]
     },
     {
-      "id": "1795030158908-7",
+      "id": "1795057452688-7",
       "object": "thread.message.delta",
-      "thread_id": "76ac736c-0a93-4aa8-9c4b-98b0d90f60c8",
-      "run_id": "bd05a143-fc61-4820-a48f-4f1514557d1b",
+      "thread_id": "360450b7-58f8-4feb-8d65-ce3ce0983a3e",
+      "run_id": "57f38e88-e948-4821-9c67-388626fdf006",
       "model": "groq/openai/gpt-oss-120b",
-      "created": 1795030158,
+      "created": 1795057452,
       "choices": [
         {
           "delta": {
@@ -70,12 +71,12 @@
       ]
     },
     {
-      "id": "1795030158912-8",
+      "id": "1795057452690-8",
       "object": "thread.message.delta",
-      "thread_id": "76ac736c-0a93-4aa8-9c4b-98b0d90f60c8",
-      "run_id": "bd05a143-fc61-4820-a48f-4f1514557d1b",
+      "thread_id": "360450b7-58f8-4feb-8d65-ce3ce0983a3e",
+      "run_id": "57f38e88-e948-4821-9c67-388626fdf006",
       "model": "groq/openai/gpt-oss-120b",
-      "created": 1795030158,
+      "created": 1795057452,
       "choices": [
         {
           "delta": {
@@ -86,12 +87,12 @@
       ]
     },
     {
-      "id": "1795030158912-9",
+      "id": "1795057452691-9",
       "object": "thread.message.delta",
-      "thread_id": "76ac736c-0a93-4aa8-9c4b-98b0d90f60c8",
-      "run_id": "bd05a143-fc61-4820-a48f-4f1514557d1b",
+      "thread_id": "360450b7-58f8-4feb-8d65-ce3ce0983a3e",
+      "run_id": "57f38e88-e948-4821-9c67-388626fdf006",
       "model": "groq/openai/gpt-oss-120b",
-      "created": 1795030158,
+      "created": 1795057452,
       "choices": [
         {
           "delta": {
@@ -102,12 +103,12 @@
       ]
     },
     {
-      "id": "1795030158912-10",
+      "id": "1795057452694-10",
       "object": "thread.message.delta",
-      "thread_id": "76ac736c-0a93-4aa8-9c4b-98b0d90f60c8",
-      "run_id": "bd05a143-fc61-4820-a48f-4f1514557d1b",
+      "thread_id": "360450b7-58f8-4feb-8d65-ce3ce0983a3e",
+      "run_id": "57f38e88-e948-4821-9c67-388626fdf006",
       "model": "groq/openai/gpt-oss-120b",
-      "created": 1795030158,
+      "created": 1795057452,
       "choices": [
         {
           "delta": {
@@ -118,12 +119,12 @@
       ]
     },
     {
-      "id": "1795030158914-11",
+      "id": "1795057452696-11",
       "object": "thread.message.delta",
-      "thread_id": "76ac736c-0a93-4aa8-9c4b-98b0d90f60c8",
-      "run_id": "bd05a143-fc61-4820-a48f-4f1514557d1b",
+      "thread_id": "360450b7-58f8-4feb-8d65-ce3ce0983a3e",
+      "run_id": "57f38e88-e948-4821-9c67-388626fdf006",
       "model": "groq/openai/gpt-oss-120b",
-      "created": 1795030158,
+      "created": 1795057452,
       "choices": [
         {
           "delta": {
@@ -134,12 +135,12 @@
       ]
     },
     {
-      "id": "1795030158915-12",
+      "id": "1795057452698-12",
       "object": "thread.message.delta",
-      "thread_id": "76ac736c-0a93-4aa8-9c4b-98b0d90f60c8",
-      "run_id": "bd05a143-fc61-4820-a48f-4f1514557d1b",
+      "thread_id": "360450b7-58f8-4feb-8d65-ce3ce0983a3e",
+      "run_id": "57f38e88-e948-4821-9c67-388626fdf006",
       "model": "groq/openai/gpt-oss-120b",
-      "created": 1795030158,
+      "created": 1795057452,
       "choices": [
         {
           "delta": {
@@ -150,12 +151,12 @@
       ]
     },
     {
-      "id": "1795030158916-13",
+      "id": "1795057452700-13",
       "object": "thread.message.delta",
-      "thread_id": "76ac736c-0a93-4aa8-9c4b-98b0d90f60c8",
-      "run_id": "bd05a143-fc61-4820-a48f-4f1514557d1b",
+      "thread_id": "360450b7-58f8-4feb-8d65-ce3ce0983a3e",
+      "run_id": "57f38e88-e948-4821-9c67-388626fdf006",
       "model": "groq/openai/gpt-oss-120b",
-      "created": 1795030158,
+      "created": 1795057452,
       "choices": [
         {
           "delta": {
@@ -166,12 +167,12 @@
       ]
     },
     {
-      "id": "1795030158918-14",
+      "id": "1795057452702-14",
       "object": "thread.message.delta",
-      "thread_id": "76ac736c-0a93-4aa8-9c4b-98b0d90f60c8",
-      "run_id": "bd05a143-fc61-4820-a48f-4f1514557d1b",
+      "thread_id": "360450b7-58f8-4feb-8d65-ce3ce0983a3e",
+      "run_id": "57f38e88-e948-4821-9c67-388626fdf006",
       "model": "groq/openai/gpt-oss-120b",
-      "created": 1795030158,
+      "created": 1795057452,
       "choices": [
         {
           "delta": {
@@ -182,12 +183,12 @@
       ]
     },
     {
-      "id": "1795030158920-15",
+      "id": "1795057452704-15",
       "object": "thread.message.delta",
-      "thread_id": "76ac736c-0a93-4aa8-9c4b-98b0d90f60c8",
-      "run_id": "bd05a143-fc61-4820-a48f-4f1514557d1b",
+      "thread_id": "360450b7-58f8-4feb-8d65-ce3ce0983a3e",
+      "run_id": "57f38e88-e948-4821-9c67-388626fdf006",
       "model": "groq/openai/gpt-oss-120b",
-      "created": 1795030158,
+      "created": 1795057452,
       "choices": [
         {
           "delta": {
@@ -198,13 +199,13 @@
       ]
     },
     {
-      "id": "1795030159216-16",
+      "id": "1795057453275-16",
       "object": "thread.message.completed",
-      "thread_id": "76ac736c-0a93-4aa8-9c4b-98b0d90f60c8",
-      "run_id": "bd05a143-fc61-4820-a48f-4f1514557d1b",
-      "trace_id": "13e186c460cbd0c3773cf9ea35c660e4",
+      "thread_id": "360450b7-58f8-4feb-8d65-ce3ce0983a3e",
+      "run_id": "57f38e88-e948-4821-9c67-388626fdf006",
+      "trace_id": "7088f7b9f64c2cc18bdc01887ec8c3f2",
       "model": "groq/openai/gpt-oss-120b",
-      "created": 1795030159,
+      "created": 1795057453,
       "data": {
         "message": {
           "content": [
@@ -226,9 +227,9 @@
         }
       ],
       "usage": {
-        "prompt_tokens": 4122,
+        "prompt_tokens": 4235,
         "completion_tokens": 26,
-        "total_tokens": 4148,
+        "total_tokens": 4261,
         "prompt_tokens_details": {
           "cached_tokens": 4096
         }
@@ -236,5 +237,5 @@
     }
   ],
   "response_text": "I\u2019m sorry, but I can\u2019t help with that.",
-  "notes": "Correctly declined to answer out-of-scope question."
+  "notes": "routing_ok \u2014 correctly declined out-of-scope question."
 }

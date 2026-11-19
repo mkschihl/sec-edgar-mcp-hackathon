@@ -2,8 +2,8 @@
 
 **Agent:** `sec_edgar_agent`  
 **Environment:** `gsa-hackathon` (IBM Cloud Toronto)  
-**Run date:** 2026-11-18 22:44  
-**Duration:** 76s for 23 questions  
+**Run date:** 2026-11-19 01:26  
+**Duration:** 94s for 23 questions  
 
 ---
 
@@ -28,7 +28,7 @@
 | BQ-04 | 🟢 easy | company_resolution | ✅ pass |  | `resolve_company` | `resolve_company` | All expected tools fired. |
 | BQ-05 | 🟢 easy | recent_filings | ✅ pass |  | `get_recent_filings` | `resolve_company`, `get_recent_filings` | All expected tools fired. |
 | BQ-06 | 🟢 easy | recent_filings | ✅ pass |  | `get_recent_filings` | `resolve_company`, `get_recent_filings` | All expected tools fired. |
-| BQ-07 | 🟡 medium | annual_facts | ✅ pass |  | `get_company_fact` | `resolve_company`, `get_company_fact` | All expected tools fired. |
+| BQ-07 | 🟡 medium | annual_facts | ✅ pass | routing_ok | `get_company_fact` | `resolve_company`, `get_company_fact` | routing_ok — all expected tools fired. |
 | BQ-08 | 🟡 medium | annual_facts | ✅ pass |  | `get_company_fact` | `search_companies`, `get_company_fact` | All expected tools fired. |
 | BQ-09 | 🟡 medium | quarterly_facts | ✅ pass | routing_ok | `get_quarterly_facts` | `resolve_company`, `get_quarterly_facts` | routing_ok — all expected tools fired. |
 | BQ-10 | 🟡 medium | quarterly_facts | ✅ pass | routing_ok | `get_quarterly_facts` | `resolve_company`, `get_quarterly_facts` | routing_ok — all expected tools fired. |
@@ -39,7 +39,7 @@
 | BQ-15 | 🔴 hard | filing_attribution | ✅ pass | routing_ok | `get_company_fact` | `resolve_company`, `get_company_fact`, `get_filing_metadata` | routing_ok — all expected tools fired. |
 | BQ-16 | 🔴 hard | filing_attribution | ✅ pass | routing_ok | `get_company_fact` | `resolve_company`, `get_company_fact`, `get_filing_metadata` | routing_ok — all expected tools fired. |
 | BQ-17 | 🔴 hard | multi_step_discovery | ✅ pass |  | `search_companies`, `get_company_fact` | `search_companies`, `get_company_fact` | All expected tools fired. |
-| BQ-18 | 🔴 hard | multi_step_discovery | ✅ pass |  | `search_companies`, `get_recent_filings` | `search_companies`, `resolve_company`, `get_recent_filings` | All expected tools fired. |
+| BQ-18 | 🔴 hard | multi_step_discovery | ✅ pass | routing_ok | `search_companies`, `get_recent_filings` | `search_companies`, `resolve_company`, `get_recent_filings` | routing_ok — all expected tools fired. |
 | BQ-19 | 🟢 easy | edge_cases | ❌ fail |  | `get_recent_filings` | `search_companies` | No expected tools fired. Missing: ['sec_edgar_get_recent_filings']. |
 | BQ-20 | 🟡 medium | edge_cases | ✅ pass | routing_ok | `get_quarterly_facts` | `resolve_company`, `get_quarterly_facts` | routing_ok — all expected tools fired. |
 | BQ-21 | 🟢 easy | out_of_scope | ✅ pass |  |  | *(none)* | Correctly declined to answer out-of-scope question. |
@@ -191,7 +191,7 @@ These filings are the most recent 10‑Q submissions for **Johnson & Johnson (CI
 <details><summary>Agent response</summary>
 
 ```
-**Apple Inc. – Net Income (attributable to parent)**  
+**Apple Inc. – Net Income (NetIncomeLoss)**  
 *XBRL concept: NetIncomeLoss (us‑gaap)*  
 
 | Fiscal Year | Period End | Net Income (USD) | Form | Accession Number |
@@ -202,7 +202,7 @@ These filings are the most recent 10‑Q submissions for **Johnson & Johnson (CI
 | 2025 | 2025‑09‑27 | $112.0 billion | 10‑K | 0000320193‑26‑000026 |
 | 2026 | 2026‑09‑26 | $132.2 billion | 10‑K | 0000320193‑26‑000026 |
 
-*All values are reported in U.S. dollars (USD) as shown in the company’s 10‑K filings.*
+*All values are presented in U.S. dollars (USD) as reported in the most recent 10‑K filings.*
 ```
 
 </details>
@@ -271,21 +271,24 @@ If you need the source filing URLs or further details for any specific quarter, 
 <details><summary>Agent response</summary>
 
 ```
-**Microsoft Corp – Net Income (Loss) Attributable to Parent**  
-*XBRL concept: **NetIncomeLoss** (us‑gaap)*  
+**Microsoft Corp – Net Income (Loss) – Last 6 Reported Quarters**  
+*(Concept: **NetIncomeLoss**, taxonomy: us‑gaap, unit: USD)*  
 
 | Fiscal Quarter | Fiscal Year | Period End | Net Income (USD) | Form | Accession Number | Derived? |
 |----------------|------------|------------|------------------|------|------------------|----------|
-| Q1 FY2027 | 2027 | 2026‑09‑30 | $36.63 billion | 10‑Q | 0001193125‑26‑436133 | No |
-| Q4 FY2026 | 2026 | 2026‑06‑30 | $35.77 billion | 10‑K | 0001193125‑26‑323660 | Yes* |
-| Q3 FY2026 | 2026 | 2026‑03‑31 | $31.78 billion | 10‑Q | 0001193125‑26‑191507 | No |
-| Q2 FY2026 | 2026 | 2025‑12‑31 | $38.46 billion | 10‑Q | 0001193125‑26‑027207 | No |
-| Q1 FY2026 | 2026 | 2025‑09‑30 | $27.75 billion | 10‑Q | 0001193125‑26‑436133 | No |
-| Q4 FY2025 | 2025 | 2025‑06‑30 | $27.23 billion | 10‑K | 0001193125‑26‑323660 | Yes* |
+| Q1 | 2027 | 2026‑09‑30 | $36.63 billion | 10‑Q | 0001193125‑26‑436133 | No |
+| Q4 | 2026 | 2026‑06‑30 | $35.77 billion | 10‑K | 0001193125‑26‑323660 | Yes (derived: annual minus nine‑month YTD) |
+| Q3 | 2026 | 2026‑03‑31 | $31.78 billion | 10‑Q | 0001193125‑26‑191507 | No |
+| Q2 | 2026 | 2025‑12‑31 | $38.46 billion | 10‑Q | 0001193125‑26‑027207 | No |
+| Q1 | 2026 | 2025‑09‑30 | $27.75 billion | 10‑Q | 0001193125‑26‑436133 | No |
+| Q4 | 2025 | 2025‑06‑30 | $27.23 billion | 10‑K | 0001193125‑26‑323660 | Yes (derived: annual minus nine‑month YTD) |
 
-\* **Derived values**: Q4 figures are derived by subtracting the nine‑month YTD total from the full‑year amount reported in the annual 10‑K filing (see derivation note in the filing metadata).  
+**Notes**
 
-All amounts are in **USD** and represent the net income attributable to Microsoft’s parent company for each quarter.
+* “Derived” quarters (Q4) are calculated by the SEC as the full‑year amount minus the nine‑month YTD amount, because the 10‑K filing reports the annual total and the nine‑month YTD figure.  
+* All values are in **USD** and are taken directly from Microsoft’s XBRL filings (10‑Q and 10‑K) as returned by the SEC’s company‑facts endpoint.  
+
+If you need the filing URLs or further details for any of these quarters, let me know!
 ```
 
 </details>
@@ -476,25 +479,24 @@ This filing contains the reported annual revenue figure for Apple’s most recen
 <details><summary>Agent response</summary>
 
 ```
-**Company identified**
-
+**Resolved Company (with recent 10‑K filings)**  
 - **Name:** EXXON MOBIL CORP  
+- **Ticker:** XOM  
 - **CIK:** 0000034088  
-- **Ticker:** (CIK used for SEC queries)  
 - **SIC:** 2911 – Petroleum Refining  
-- **State of incorporation:** New Jersey (NJ)  
+- **State of Incorporation:** TX  
 
-**5 most recent Form 10‑K filings**
+**5 Most Recent Form 10‑K Filings**
 
-| Filing Date | Reported Fiscal Year End | Accession Number | Primary Document |
+| Filing Date | Report (Fiscal) Year End | Accession Number | Primary Document |
 |-------------|--------------------------|------------------|------------------|
-| 2026‑02‑18 | 2025‑12‑31 | 0000034088‑26‑000045 | xom‑20251231.htm |
-| 2025‑02‑19 | 2024‑12‑31 | 0000034088‑25‑000010 | xom‑20241231.htm |
-| 2024‑02‑28 | 2023‑12‑31 | 0000034088‑24‑000018 | xom‑20231231.htm |
-| 2023‑02‑22 | 2022‑12‑31 | 0000034088‑23‑000020 | xom‑20221231.htm |
-| 2022‑02‑23 | 2021‑12‑31 | 0000034088‑22‑000011 | xom‑20211231.htm |
+| 2026‑02‑18 | 2025‑12‑31 | 0000034088‑26‑000045 | xom-20251231.htm |
+| 2025‑02‑19 | 2024‑12‑31 | 0000034088‑25‑000010 | xom-20241231.htm |
+| 2024‑02‑28 | 2023‑12‑31 | 0000034088‑24‑000018 | xom-20231231.htm |
+| 2023‑02‑22 | 2022‑12‑31 | 0000034088‑23‑000020 | xom-20221231.htm |
+| 2022‑02‑23 | 2021‑12‑31 | 0000034088‑22‑000011 | xom-20211231.htm |
 
-These filings are the most recent annual reports (Form 10‑K) filed by Exxon Mobil Corp. If you need details from any specific filing (e.g., revenue, net income) or want to retrieve the full filing documents, let me know and I can provide the appropriate filing metadata or extract the requested financial data.
+These are the latest five annual reports (Form 10‑K) filed by Exxon Mobil Corp as recorded by the SEC.
 ```
 
 </details>

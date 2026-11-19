@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import asyncio
 import re
+import time
 from datetime import date, datetime, timedelta
 from typing import Annotated
 from urllib.parse import quote as _url_quote
@@ -273,6 +274,38 @@ async def _fetch_submission(cik: str) -> dict:
         resp.raise_for_status()
         _SUBMISSION_CACHE[cik] = resp.json()
     return _SUBMISSION_CACHE[cik]
+
+
+# Cache for companyfacts JSON (all XBRL data) keyed by padded CIK.
+# Values are (data_dict, fetch_timestamp_monotonic).  TTL = 24 h.
+# The companyfacts payload is large (5–10 MB per company); caching it
+# eliminates redundant round-trips when an agent asks multiple XBRL
+# questions about the same company in one session.
+_FACTS_CACHE: dict[str, tuple[dict, float]] = {}
+_FACTS_CACHE_TTL_SECONDS: float = 86_400.0  # 24 hours
+
+
+async def _fetch_company_facts(cik: str) -> dict:
+    """Fetch and TTL-cache the companyfacts JSON for a company by padded CIK.
+
+    Re-fetches if the cached entry is older than _FACTS_CACHE_TTL_SECONDS (24 h).
+    Within a single process lifetime the same company is almost never stale —
+    EDGAR publishes new facts only when a company files a new 10-K/10-Q.
+    """
+    cached = _FACTS_CACHE.get(cik)
+    if cached is not None:
+        data, fetched_at = cached
+        if time.monotonic() - fetched_at < _FACTS_CACHE_TTL_SECONDS:
+            return data
+    client = _get_client()
+    resp = await client.get(
+        f"https://data.sec.gov/api/xbrl/companyfacts/CIK{cik}.json",
+        headers=_make_headers(),
+    )
+    resp.raise_for_status()
+    data = resp.json()
+    _FACTS_CACHE[cik] = (data, time.monotonic())
+    return data
 
 
 def _normalize_accession(raw: str) -> str:
@@ -856,17 +889,12 @@ async def sec_edgar_get_company_fact(
             return resolved
         padded_cik, _ = resolved
 
-        client = _get_client()
         # Fetch submission and companyfacts concurrently to reduce latency.
-        sub, resp = await asyncio.gather(
+        # _fetch_company_facts uses a 24h TTL cache; second call for same CIK is free.
+        sub, facts = await asyncio.gather(
             _fetch_submission(padded_cik),
-            client.get(
-                f"https://data.sec.gov/api/xbrl/companyfacts/CIK{padded_cik}.json",
-                headers=_make_headers(),
-            ),
+            _fetch_company_facts(padded_cik),
         )
-        resp.raise_for_status()
-        facts = resp.json()
         fye_mmdd: str | None = sub.get("fiscalYearEnd")
 
         company_name = facts.get("entityName", identifier)
@@ -1063,7 +1091,6 @@ async def sec_edgar_compare_companies(
     warnings: list[str] = []
 
     try:
-        client = _get_client()
         today = date.today()
         for idx, identifier in enumerate(identifiers):
             if idx > 0:
@@ -1077,12 +1104,7 @@ async def sec_edgar_compare_companies(
 
             try:
                 sub = await _fetch_submission(padded_cik)
-                resp = await client.get(
-                    f"https://data.sec.gov/api/xbrl/companyfacts/CIK{padded_cik}.json",
-                    headers=_make_headers(),
-                )
-                resp.raise_for_status()
-                facts = resp.json()
+                facts = await _fetch_company_facts(padded_cik)
             except (httpx.HTTPStatusError, httpx.RequestError) as exc:
                 warnings.append(f"Could not fetch facts for '{identifier}': {exc} — skipped.")
                 continue
@@ -1357,13 +1379,7 @@ async def sec_edgar_list_concepts(
             return resolved
         padded_cik, _ = resolved
 
-        client = _get_client()
-        resp = await client.get(
-            f"https://data.sec.gov/api/xbrl/companyfacts/CIK{padded_cik}.json",
-            headers=_make_headers(),
-        )
-        resp.raise_for_status()
-        facts = resp.json()
+        facts = await _fetch_company_facts(padded_cik)
 
         company_name = facts.get("entityName", identifier)
         taxonomy_data = facts.get("facts", {}).get(taxonomy)
@@ -1470,17 +1486,12 @@ async def sec_edgar_get_quarterly_facts(
             return resolved
         padded_cik, _ = resolved
 
-        client = _get_client()
         # Fetch submission and companyfacts concurrently to reduce latency.
-        sub, resp = await asyncio.gather(
+        # _fetch_company_facts uses a 24h TTL cache; second call for same CIK is free.
+        sub, facts = await asyncio.gather(
             _fetch_submission(padded_cik),
-            client.get(
-                f"https://data.sec.gov/api/xbrl/companyfacts/CIK{padded_cik}.json",
-                headers=_make_headers(),
-            ),
+            _fetch_company_facts(padded_cik),
         )
-        resp.raise_for_status()
-        facts = resp.json()
         fye_mmdd: str | None = sub.get("fiscalYearEnd")
 
         company_name = facts.get("entityName", identifier)

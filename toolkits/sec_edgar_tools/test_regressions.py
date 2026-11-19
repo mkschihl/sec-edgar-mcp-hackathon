@@ -22,6 +22,7 @@ from server import (
     sec_edgar_get_recent_filings,
     sec_edgar_resolve_synonym,
     sec_edgar_get_filing_text,
+    sec_edgar_full_text_search,
     _strip_html,
     _find_section_offset,
     SEC_USER_AGENT,
@@ -644,9 +645,62 @@ async def test_filing_text():
     check("bad accession: returns error key", "error" in r_bad, str(r_bad))
 
 
+async def test_full_text_search():
+    print("\n[18] sec_edgar_full_text_search — EFTS keyword search")
+
+    # Basic keyword search across all forms
+    r = await sec_edgar_full_text_search("going concern")
+    check("fts: no error", "error" not in r, str(r.get("error", "")))
+    check("fts: query preserved", r.get("query") == "going concern", r.get("query"))
+    check("fts: total_matches > 0", r.get("total_matches", 0) > 0, str(r.get("total_matches")))
+    check("fts: results list present", isinstance(r.get("results"), list), str(type(r.get("results"))))
+    check("fts: default limit ≤ 10 results", len(r.get("results", [])) <= 10, str(len(r.get("results", []))))
+
+    # Result shape
+    if r.get("results"):
+        first = r["results"][0]
+        check("fts result: accession_number present", bool(first.get("accession_number")), str(first))
+        check("fts result: form present", bool(first.get("form")), str(first))
+        check("fts result: filing_date present", bool(first.get("filing_date")), str(first))
+        check("fts result: company present", bool(first.get("company")), str(first))
+        check("fts result: filing_index_url is https", first.get("filing_index_url", "").startswith("https://"), str(first))
+
+    # Form type filter
+    r_10k = await sec_edgar_full_text_search("going concern", forms="10-K", limit=5)
+    check("fts forms filter: no error", "error" not in r_10k, str(r_10k.get("error", "")))
+    check("fts forms filter: all results start with 10-K",
+          all(x.get("form", "").startswith("10-K") for x in r_10k.get("results", [])),
+          str([x.get("form") for x in r_10k.get("results", [])]))
+
+    # Date range filter
+    r_dated = await sec_edgar_full_text_search(
+        "going concern", forms="10-K",
+        start_date="2024-01-01", end_date="2024-06-30", limit=5
+    )
+    check("fts date range: no error", "error" not in r_dated, str(r_dated.get("error", "")))
+    check("fts date range: results within range",
+          all("2024" in x.get("filing_date", "") for x in r_dated.get("results", [])),
+          str([x.get("filing_date") for x in r_dated.get("results", [])]))
+
+    # Company-scoped search (Apple 8-K filings mentioning 'dividend')
+    r_aapl = await sec_edgar_full_text_search("dividend", forms="8-K", identifier="AAPL", limit=5)
+    check("fts identifier scope: no error", "error" not in r_aapl, str(r_aapl.get("error", "")))
+    # May return 0 results if none match, but should not error
+    check("fts identifier scope: results is list", isinstance(r_aapl.get("results"), list), str(r_aapl))
+
+    # Empty query → error
+    r_empty = await sec_edgar_full_text_search("")
+    check("fts empty query: returns error key", "error" in r_empty, str(r_empty))
+
+    # limit clamping
+    r_lim = await sec_edgar_full_text_search("revenue", limit=5)
+    check("fts limit=5: ≤ 5 results", len(r_lim.get("results", [])) <= 5, str(len(r_lim.get("results", []))))
+
+
 async def main():
     await test_synonym_tool()
     await test_filing_text()
+    await test_full_text_search()
     await test_aapl_net_income()
     await test_aapl_revenues_quarterly()
     await test_aapl_eps()

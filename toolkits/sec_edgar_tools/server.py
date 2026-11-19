@@ -1,6 +1,6 @@
 """SEC EDGAR MCP Toolkit — stdio transport.
 
-Ten tools exposed to watsonx Orchestrate:
+Eleven tools exposed to watsonx Orchestrate:
   - sec_edgar_resolve_synonym       : map a common company nickname/alias to canonical EDGAR name + ticker
   - sec_edgar_search_companies      : search all SEC-registered companies by partial name
   - sec_edgar_resolve_company       : resolve ticker or CIK to canonical company info
@@ -9,6 +9,7 @@ Ten tools exposed to watsonx Orchestrate:
   - sec_edgar_compare_companies     : compare one XBRL concept across multiple companies
   - sec_edgar_get_filing_metadata   : filing doc list and EDGAR URL for an accession number
   - sec_edgar_get_filing_text       : extract readable text from an SEC filing document
+  - sec_edgar_full_text_search      : search EDGAR full-text index by keyword across all filings
   - sec_edgar_list_concepts         : discover available XBRL concepts for a company
   - sec_edgar_get_quarterly_facts   : quarterly XBRL observations (Q1/Q2/Q3/Q4) for one company
 
@@ -56,7 +57,7 @@ REVENUE_CANDIDATES = [
 mcp = FastMCP(
     "sec_edgar_tools",
     instructions=(
-        "SEC EDGAR toolkit with ten tools for authoritative SEC filing data.\n\n"
+        "SEC EDGAR toolkit with eleven tools for authoritative SEC filing data.\n\n"
         "TOOL SELECTION GUIDE:\n"
         "- Resolve a common nickname/alias to canonical name + ticker → sec_edgar_resolve_synonym\n"
         "- Find companies by partial name → sec_edgar_search_companies\n"
@@ -67,6 +68,7 @@ mcp = FastMCP(
         "- Compare a concept across multiple companies → sec_edgar_compare_companies\n"
         "- Look up a specific filing by accession number → sec_edgar_get_filing_metadata\n"
         "- Read narrative text from a filing document → sec_edgar_get_filing_text\n"
+        "- Search EDGAR full-text for any keyword across all filings → sec_edgar_full_text_search\n"
         "- Discover what XBRL concepts a company reports → sec_edgar_list_concepts\n\n"
         "No authentication required. All tools return dicts; errors include "
         "an 'error' key and a 'hint' key with recovery guidance."
@@ -2098,6 +2100,173 @@ async def sec_edgar_get_quarterly_facts(
     except Exception as exc:
         return {"error": f"Unexpected error: {type(exc).__name__}: {exc}",
                 "hint": "Report this to the toolkit maintainer; do not retry with the same arguments."}
+
+
+# ---------------------------------------------------------------------------
+# Tool 11 — Full-text search across all SEC filings (EFTS)
+# ---------------------------------------------------------------------------
+
+@mcp.tool(
+    name="sec_edgar_full_text_search",
+    annotations={
+        "title": "Search SEC Filings by Keyword",
+        "readOnlyHint": True,
+        "destructiveHint": False,
+        "idempotentHint": True,
+        "openWorldHint": True,
+    },
+)
+async def sec_edgar_full_text_search(
+    query: Annotated[str, (
+        "Keyword or phrase to search for in filing text, e.g. 'artificial intelligence', "
+        "'supply chain disruption', 'tariff impact'. Wrap multi-word phrases in quotes for "
+        "exact matching, e.g. '\"going concern\"'."
+    )],
+    forms: Annotated[str, (
+        "Comma-separated list of form types to restrict results, e.g. '10-K', '8-K,10-Q', "
+        "'10-K,10-Q'. Leave empty to search all form types."
+    )] = "",
+    start_date: Annotated[str, "Earliest filing date to include (YYYY-MM-DD). Leave empty for no lower bound."] = "",
+    end_date: Annotated[str, "Latest filing date to include (YYYY-MM-DD). Leave empty for no upper bound."] = "",
+    identifier: Annotated[str, (
+        "Optional ticker or CIK to scope the search to one company, "
+        "e.g. 'AAPL' or '0000320193'. Leave empty to search all filers."
+    )] = "",
+    limit: Annotated[int, "Maximum number of results to return (default 10, max 40)."] = 10,
+) -> dict:
+    """Search the EDGAR full-text search index for filings whose text contains a keyword.
+
+    Unlike sec_edgar_search_companies (which searches company names) or
+    sec_edgar_get_recent_filings (which lists filings by company), this tool
+    searches across the actual text content of all SEC filings and returns
+    the filings that mention the query term.
+
+    Useful for questions like:
+      - "Which companies mentioned 'going concern' in their 2024 10-K filings?"
+      - "Find Apple's 8-K filings that mention 'dividend'."
+      - "What companies disclosed 'tariff impact' in recent filings?"
+
+    Use sec_edgar_get_filing_text with the returned accession_number to read
+    the actual text of any matching filing.
+
+    Returns a dict with keys:
+      query           — the search query as submitted
+      forms           — form type filter (empty = all)
+      total_matches   — total number of matching filings in EDGAR (may exceed limit)
+      results         — list of matching filings (up to limit entries), each with:
+          accession_number  — filing identifier
+          form              — form type (10-K, 8-K, …)
+          filing_date       — YYYY-MM-DD
+          period_ending     — reporting period end date (may be empty)
+          company           — company name
+          ticker            — primary ticker (may be empty)
+          cik               — 10-digit CIK
+          filing_index_url  — direct link to the EDGAR filing index
+
+    On failure returns {"error": "...", "hint": "..."}.
+    """
+    query = query.strip()
+    if not query:
+        return {
+            "error": "query must not be empty.",
+            "hint": "Provide a keyword or phrase, e.g. 'going concern' or 'artificial intelligence'.",
+        }
+    limit = max(1, min(limit, 40))
+
+    try:
+        # --- Build EFTS URL ---------------------------------------------------
+        encoded_q = _url_quote(query)
+        url_parts = [
+            f"https://efts.sec.gov/LATEST/search-index?q={encoded_q}",
+        ]
+
+        if forms.strip():
+            # Comma-separated → repeated &forms= params
+            for form in forms.split(","):
+                form = form.strip()
+                if form:
+                    url_parts.append(f"forms={_url_quote(form)}")
+
+        if start_date.strip() or end_date.strip():
+            url_parts.append("dateRange=custom")
+            if start_date.strip():
+                url_parts.append(f"startdt={_url_quote(start_date.strip())}")
+            if end_date.strip():
+                url_parts.append(f"enddt={_url_quote(end_date.strip())}")
+
+        # Scope to a single company if identifier provided
+        if identifier.strip():
+            id_clean = identifier.strip()
+            if id_clean.isdigit():
+                url_parts.append(f"entity={_url_quote(id_clean)}")
+            else:
+                # Resolve ticker → CIK for the entity param
+                await _ensure_ticker_cache()
+                record = _TICKER_CACHE.get(id_clean.upper())
+                if record:
+                    url_parts.append(f"entity={_url_quote(record['cik_str'])}")
+                else:
+                    url_parts.append(f"entity={_url_quote(id_clean)}")
+
+        # EFTS returns up to 100 hits per page; we only need `limit`
+        url_parts.append(f"hits.hits._source=adsh,display_names,file_date,form,period_ending")
+        full_url = url_parts[0] + "&" + "&".join(url_parts[1:]) if len(url_parts) > 1 else url_parts[0]
+
+        resp = await _edgar_get(full_url, headers=_make_headers(), timeout=15.0)
+        resp.raise_for_status()
+        data = resp.json()
+
+        hits_data = data.get("hits", {})
+        total = hits_data.get("total", {})
+        total_value = total.get("value", 0) if isinstance(total, dict) else int(total)
+        raw_hits = hits_data.get("hits", [])[:limit]
+
+        results = []
+        for hit in raw_hits:
+            src = hit.get("_source", {})
+            accession_dashed = _normalize_accession(src.get("adsh", ""))
+            accession_path = _accession_to_path(accession_dashed)
+
+            # Parse the first display_name entry for company name, ticker, CIK
+            display_names = src.get("display_names", [])
+            parsed = _parse_display_name(display_names[0]) if display_names else None
+
+            company = parsed["name"] if parsed else ""
+            ticker = parsed.get("ticker", "") if parsed else ""
+            cik = parsed["cik"] if parsed else ""
+            if cik:
+                cik = f"{int(cik):010d}"
+                filing_index_url = (
+                    f"https://www.sec.gov/Archives/edgar/data/{int(cik)}/{accession_path}/"
+                )
+            else:
+                filing_index_url = ""
+
+            results.append({
+                "accession_number": accession_dashed,
+                "form": src.get("form", ""),
+                "filing_date": src.get("file_date", ""),
+                "period_ending": src.get("period_ending", ""),
+                "company": company,
+                "ticker": ticker,
+                "cik": cik,
+                "filing_index_url": filing_index_url,
+            })
+
+        return {
+            "query": query,
+            "forms": forms.strip(),
+            "total_matches": total_value,
+            "results": results,
+        }
+
+    except (httpx.HTTPStatusError, httpx.RequestError) as exc:
+        return {"error": str(exc), "hint": "EDGAR full-text search may be temporarily unavailable; try again shortly."}
+    except Exception as exc:
+        return {
+            "error": f"Unexpected error: {type(exc).__name__}: {exc}",
+            "hint": "Report this to the toolkit maintainer; do not retry with the same arguments.",
+        }
 
 
 if __name__ == "__main__":

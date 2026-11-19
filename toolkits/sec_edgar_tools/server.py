@@ -96,6 +96,46 @@ def _make_headers() -> dict[str, str]:
 _http_client: httpx.AsyncClient | None = None
 _http_client_loop: asyncio.AbstractEventLoop | None = None
 
+# ---------------------------------------------------------------------------
+# Global SEC rate limiter
+# ---------------------------------------------------------------------------
+# EDGAR's published rate limit is 10 requests/second per IP address.  A
+# semaphore of 8 permits up to 8 concurrent in-flight requests, leaving
+# headroom for the HTTP round-trip time and ensuring we never burst to 10.
+#
+# The semaphore is per-event-loop: asyncio.Semaphore is bound to the loop
+# that created it.  We use the same rebuild pattern as _http_client so that
+# the test suite (which calls asyncio.run() multiple times) gets a fresh
+# semaphore for each loop without raising "attached to a different loop".
+_edgar_sem: asyncio.Semaphore | None = None
+_edgar_sem_loop: asyncio.AbstractEventLoop | None = None
+
+
+def _get_sem() -> asyncio.Semaphore:
+    """Return a Semaphore bound to the current running event loop."""
+    global _edgar_sem, _edgar_sem_loop
+    try:
+        current_loop = asyncio.get_running_loop()
+    except RuntimeError:
+        current_loop = None
+    if (
+        _edgar_sem is None
+        or _edgar_sem_loop is None
+        or _edgar_sem_loop is not current_loop
+        or (_edgar_sem_loop is not None and _edgar_sem_loop.is_closed())
+    ):
+        _edgar_sem = asyncio.Semaphore(8)
+        _edgar_sem_loop = current_loop
+    return _edgar_sem
+
+
+async def _edgar_get(url: str, **kwargs) -> httpx.Response:
+    """Rate-limited GET wrapper.  Acquires the global semaphore before issuing
+    the request so that at most 8 outbound EDGAR calls are in-flight at once.
+    """
+    async with _get_sem():
+        return await _get_client().get(url, **kwargs)
+
 
 def _get_client() -> httpx.AsyncClient:
     """Return a shared AsyncClient bound to the current running event loop.
@@ -130,12 +170,12 @@ def _get_client() -> httpx.AsyncClient:
     return _http_client
 
 
-async def _ensure_ticker_cache(client: httpx.AsyncClient) -> None:
+async def _ensure_ticker_cache() -> None:
     """Fetch company_tickers.json and populate _TICKER_CACHE / _CIK_CACHE if empty."""
     global _TICKER_CACHE, _CIK_CACHE
     if _TICKER_CACHE:
         return
-    resp = await client.get(
+    resp = await _edgar_get(
         "https://www.sec.gov/files/company_tickers.json",
         headers=_make_headers(),
     )
@@ -188,7 +228,7 @@ _EFTS_UNAVAILABLE = object()
 
 
 async def _search_all_filers(
-    query: str, limit: int, client: httpx.AsyncClient
+    query: str, limit: int
 ) -> list[dict] | object:
     """Search ALL SEC-registered filers by company name using the EDGAR full-text
     search index, filtered to entities that have filed a 10-K in the last 730 days.
@@ -208,7 +248,7 @@ async def _search_all_filers(
         f"?q={encoded}&forms=10-K&dateRange=custom&startdt={startdt}"
     )
     try:
-        resp = await client.get(url, headers=_make_headers(), timeout=10.0)
+        resp = await _edgar_get(url, headers=_make_headers(), timeout=10.0)
         resp.raise_for_status()
     except (httpx.HTTPStatusError, httpx.RequestError):
         return _EFTS_UNAVAILABLE
@@ -242,8 +282,7 @@ async def _resolve_identifier(identifier: str) -> tuple[str, str] | dict:
     Returns an error dict if the identifier cannot be resolved.
     The ticker cache is warmed as a side-effect on the first call.
     """
-    client = _get_client()
-    await _ensure_ticker_cache(client)
+    await _ensure_ticker_cache()
     id_clean = identifier.strip()
     if id_clean.isdigit():
         padded_cik = f"{int(id_clean):010d}"
@@ -268,8 +307,7 @@ _SUBMISSION_CACHE: dict[str, dict] = {}
 async def _fetch_submission(cik: str) -> dict:
     """Fetch and cache the submissions JSON for a company by padded CIK."""
     if cik not in _SUBMISSION_CACHE:
-        client = _get_client()
-        resp = await client.get(
+        resp = await _edgar_get(
             f"https://data.sec.gov/submissions/CIK{cik}.json",
             headers=_make_headers(),
         )
@@ -299,8 +337,7 @@ async def _fetch_company_facts(cik: str) -> dict:
         data, fetched_at = cached
         if time.monotonic() - fetched_at < _FACTS_CACHE_TTL_SECONDS:
             return data
-    client = _get_client()
-    resp = await client.get(
+    resp = await _edgar_get(
         f"https://data.sec.gov/api/xbrl/companyfacts/CIK{cik}.json",
         headers=_make_headers(),
     )
@@ -603,11 +640,10 @@ async def sec_edgar_search_companies(
         return {"error": "query must not be empty.", "hint": "Provide a partial company name such as 'apple' or 'berkshire'."}
     limit = max(1, min(limit, 50))
     effective_limit = max(limit, 5)
-    client = _get_client()
     warnings: list[str] = []
     try:
         # Warm the ticker cache, then run both passes concurrently.
-        await _ensure_ticker_cache(client)
+        await _ensure_ticker_cache()
         query_lower = query.lower()
         primary_all = [
             {"ticker": v["ticker"], "cik": v["cik_str"], "name": v["title"], "source": "exchange_listed"}
@@ -616,7 +652,7 @@ async def sec_edgar_search_companies(
         ]
 
         # Run the all-filers search concurrently with building primary list (already done above).
-        fallback_result = await _search_all_filers(query, effective_limit, client)
+        fallback_result = await _search_all_filers(query, effective_limit)
 
         efts_failed = fallback_result is _EFTS_UNAVAILABLE
         if efts_failed:
@@ -1520,9 +1556,8 @@ async def sec_edgar_get_filing_text(
             primary_doc = primary_docs[idx] if idx < len(primary_docs) else ""
 
         # --- Step 2: fall back to index.json if primary_doc not in submissions --
-        client = _get_client()
         if not primary_doc:
-            index_resp = await client.get(
+            index_resp = await _edgar_get(
                 f"{base_url}/index.json",
                 headers=_make_headers(),
             )
@@ -1556,7 +1591,7 @@ async def sec_edgar_get_filing_text(
         document_url = f"{base_url}/{primary_doc}"
 
         # --- Step 3: fetch the primary document --------------------------------
-        doc_resp = await client.get(document_url, headers=_make_headers())
+        doc_resp = await _edgar_get(document_url, headers=_make_headers())
         doc_resp.raise_for_status()
         raw_content = doc_resp.text
 

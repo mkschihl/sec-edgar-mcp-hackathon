@@ -1,4 +1,4 @@
-# SEC EDGAR Project — Session Handoff (2026-11-19, end of session 6)
+# SEC EDGAR Project — Session Handoff (2026-11-20, end of session 7)
 
 Read this file first before doing any work in a new session.
 
@@ -33,8 +33,8 @@ SEC filings and XBRL financial data for any publicly traded company.
 | Phoenix run command | `source .env && export WATSONX_URL WATSONX_API_KEY WATSONX_PROJECT_ID AGENT_MODEL JUDGE_MODEL && venv/bin/python eval/phoenix/run_experiment.py --dataset-name sec-edgar-eval-2 --system-prompt-version yaml` |
 | Run evaluator (no Phoenix) | `source .env && export WATSONX_URL WATSONX_API_KEY WATSONX_PROJECT_ID JUDGE_MODEL && venv/bin/python eval/phoenix/score_wxo_results.py` |
 | Git remote | `github.com:mkschihl/wxo-agentic-workflow.git` |
-| Active branch | `main` at `ed168e7` |
-| Last commit | `ed168e7` — "feat(agent): add routing rules for 3 new tools (resolve_synonym, get_filing_text, full_text_search); 11 tools total" |
+| Active branch | `main` at `77a9353` |
+| Last commit | `77a9353` — "feat(eval): add BQ-24–BQ-27 covering get_filing_text and full_text_search; 27/27 pass (100%)" |
 | Release tag | `v1.2.0` → `ed168e7` (latest; pushed to origin) |
 | WXO instance ID | `76b76ce7-8b9e-4f7e-885b-967fbaef80c9` |
 | WXO agent ID | `dd7fadae-34b2-478b-98c4-2fc48cbd35e5` (sec_edgar_agent) |
@@ -68,15 +68,33 @@ SEC filings and XBRL financial data for any publicly traded company.
 | M18 — sec_edgar_full_text_search tool | ✅ Complete | EFTS keyword search, 17 tests; commit `d78f787` |
 | M19 — CE deploy v1.2.0 + toolkit/agent re-import | ✅ Complete | 11 tools live on CE; toolkit re-imported; agent re-imported; commit `ed168e7` |
 | M20 — Agent routing rules for all 11 tools | ✅ Complete | Rule 0 (resolve_synonym), Rule 9 (get_filing_text), Rule 10 (full_text_search); smoke-tested 3/3 pass |
+| M21 — Eval dataset extended to 27 Qs | ✅ Complete | BQ-24–BQ-27 (filing_text × 2, full_text_search × 2); 27/27 pass; commit `77a9353` |
 
 ---
 
-## This session's changes (session 6)
+## This session's changes (session 7)
 
 ### Commits
 
 ```
-ed168e7  feat(agent): add routing rules for 3 new tools; 11 tools total  ← HEAD, v1.2.0
+77a9353  feat(eval): add BQ-24–BQ-27 covering get_filing_text and full_text_search; 27/27 pass  ← HEAD
+a09cba7  chore: session handoff 2026-11-19 (session 6 complete)
+```
+
+Session 7 work: extended eval dataset with 4 new BQs (BQ-24–BQ-27) covering
+`sec_edgar_get_filing_text` and `sec_edgar_full_text_search`; rebuilt CSV (27 rows);
+ran all 4 against live agent (27/27 total, 100% pass); updated EVAL_REPORT.md.
+Also added `sec_edgar_resolve_synonym`, `sec_edgar_get_filing_text`,
+`sec_edgar_full_text_search` to `ALL_TOOL_NAMES` in `run_evaluation.py`.
+
+---
+
+## Previous session's changes (session 6)
+
+### Commits
+
+```
+ed168e7  feat(agent): add routing rules for 3 new tools; 11 tools total  ← v1.2.0
 64d30ab  chore: session handoff 2026-11-19 (session 5 complete)
 ```
 
@@ -128,39 +146,42 @@ New 11th tool in `toolkits/sec_edgar_tools/server.py`:
 
 ---
 
-## Current evaluation state (canonical — `score_wxo_results.py`, 2026-11-19)
+## Current evaluation state (canonical — `run_evaluation.py`, 2026-11-20)
 
 ```
-correctness=23/23  (BQ-20 unanimous correct after pass_criteria fix)
-scope=23/23
-numeric=8/8 (of 8 with checks)
+score=27/27 pass  (100%)  partial=0  fail=0
 ```
 
-EVAL_REPORT.md (23/23 all-pass, run 2026-11-19 03:04 against live WXO) = canonical truth.
+`evaluation/EVAL_REPORT.md` (27/27 all-pass, run 2026-11-20 22:29 against live WXO) = canonical truth.
 
-**Note**: The eval dataset (sec-edgar-eval-2, 23 Qs) covers the original 9 tools only.
-The 2 new tools (get_filing_text, full_text_search) are live but not yet in the eval
-dataset. Consider adding BQs for them in a future session.
+**Note**: `score_wxo_results.py` uses `raw_results.json` (cached WXO responses) with the
+majority-vote LLM judge. The last full run of `score_wxo_results.py` covered BQ-01–BQ-23
+only (session 6). After next Phoenix re-run, run `score_wxo_results.py` over all 27 Qs.
+
+**Phoenix dataset**: sec-edgar-eval-2 in Phoenix still has 23 rows (not yet updated with
+BQ-24–BQ-27). The local CSV at `eval/phoenix/datasets/sec-edgar-eval-2/examples/sec-edgar-eval-2.csv`
+has 27 rows — run `create_dataset.py` to upload before the next Phoenix experiment.
 
 ### Phoenix datasets:
 - `sec-edgar-eval-1`: id `RGF0YXNldDoy`, 23 examples — OLD schema (do not re-use)
-- `sec-edgar-eval-2`: id `RGF0YXNldDoz`, 23 examples — CURRENT, correct schema
+- `sec-edgar-eval-2`: id `RGF0YXNldDoz`, 23 examples in Phoenix — **stale** (CSV has 27)
   - Most recent upload: 2026-11-19 (session 3, with corrected reference answers)
   - Experiment 11 (`RXhwZXJpbWVudDoxMQ==`) is the latest run
+  - **Before next Phoenix run**: upload new CSV → `python create_dataset.py --dataset-name sec-edgar-eval-2`
 
 ---
 
 ## Git log (last 8 commits)
 
 ```
-ed168e7  feat(agent): add routing rules for 3 new tools; 11 tools total  ← HEAD, main, v1.2.0
+77a9353  feat(eval): add BQ-24–BQ-27; 27/27 pass (100%)  ← HEAD, main
+a09cba7  chore: session handoff 2026-11-19 (session 6 complete)
+ed168e7  feat(agent): add routing rules for 3 new tools; 11 tools total  ← v1.2.0
 64d30ab  chore: session handoff 2026-11-19 (session 5 complete — 11 tools, 72 tests)
 d78f787  feat(server): add sec_edgar_full_text_search tool (11th tool, 17 tests)
 20c9357  perf(server): add global SEC rate limiter (asyncio.Semaphore(8))
 8f1a439  feat(server): add sec_edgar_get_filing_text tool (10th tool, 18 tests)
 752e86d  perf(server): add 24h TTL cache for companyfacts JSON  ← v1.1.0
-b9900a5  feat(server): add sec_edgar_resolve_synonym tool (75 synonyms, 22 tests); fix BQ-20 pass_criteria
-fd0a132  chore: session handoff 2026-11-19 (session 3 complete — v1.0.0 tagged, 22/23 score)
 ```
 
 Tags: `v1.0.0` → `e604b36`, `v1.1.0` → `752e86d`, `v1.2.0` → `ed168e7`
@@ -175,6 +196,7 @@ agents/sec_edgar_agent.yaml              ← UPDATED (ed168e7): 11 tools in tool
                                            Rule 8 Q4 derived rows, Rule 9 (get_filing_text),
                                            Rule 10 (full_text_search); 12 starter prompts;
                                            re-imported and smoke-tested 3/3 (session 6).
+                                           Will need new rules for tools added in session 8.
 
 toolkits/sec_edgar_tools/server.py       ← UPDATED (d78f787):
                                            - 11 tools total (up from 9 at v1.1.0)
@@ -191,12 +213,11 @@ toolkits/sec_edgar_tools/test_regressions.py ← 72 assertions (tests 16/17/18 a
 eval/phoenix/run_experiment.py           ← unchanged; use --dataset-name sec-edgar-eval-2
                                            --system-prompt-version yaml
 eval/phoenix/agent.py                    ← unchanged
-eval/phoenix/build_dataset.py            ← UPDATED (e604b36): reference answers corrected for
-                                           BQ-04/07/08/13/17/20 (FY2025/26 allowances; SIC fix)
+eval/phoenix/build_dataset.py            ← UPDATED (77a9353): BQ-24–BQ-27 reference answers added
 eval/phoenix/create_dataset.py           ← uploads to Phoenix; run after rebuild
 eval/phoenix/score_wxo_results.py        ← majority vote; unstable reporting; all 3 explanations on fail
 eval/phoenix/datasets.yaml              ← sec-edgar-eval-2 entry
-eval/phoenix/datasets/sec-edgar-eval-2/examples/sec-edgar-eval-2.csv  ← UPDATED (e604b36)
+eval/phoenix/datasets/sec-edgar-eval-2/examples/sec-edgar-eval-2.csv  ← UPDATED (77a9353): 27 rows
 
 eval/phoenix/judges/__init__.py          ← exports majority_vote_correctness
 eval/phoenix/judges/correctness_judge.py ← _single_classify, _majority_vote, majority_vote_correctness
@@ -204,12 +225,13 @@ eval/phoenix/judges/relevance_judge.py   ← 3-attempt retry, judge_error return
 eval/phoenix/judges/numeric_judge.py     ← deterministic: {must_include, rel_tol, max_value}
 eval/phoenix/judges/sanity_check.py      ← 11 cases; BQ-10h; expect_correctness guard; 11/11 PASS
 
-evaluation/run_evaluation.py             ← --ids merges into raw_results.json by id
-evaluation/benchmark_questions.py        ← UPDATED (b9900a5): BQ-20 pass_criteria EPS range fixed;
-                                           BQ-19 expected_tools=[]
-evaluation/raw_results.json              ← 23 results (all BQ-01→BQ-23, refreshed 329b46c)
-evaluation/traces/                       ← BQ-01 through BQ-23 trace JSON files (current as of 329b46c)
-evaluation/EVAL_REPORT.md                ← 23/23 pass, run 2026-11-19 03:04
+evaluation/run_evaluation.py             ← UPDATED (77a9353): ALL_TOOL_NAMES has all 11 tools;
+                                           --ids merges into raw_results.json by id
+evaluation/benchmark_questions.py        ← UPDATED (77a9353): 27 Qs, 13 categories, all 11 tools;
+                                           BQ-24–BQ-27 added (filing_text, full_text_search)
+evaluation/raw_results.json              ← 27 results (BQ-01→BQ-27, run 2026-11-20)
+evaluation/traces/                       ← BQ-01 through BQ-27 trace JSON files
+evaluation/EVAL_REPORT.md                ← 27/27 pass, run 2026-11-20 22:29
 
 docs/submission.md                       ← UPDATED (e604b36): 22/23 score; 2026-11-19 date
 evaluation/interpretation.md             ← UPDATED (e604b36): same corrections
@@ -217,21 +239,37 @@ evaluation/interpretation.md             ← UPDATED (e604b36): same corrections
 
 ---
 
-## Known remaining gaps / future work (low priority)
+## Known remaining gaps / future work
 
-1. **Eval dataset coverage for new tools** — sec-edgar-eval-2 covers only the original
-   9 tools. Add BQs for `sec_edgar_get_filing_text` (narrative/qualitative) and
-   `sec_edgar_full_text_search` (keyword search) to properly measure the v1.2.0 agent.
+**In scope (session 8 — do in this order):**
 
-2. **sec_edgar_get_insider_transactions** — Form 4 insider buy/sell data.
-   `edgar_ownership` in edgartools shows the pattern. Medium effort, interesting use case.
+1. **Synonym table expansion** — zero deploy risk; extend `_SYNONYM_TABLE` in `server.py`
+   with more brand names. No CE deploy needed if synonyms already match common queries.
+   Commit + regression test.
 
-3. **8-K earnings release tool** — cross-check Q4 derived values. Very low priority.
+2. **`sec_edgar_screen`** — new tool to discover companies by SIC code, exchange, or state
+   of incorporation. Use the SEC's company_tickers.json + submissions JSON (local/cached).
+   Zero network calls beyond the ticker cache. Add regression tests. No CE deploy needed
+   until a tool function is added.
 
-4. **Synonym table expansion** — `_SYNONYM_TABLE` easy to extend; zero deploy risk.
+3. **8-K earnings release tool** — fetch the 8-K press release for a company and extract
+   key earnings figures (EPS, revenue) to cross-check Q4 derived values. Requires EDGAR
+   network call (HTML/text extraction, similar to `get_filing_text`). After implementing:
+   - Add regression tests
+   - CE deploy (`ibmcloud ce app update …`)
+   - Re-import toolkit + agent YAML update (new routing rule)
+   - Add BQs to eval dataset, run against live agent
 
-5. **sec_edgar_screen** — discover companies by SIC code/exchange/state. Zero network
-   calls (local reference data). Low effort.
+**After all three tools done:**
+
+4. **Phoenix re-run** — upload new 27-row CSV (`python create_dataset.py`) then run
+   `run_experiment.py`. Covers all 27+ BQs including the 4 new ones.
+   Also run `score_wxo_results.py` over all 27 results for the LLM-judge canonical score.
+
+**Out of scope (dropped):**
+
+5. ~~**sec_edgar_get_insider_transactions**~~ — Form 4 data; outside the 10-K/10-Q/8-K
+   design scope. Dropped.
 
 ---
 
@@ -307,17 +345,23 @@ FY2025/2026 questions. Canonical metric = `score_wxo_results.py`.
 
 ---
 
-## Next steps (suggested order for next session)
+## Next steps (suggested order for session 8)
 
-1. **(Medium) Extend eval dataset** — add 2–4 BQs for `sec_edgar_get_filing_text`
-   (e.g. "What are the main risk factors in Apple's 2025 10-K?") and
-   `sec_edgar_full_text_search` (e.g. "Which companies mentioned 'going concern' in
-   2024 10-K filings?"). Add to `evaluation/benchmark_questions.py` and
-   `eval/phoenix/build_dataset.py`; re-run `score_wxo_results.py`.
+1. **Synonym table expansion** — extend `_SYNONYM_TABLE` in `server.py`; add regression
+   tests; commit. No CE deploy needed.
 
-2. **(Medium) sec_edgar_get_insider_transactions** — Form 4 data.
+2. **`sec_edgar_screen` tool** — discover companies by SIC code/exchange/state using
+   the cached SEC ticker/submissions data. No new network calls. Add regression tests;
+   commit. Needs CE deploy + toolkit re-import + agent YAML routing rule.
 
-3. **(Low) Synonym table expansion**, `sec_edgar_screen`, 8-K earnings tool.
+3. **8-K earnings release tool** — parse 8-K press release HTML via `get_filing_text`
+   pattern. Add regression tests; commit. Needs CE deploy + toolkit re-import + agent
+   YAML routing rule.
+
+4. Add BQs for `sec_edgar_screen` and 8-K tool; run `run_evaluation.py --ids <new>`.
+
+5. **Phoenix re-run** — upload updated 27+ row CSV, run `run_experiment.py` over full
+   dataset. Run `score_wxo_results.py` for canonical LLM-judge score.
 
 ---
 

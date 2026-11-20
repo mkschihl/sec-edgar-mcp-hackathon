@@ -586,6 +586,167 @@ async def test_synonym_tool():
     check("Twitter → X Holdings Corp", r.get("canonical_name") == "X Holdings Corp", str(r))
     check("Twitter ticker is empty string (not exchange-listed)", r.get("ticker") == "", str(r))
 
+    # -- New entries (session 8 expansion) ------------------------------------
+    # Semiconductor additions
+    r = await sec_edgar_resolve_synonym("Broadcom")
+    check("Broadcom → Broadcom Inc.", r.get("canonical_name") == "Broadcom Inc.", str(r))
+    check("Broadcom → AVGO", r.get("ticker") == "AVGO", str(r))
+
+    r = await sec_edgar_resolve_synonym("Micron")
+    check("Micron → Micron Technology Inc.", r.get("canonical_name") == "Micron Technology Inc.", str(r))
+
+    # Cloud/Enterprise SaaS
+    r = await sec_edgar_resolve_synonym("Salesforce")
+    check("Salesforce → Salesforce Inc.", r.get("canonical_name") == "Salesforce Inc.", str(r))
+    check("Salesforce → CRM", r.get("ticker") == "CRM", str(r))
+
+    r = await sec_edgar_resolve_synonym("IBM")
+    check("IBM → International Business Machines Corp", r.get("canonical_name") == "International Business Machines Corp", str(r))
+    check("IBM ticker", r.get("ticker") == "IBM", str(r))
+
+    r = await sec_edgar_resolve_synonym("Palantir")
+    check("Palantir → Palantir Technologies Inc.", r.get("canonical_name") == "Palantir Technologies Inc.", str(r))
+
+    r = await sec_edgar_resolve_synonym("Palo Alto")
+    check("Palo Alto → Palo Alto Networks Inc.", r.get("canonical_name") == "Palo Alto Networks Inc.", str(r))
+    check("Palo Alto → PANW", r.get("ticker") == "PANW", str(r))
+
+    r = await sec_edgar_resolve_synonym("CrowdStrike")
+    check("CrowdStrike → CrowdStrike Holdings Inc.", r.get("canonical_name") == "CrowdStrike Holdings Inc.", str(r))
+
+    r = await sec_edgar_resolve_synonym("OpenAI")
+    check("OpenAI → OpenAI", r.get("canonical_name") == "OpenAI", str(r))
+    check("OpenAI ticker empty (private)", r.get("ticker") == "", str(r))
+
+    # Media & entertainment
+    r = await sec_edgar_resolve_synonym("Disney")
+    check("Disney → Walt Disney Co", r.get("canonical_name") == "Walt Disney Co", str(r))
+    check("Disney → DIS", r.get("ticker") == "DIS", str(r))
+
+    r = await sec_edgar_resolve_synonym("ESPN")
+    check("ESPN → Walt Disney Co (subsidiary)", r.get("canonical_name") == "Walt Disney Co", str(r))
+
+    r = await sec_edgar_resolve_synonym("HBO")
+    check("HBO → Warner Bros. Discovery Inc.", r.get("canonical_name") == "Warner Bros. Discovery Inc.", str(r))
+
+    r = await sec_edgar_resolve_synonym("Paramount")
+    check("Paramount → Paramount Global", r.get("canonical_name") == "Paramount Global", str(r))
+    check("Paramount → PARA", r.get("ticker") == "PARA", str(r))
+
+    # Automotive additions
+    r = await sec_edgar_resolve_synonym("Toyota")
+    check("Toyota → Toyota Motor Corp", r.get("canonical_name") == "Toyota Motor Corp", str(r))
+    check("Toyota → TM", r.get("ticker") == "TM", str(r))
+
+    r = await sec_edgar_resolve_synonym("Jeep")
+    check("Jeep → Stellantis N.V. (brand)", r.get("canonical_name") == "Stellantis N.V.", str(r))
+
+    r = await sec_edgar_resolve_synonym("VW")
+    check("VW → Volkswagen AG", r.get("canonical_name") == "Volkswagen AG", str(r))
+    check("VW → VWAGY", r.get("ticker") == "VWAGY", str(r))
+
+    r = await sec_edgar_resolve_synonym("BMW")
+    check("BMW → Bayerische Motoren Werke AG", r.get("canonical_name") == "Bayerische Motoren Werke AG", str(r))
+
+    # Finance additions
+    r = await sec_edgar_resolve_synonym("Citi")
+    check("Citi → Citigroup Inc.", r.get("canonical_name") == "Citigroup Inc.", str(r))
+    check("Citi → C ticker", r.get("ticker") == "C", str(r))
+
+    r = await sec_edgar_resolve_synonym("Citibank")
+    check("Citibank → Citigroup Inc.", r.get("canonical_name") == "Citigroup Inc.", str(r))
+
+    r = await sec_edgar_resolve_synonym("Amex")
+    check("Amex → American Express Co", r.get("canonical_name") == "American Express Co", str(r))
+    check("Amex → AXP", r.get("ticker") == "AXP", str(r))
+
+    r = await sec_edgar_resolve_synonym("American Express")
+    check("American Express → American Express Co", r.get("canonical_name") == "American Express Co", str(r))
+
+    r = await sec_edgar_resolve_synonym("BlackRock")
+    check("BlackRock → BlackRock Inc.", r.get("canonical_name") == "BlackRock Inc.", str(r))
+    check("BlackRock → BLK", r.get("ticker") == "BLK", str(r))
+
+    r = await sec_edgar_resolve_synonym("Charles Schwab")
+    check("Charles Schwab → Charles Schwab Corp", r.get("canonical_name") == "Charles Schwab Corp", str(r))
+
+    # Healthcare additions
+    r = await sec_edgar_resolve_synonym("Moderna")
+    check("Moderna → Moderna Inc.", r.get("canonical_name") == "Moderna Inc.", str(r))
+    check("Moderna → MRNA", r.get("ticker") == "MRNA", str(r))
+
+    r = await sec_edgar_resolve_synonym("Eli Lilly")
+    check("Eli Lilly → Eli Lilly and Co", r.get("canonical_name") == "Eli Lilly and Co", str(r))
+    check("Eli Lilly → LLY", r.get("ticker") == "LLY", str(r))
+
+    r = await sec_edgar_resolve_synonym("Lilly")
+    check("Lilly → Eli Lilly and Co", r.get("canonical_name") == "Eli Lilly and Co", str(r))
+
+    r = await sec_edgar_resolve_synonym("Aetna")
+    check("Aetna → CVS Health Corp (subsidiary)", r.get("canonical_name") == "CVS Health Corp", str(r))
+
+    r = await sec_edgar_resolve_synonym("Walgreens")
+    check("Walgreens → Walgreens Boots Alliance Inc.", r.get("canonical_name") == "Walgreens Boots Alliance Inc.", str(r))
+
+    # Retail additions
+    r = await sec_edgar_resolve_synonym("Target")
+    check("Target → Target Corp", r.get("canonical_name") == "Target Corp", str(r))
+    check("Target → TGT", r.get("ticker") == "TGT", str(r))
+
+    r = await sec_edgar_resolve_synonym("Marshalls")
+    check("Marshalls → TJX Companies Inc. (brand)", r.get("canonical_name") == "TJX Companies Inc.", str(r))
+
+    r = await sec_edgar_resolve_synonym("TJ Maxx")
+    check("TJ Maxx → TJX Companies Inc.", r.get("canonical_name") == "TJX Companies Inc.", str(r))
+
+    # Energy additions
+    r = await sec_edgar_resolve_synonym("BP")
+    check("BP → BP p.l.c.", r.get("canonical_name") == "BP p.l.c.", str(r))
+    check("BP → BP ticker", r.get("ticker") == "BP", str(r))
+
+    r = await sec_edgar_resolve_synonym("Schlumberger")
+    check("Schlumberger → SLB (rebranded)", r.get("canonical_name") == "SLB", str(r))
+
+    r = await sec_edgar_resolve_synonym("SLB")
+    check("SLB → SLB", r.get("canonical_name") == "SLB", str(r))
+
+    r = await sec_edgar_resolve_synonym("Halliburton")
+    check("Halliburton → Halliburton Co", r.get("canonical_name") == "Halliburton Co", str(r))
+
+    # Aerospace & defense
+    r = await sec_edgar_resolve_synonym("Lockheed Martin")
+    check("Lockheed Martin → Lockheed Martin Corp", r.get("canonical_name") == "Lockheed Martin Corp", str(r))
+    check("Lockheed Martin → LMT", r.get("ticker") == "LMT", str(r))
+
+    r = await sec_edgar_resolve_synonym("Lockheed")
+    check("Lockheed → Lockheed Martin Corp", r.get("canonical_name") == "Lockheed Martin Corp", str(r))
+
+    r = await sec_edgar_resolve_synonym("Raytheon")
+    check("Raytheon → RTX Corp (rebranded)", r.get("canonical_name") == "RTX Corp", str(r))
+
+    r = await sec_edgar_resolve_synonym("Northrop Grumman")
+    check("Northrop Grumman → Northrop Grumman Corp", r.get("canonical_name") == "Northrop Grumman Corp", str(r))
+
+    r = await sec_edgar_resolve_synonym("General Dynamics")
+    check("General Dynamics → General Dynamics Corp", r.get("canonical_name") == "General Dynamics Corp", str(r))
+    check("General Dynamics → GD ticker", r.get("ticker") == "GD", str(r))
+
+    # Telecom additions
+    r = await sec_edgar_resolve_synonym("Comcast")
+    check("Comcast → Comcast Corp", r.get("canonical_name") == "Comcast Corp", str(r))
+    check("Comcast → CMCSA", r.get("ticker") == "CMCSA", str(r))
+
+    r = await sec_edgar_resolve_synonym("Charter")
+    check("Charter → Charter Communications Inc.", r.get("canonical_name") == "Charter Communications Inc.", str(r))
+
+    # E-commerce additions
+    r = await sec_edgar_resolve_synonym("Square")
+    check("Square → Block Inc. (rebranded)", r.get("canonical_name") == "Block Inc.", str(r))
+    check("Square → SQ ticker", r.get("ticker") == "SQ", str(r))
+
+    r = await sec_edgar_resolve_synonym("DoorDash")
+    check("DoorDash → DoorDash Inc.", r.get("canonical_name") == "DoorDash Inc.", str(r))
+
 
 async def test_filing_text():
     print("\n[17] sec_edgar_get_filing_text — Apple 10-K text extraction")

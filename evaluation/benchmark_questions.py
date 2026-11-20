@@ -1,6 +1,6 @@
 """SEC EDGAR Agent — Benchmark Question Set.
 
-23 questions across 11 scenario categories covering all 8 tools.
+27 questions across 13 scenario categories covering all 11 tools.
 Each question specifies:
   - id              : unique identifier (BQ-01 … BQ-23)
   - category        : scenario type
@@ -16,6 +16,21 @@ Difficulty rubric:
   medium — two-tool chain, or requires the agent to handle a concept name issue
   hard   — three+ tool chain, cross-company comparison, or source attribution
 """
+
+# Category mapping:
+#   1  company_search          BQ-01, BQ-02
+#   2  company_resolution      BQ-03, BQ-04
+#   3  recent_filings          BQ-05, BQ-06
+#   4  annual_facts            BQ-07, BQ-08
+#   5  quarterly_facts         BQ-09, BQ-10
+#   6  concept_discovery       BQ-11, BQ-12
+#   7  cross_company_comparison BQ-13, BQ-14
+#   8  filing_attribution      BQ-15, BQ-16
+#   9  multi_step_discovery    BQ-17, BQ-18
+#  10  edge_cases              BQ-19, BQ-20
+#  11  out_of_scope            BQ-21, BQ-22, BQ-23
+#  12  filing_text             BQ-24, BQ-25   ← new (sec_edgar_get_filing_text)
+#  13  full_text_search        BQ-26, BQ-27   ← new (sec_edgar_full_text_search)
 
 BENCHMARK_QUESTIONS = [
     # ------------------------------------------------------------------
@@ -417,6 +432,85 @@ BENCHMARK_QUESTIONS = [
         ),
         "numeric_checks": None,
     },
+    # ------------------------------------------------------------------
+    # Category 12 — Filing text extraction (sec_edgar_get_filing_text)
+    # ------------------------------------------------------------------
+    {
+        "id": "BQ-24",
+        "category": "filing_text",
+        "difficulty": "medium",
+        "question": "Show me the Risk Factors section from Apple's most recent 10-K filing.",
+        "expected_tools": ["sec_edgar_get_recent_filings", "sec_edgar_get_filing_text"],
+        "pass_criteria": (
+            "Agent retrieves a recent Apple 10-K accession number (via get_recent_filings "
+            "or get_company_fact), then calls sec_edgar_get_filing_text with section='risk_factors'; "
+            "response contains extracted plain text from the filing (not just metadata); "
+            "text is at least a few sentences long and reads as risk-factor prose; "
+            "response includes the document_url pointing to sec.gov; "
+            "response does NOT fabricate risk factor content from memory."
+        ),
+        "numeric_checks": None,
+    },
+    {
+        "id": "BQ-25",
+        "category": "filing_text",
+        "difficulty": "hard",
+        "question": (
+            "Read the MD&A (Management's Discussion and Analysis) section from "
+            "Microsoft's most recent 10-K and summarise what it says about revenue growth."
+        ),
+        "expected_tools": ["sec_edgar_get_filing_text"],
+        "optional_tools": ["sec_edgar_get_recent_filings", "sec_edgar_get_company_fact"],
+        "pass_criteria": (
+            "Agent calls sec_edgar_get_filing_text with section='mda' for a Microsoft 10-K; "
+            "response contains or summarises actual extracted text about revenue growth "
+            "(not fabricated); "
+            "includes the document_url from the tool response; "
+            "response is substantive (more than one sentence of content)."
+        ),
+        "numeric_checks": None,
+    },
+    # ------------------------------------------------------------------
+    # Category 13 — Full-text keyword search (sec_edgar_full_text_search)
+    # ------------------------------------------------------------------
+    {
+        "id": "BQ-26",
+        "category": "full_text_search",
+        "difficulty": "easy",
+        "question": (
+            "Which companies mentioned going concern in their 10-K filings "
+            "filed in 2024? Show up to 5 results."
+        ),
+        "expected_tools": ["sec_edgar_full_text_search"],
+        "pass_criteria": (
+            "Agent calls sec_edgar_full_text_search with query containing 'going concern' "
+            "and forms='10-K' (or similar) and a date range covering 2024; "
+            "if results are returned, response presents at least 1 company with "
+            "filing date and filing index URL or accession number, and results are real (not fabricated); "
+            "if zero results are returned, agent clearly reports that and may suggest broadening the search; "
+            "agent does NOT fabricate results when the tool returns zero matches."
+        ),
+        "numeric_checks": None,
+    },
+    {
+        "id": "BQ-27",
+        "category": "full_text_search",
+        "difficulty": "medium",
+        "question": (
+            "Find Apple's 8-K filings from 2024 that mention the word 'dividend'. "
+            "List up to 5 results with their filing dates."
+        ),
+        "expected_tools": ["sec_edgar_full_text_search"],
+        "pass_criteria": (
+            "Agent calls sec_edgar_full_text_search scoped to Apple (AAPL) with "
+            "query='dividend', forms='8-K', and a date range covering 2024; "
+            "response lists up to 5 matching 8-K filings with filing dates and "
+            "accession numbers or filing index URLs; "
+            "if no matching filings exist the agent clearly states that (not fabricates); "
+            "results, if present, are Apple 8-K filings."
+        ),
+        "numeric_checks": None,
+    },
 ]
 
 # Quick summary when run directly
@@ -427,6 +521,7 @@ if __name__ == "__main__":
     all_tools = []
     for q in BENCHMARK_QUESTIONS:
         all_tools.extend(q["expected_tools"])
+        all_tools.extend(q.get("optional_tools") or [])
     tool_counts = Counter(all_tools)
     with_numeric = sum(1 for q in BENCHMARK_QUESTIONS if q.get("numeric_checks"))
 

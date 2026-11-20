@@ -223,6 +223,9 @@ ALL_TOOL_NAMES = [
     "sec_edgar_compare_companies",
     "sec_edgar_get_filing_metadata",
     "sec_edgar_list_concepts",
+    "sec_edgar_resolve_synonym",
+    "sec_edgar_get_filing_text",
+    "sec_edgar_full_text_search",
 ]
 
 REFUSAL_PATTERNS = [

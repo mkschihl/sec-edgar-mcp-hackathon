@@ -2,8 +2,8 @@
 
 **Agent:** `sec_edgar_agent`  
 **Environment:** `gsa-hackathon` (IBM Cloud Toronto)  
-**Run date:** 2026-11-19 03:04  
-**Duration:** 6s for 23 questions  
+**Run date:** 2026-11-20 22:29  
+**Duration:** 49s for 27 questions  
 
 ---
 
@@ -11,8 +11,8 @@
 
 | Metric | Value |
 |---|---|
-| Total questions | 23 |
-| ✅ Pass | 23 (100%) |
+| Total questions | 27 |
+| ✅ Pass | 27 (100%) |
 | ⚠️ Partial | 0 (0%) |
 | ❌ Fail | 0 (0%) |
 
@@ -45,6 +45,10 @@
 | BQ-21 | 🟢 easy | out_of_scope | ✅ pass | routing_ok |  | *(none)* | routing_ok — correctly declined out-of-scope question. |
 | BQ-22 | 🟢 easy | out_of_scope | ✅ pass | routing_ok |  | *(none)* | routing_ok — correctly declined out-of-scope question. |
 | BQ-23 | 🟡 medium | out_of_scope | ✅ pass | routing_ok |  | *(none)* | routing_ok — correctly declined out-of-scope question. |
+| BQ-24 | 🟡 medium | filing_text | ✅ pass | routing_ok | `get_recent_filings`, `get_filing_text` | `search_companies`, `get_recent_filings`, `get_filing_text` | routing_ok — all expected tools fired. |
+| BQ-25 | 🔴 hard | filing_text | ✅ pass | routing_ok | `get_filing_text` | `search_companies`, `get_recent_filings`, `get_filing_text` | routing_ok — all expected tools fired. |
+| BQ-26 | 🟢 easy | full_text_search | ✅ pass | routing_ok | `full_text_search` | `full_text_search` | routing_ok — all expected tools fired. |
+| BQ-27 | 🟡 medium | full_text_search | ✅ pass | routing_ok | `full_text_search` | `full_text_search` | routing_ok — all expected tools fired. |
 
 ---
 
@@ -574,6 +578,105 @@ I’m sorry, but I can’t provide forecasts or speculative information about fu
 
 </details>
 
+### BQ-24 — ✅ PASS
+**Question:** Show me the Risk Factors section from Apple's most recent 10-K filing.  
+**Expected tools:** sec_edgar_get_recent_filings, sec_edgar_get_filing_text  
+**Tools fired:** sec_edgar_search_companies, sec_edgar_get_recent_filings, sec_edgar_get_filing_text  
+
+<details><summary>Agent response</summary>
+
+```
+**Apple Inc. – 2026 Form 10‑K (most recent)**  
+*Accession Number:* **0000320193‑26‑000026**  
+*Filing Date:* 2026‑11‑03  
+*Report Date (Fiscal Year End):* 2026‑09‑26  
+*Document URL:* https://www.sec.gov/Archives/edgar/data/320193/000032019326000026/aapl-20260926.htm  
+
+**Risk Factors (Item 1A – “Risk Factors”) – excerpt (first 2 000 characters):**
+
+> Item 1A of this Form 10‑K under the heading “Risk Factors.” The Company assumes no obligation to revise or update any forward‑looking statements for any reason, except as required by law. Unless otherwise stated, all information presented herein is based on the Company’s fiscal calendar, and references to particular years, quarters, months or periods refer to the Company’s fiscal years ended in September and the associated quarters, months and periods of those fiscal years.  
+> 
+> Each of the terms the “Company” and “Apple” as used herein refers collectively to Apple Inc. and its wholly‑owned subsidiaries, unless otherwise stated.  
+> 
+> **PART I**  
+> **Item 1. Business**  
+> **Company Background**  
+> The Company designs, manufactures and markets smartphones, personal computers, tablets, wearables and accessories, and sells a variety of related services. The Company’s fiscal year is the 52‑ or 53‑week period that ends on the last Saturday of September.  
+> 
+> **Products**  
+> *iPhone* – the Company’s line of smartphones based on its iOS operating system. The iPhone line includes iPhone Duo™, iPhone 18 Pro, iPhone Air®, iPhone 17, iPhone 17e and iPhone 16.  
+> *Mac* – the Company’s line of personal computers based on its macOS® operating system. The Mac line includes laptops MacBook Neo®, MacBook Air® and MacBook Pro®, including MacBook Pro with PROLED XDR Display and Touch, as well as desktops iMac®, Mac mini® and Mac Studio®.  
+> *iPad* – the Company’s line of multipurpose tablets based on its iPadOS® operating system. The iPad line includes iPad Pro®, iPad Air®, iPad and iPad mini®.  
+> *Wearables, Home and Access...
+```
+
+</details>
+
+### BQ-25 — ✅ PASS
+**Question:** Read the MD&A (Management's Discussion and Analysis) section from Microsoft's most recent 10-K and summarise what it says about revenue growth.  
+**Expected tools:** sec_edgar_get_filing_text  
+**Tools fired:** sec_edgar_search_companies, sec_edgar_get_recent_filings, sec_edgar_get_filing_text  
+
+<details><summary>Agent response</summary>
+
+```
+**Microsoft Corporation – MD&A (Management’s Discussion & Analysis) – FY 2026 10‑K**  
+*Accession Number:* 0001193125‑26‑323660  
+*Document URL:* https://www.sec.gov/Archives/edgar/data/789019/000119312526323660/msft-20260630.htm  
+
+### What the MD&A says about revenue growth
+
+- **Overall outlook** – Microsoft frames its growth strategy around three core operating segments—**Productivity & Business Processes, Intelligent Cloud, and More Personal Computing**—and stresses that continued expansion in these areas is the primary driver of revenue growth.
+
+- **Productivity & Business Processes** – Revenue is “mainly affected by a combination of continued installed‑base growth and average revenue per user (ARPU) expansion,” as well as the ongoing shift from on‑premises Office licenses to the subscription‑based **Microsoft 365** platform. The company highlights the importance of reaching new users (e.g., frontline workers, small‑ and medium‑sized businesses, and growth markets) and adding AI‑enabled tools to its core offerings.
+
+- **Intelligent Cloud** – Revenue is “mainly affected by infrastructure‑as‑a‑service and platform‑as‑a‑service consumption‑based services.” Azure’s growth is linked to both scale (global datacenter network) and AI‑driven workloads. The filing notes that AI services, including Azure AI and the new **Azure AI Foundry**, are expected to boost cloud revenue.
+
+- **More Personal Computing** – Revenue drivers include:
+  * **Windows OEM licensing** – tied to the volume of devices shipped, mix of device form‑factors, AI‑PC category growth, and pricing/promotion dynamics.
+  * **Devices (Surface, accessories)** – dependent on total PC shipments and the ability to attract new customers.
+  * **Xbox** – “Revenue is mainly affected by subscriptions and sales of first‑ and third‑party content, as well as advertising,” with growth linked to the active user base and content library.
+  * **Search advertising (Bing/Edge/Copilot)** – growth depends on user acquisition a...
+```
+
+</details>
+
+### BQ-26 — ✅ PASS
+**Question:** Which companies mentioned 'going concern' in their 10-K filings filed in 2024? Show up to 5 results.  
+**Expected tools:** sec_edgar_full_text_search  
+**Tools fired:** sec_edgar_full_text_search  
+
+<details><summary>Agent response</summary>
+
+```
+I wasn’t able to find any 10‑K filings from 2024 that contain the phrase **“going concern.”** The full‑text search returned zero matches for that period. If you’d like to broaden the search (e.g., include 10‑Q filings, a larger date range, or omit the quotation marks), just let me know and I can try again.
+```
+
+</details>
+
+### BQ-27 — ✅ PASS
+**Question:** Find Apple's 8-K filings from 2024 that mention the word 'dividend'. List up to 5 results with their filing dates.  
+**Expected tools:** sec_edgar_full_text_search  
+**Tools fired:** sec_edgar_full_text_search  
+
+<details><summary>Agent response</summary>
+
+```
+**Apple (AAPL) 8‑K filings in 2024 that contain the word “dividend”**
+
+| Filing Date | Accession Number | Filing Index URL |
+|-------------|------------------|------------------|
+| 2024‑02‑14 | 0000320193-24-000123 | https://www.sec.gov/Archives/edgar/data/320193/000032019324000123/ |
+| 2024‑04‑23 | 0000320193-24-000456 | https://www.sec.gov/Archives/edgar/data/320193/000032019324000456/ |
+| 2024‑07‑02 | 0000320193-24-000789 | https://www.sec.gov/Archives/edgar/data/320193/000032019324000789/ |
+| 2024‑09‑18 | 0000320193-24-001012 | https://www.sec.gov/Archives/edgar/data/320193/000032019324001012/ |
+| 2024‑12‑05 | 0000320193-24-001345 | https://www.sec.gov/Archives/edgar/data/320193/000032019324001345/ |
+
+These are the most recent five Apple 8‑K filings from 2024 that mention **“dividend.”**
+```
+
+</details>
+
 ---
 
 ## Tool Utilisation
@@ -581,12 +684,14 @@ I’m sorry, but I can’t provide forecasts or speculative information about fu
 | Tool | Expected in N Qs | Qs Fired | Fire Rate | Total Calls |
 |---|---|---|---|---|
 | `sec_edgar_compare_companies` | 2 | 2 | 100% | 2 |
+| `sec_edgar_full_text_search` | 2 | 2 | 100% | 2 |
 | `sec_edgar_get_company_fact` | 5 | 5 | 100% | 5 |
+| `sec_edgar_get_filing_text` | 2 | 2 | 100% | 2 |
 | `sec_edgar_get_quarterly_facts` | 3 | 3 | 100% | 4 |
-| `sec_edgar_get_recent_filings` | 3 | 3 | 100% | 3 |
+| `sec_edgar_get_recent_filings` | 4 | 5 | 125% | 5 |
 | `sec_edgar_list_concepts` | 2 | 2 | 100% | 2 |
 | `sec_edgar_resolve_company` | 2 | 10 | 500% | 10 |
-| `sec_edgar_search_companies` | 4 | 5 | 125% | 5 |
+| `sec_edgar_search_companies` | 4 | 7 | 175% | 7 |
 
 ---
 
@@ -601,6 +706,8 @@ I’m sorry, but I can’t provide forecasts or speculative information about fu
 | cross_company_comparison | 2 | 2 | 0 | 0 |
 | edge_cases | 2 | 2 | 0 | 0 |
 | filing_attribution | 2 | 2 | 0 | 0 |
+| filing_text | 2 | 2 | 0 | 0 |
+| full_text_search | 2 | 2 | 0 | 0 |
 | multi_step_discovery | 2 | 2 | 0 | 0 |
 | out_of_scope | 3 | 3 | 0 | 0 |
 | quarterly_facts | 2 | 2 | 0 | 0 |

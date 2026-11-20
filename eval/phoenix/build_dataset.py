@@ -175,6 +175,36 @@ _REFERENCE_ANSWERS: dict[str, str] = {
         "make forward-looking projections. "
         "Agent may offer to show historical revenue figures instead."
     ),
+    "BQ-24": (
+        "Agent calls sec_edgar_get_filing_text for Apple's most recent 10-K "
+        "with section='risk_factors'. "
+        "Response contains extracted plain text from the filing — multi-sentence prose "
+        "describing Apple's business risks (e.g. competition, supply chain, regulation). "
+        "Response includes a document_url pointing to sec.gov. "
+        "Content is NOT fabricated from memory."
+    ),
+    "BQ-25": (
+        "Agent calls sec_edgar_get_filing_text for Microsoft's most recent 10-K "
+        "with section='mda'. "
+        "Response summarises or quotes actual MD&A text about revenue growth. "
+        "Response includes a document_url pointing to sec.gov. "
+        "Content is NOT fabricated from memory."
+    ),
+    "BQ-26": (
+        "Agent calls sec_edgar_full_text_search with query='going concern' "
+        "restricted to 10-K form type and 2024 date range. "
+        "If results are returned, response lists at least 1 company with filing date "
+        "and filing index URL or accession number; results are real (not fabricated). "
+        "If zero results returned, agent clearly states that and may offer to broaden "
+        "the search — this is also a correct response."
+    ),
+    "BQ-27": (
+        "Agent calls sec_edgar_full_text_search scoped to Apple (AAPL) with "
+        "query='dividend' and forms='8-K' in 2024. "
+        "If results exist, response lists up to 5 Apple 8-K filings with filing dates. "
+        "If no results, agent clearly states no matching filings were found. "
+        "No results are fabricated."
+    ),
 }
 
 

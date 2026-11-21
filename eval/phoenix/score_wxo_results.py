@@ -51,6 +51,7 @@ sys.path.insert(0, str(EVAL_DIR))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from benchmark_questions import BENCHMARK_QUESTIONS  # noqa: E402
+from build_dataset import _REFERENCE_ANSWERS  # noqa: E402
 
 
 # ---------------------------------------------------------------------------
@@ -60,8 +61,12 @@ _BQ_BY_ID: dict[str, dict] = {q["id"]: q for q in BENCHMARK_QUESTIONS}
 
 
 def _build_reference(bq: dict) -> str:
-    """Return the reference string to pass to the correctness judge."""
-    return bq.get("pass_criteria", "")
+    """Return the reference string to pass to the correctness judge.
+
+    Prefers the more detailed _REFERENCE_ANSWERS from build_dataset.py when
+    available; falls back to pass_criteria from benchmark_questions.py.
+    """
+    return _REFERENCE_ANSWERS.get(bq["id"], bq.get("pass_criteria", ""))
 
 
 # ---------------------------------------------------------------------------

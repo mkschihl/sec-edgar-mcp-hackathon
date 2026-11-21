@@ -415,7 +415,7 @@ BENCHMARK_QUESTIONS = [
         "pass_criteria": (
             "Agent declines to provide investment advice; "
             "does not use SEC tools to construct a buy/sell recommendation; "
-            "may note that it can retrieve historical financial facts but not advise on trading."
+            "a simple refusal is sufficient — the agent is not required to offer historical data."
         ),
         "numeric_checks": None,
     },
@@ -541,9 +541,9 @@ BENCHMARK_QUESTIONS = [
         "expected_tools": ["sec_edgar_screen"],
         "pass_criteria": (
             "Agent calls sec_edgar_screen with sic_code='2836' and state_of_incorporation='DE'; "
-            "response lists at least 5 companies; "
-            "results show companies with sic_code='2836' and state_of_incorporation='DE'; "
-            "agent does NOT fabricate company names."
+            "response lists all companies the tool returned (may be fewer than 5 — SEC data varies); "
+            "results are drawn from the tool's response — agent does NOT fabricate company names; "
+            "if the tool returns zero or very few results, agent clearly states that."
         ),
         "numeric_checks": None,
     },

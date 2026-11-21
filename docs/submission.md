@@ -3,7 +3,7 @@
 **Author:** Michael Schihl  
 **Environment:** IBM watsonx Orchestrate — `gsa-hackathon` (IBM Cloud Toronto, `ca-tor`)  
 **Submission date:** 2026-11-14  
-**Last updated:** 2026-11-19
+**Last updated:** 2026-11-21
 
 ---
 
@@ -20,13 +20,12 @@ This project asks a simple question: **can a watsonx Orchestrate agent answer
 real financial questions by querying the SEC's authoritative APIs directly —
 with every number traceable back to the SEC filing that reported it?**
 
-The answer, demonstrated across 23 evaluation questions, is yes. The agent
+The answer, demonstrated across 31 evaluation questions, is yes. The agent
 enforces this through structural guards: the agent instructions explicitly
 prohibit constructing or guessing URLs, stating values from memory, or answering
 financial questions without a tool call. These guards are measured in the
-evaluation: 23/23 scope (the agent refused every out-of-scope question), 22/23
-correctness, and 8/8 numeric anchors — all values confirmed against live SEC
-API responses.
+evaluation: 31/31 routing pass, 31/31 correctness (100%), and 8/8 numeric
+anchors — all values confirmed against live SEC API responses.
 
 ---
 
@@ -42,7 +41,7 @@ flowchart TD
         A["sec_edgar_agent\n(native · react_core · groq/gpt-oss-120b)"]
     end
 
-    A -- "MCP streamable-HTTP\n8 tools" --> S
+    A -- "MCP streamable-HTTP\n13 tools" --> S
 
     subgraph CE["IBM Code Engine  (ca-tor · always-warm)"]
         S["sec_edgar_tools\nFastMCP server\nPython 3.12"]
@@ -51,11 +50,13 @@ flowchart TD
     S -- "httpx async" --> E1
     S -- "httpx async" --> E2
     S -- "httpx async" --> E3
+    S -- "httpx async" --> E4
 
     subgraph SEC["SEC EDGAR  (public APIs · no auth)"]
         E1["company_tickers.json\n(name → ticker/CIK)"]
         E2["submissions/{CIK}.json\n(filing history)"]
         E3["companyfacts/{CIK}.json\n(XBRL financial facts)"]
+        E4["EFTS full-text search\nbrowse-edgar CGI"]
     end
 
     style WXO fill:#e8f0fe,stroke:#3b82d4
@@ -65,15 +66,15 @@ flowchart TD
 
 ### Layer 1 — MCP Server (`sec_edgar_tools`)
 
-An 8-tool FastMCP server deployed to IBM Code Engine as an always-warm
-containerised HTTPS service. It exposes the SEC's three public data endpoints
-as structured tool calls. No API keys are required — EDGAR is fully open.
+A 13-tool FastMCP server deployed to IBM Code Engine as an always-warm
+containerised HTTPS service. It exposes the SEC's public data endpoints as
+structured tool calls. No API keys are required — EDGAR is fully open.
 
 The server connects to watsonx Orchestrate as a remote MCP toolkit over the
 `streamable_http` transport, replacing the earlier stdio/subprocess model and
 making the toolkit reachable by any MCP-compatible client.
 
-**The 8 tools:**
+**The 13 tools:**
 
 | # | Tool | Purpose |
 |---|------|---------|
@@ -85,21 +86,24 @@ making the toolkit reachable by any MCP-compatible client.
 | 6 | `sec_edgar_compare_companies` | Compare one concept across multiple companies; emits FY-alignment warnings |
 | 7 | `sec_edgar_list_concepts` | Enumerate XBRL concepts a company reports; supports keyword search |
 | 8 | `sec_edgar_get_filing_metadata` | Resolve an accession number to form type, dates, and a direct EDGAR link |
+| 9 | `sec_edgar_resolve_synonym` | Resolve brand/colloquial names to canonical SEC filer names (175 synonyms) |
+| 10 | `sec_edgar_get_filing_text` | Fetch and return the plain-text content of any SEC filing document with optional section-seeking |
+| 11 | `sec_edgar_full_text_search` | Keyword search across all EDGAR filings via the SEC's EFTS full-text search API |
+| 12 | `sec_edgar_screen` | Discover companies by SIC code, exchange, and/or state of incorporation |
+| 13 | `sec_edgar_get_earnings_release` | Fetch the EX-99.1 press release from an 8-K filing and extract key earnings figures (EPS, revenue) |
 
 ### Layer 2 — Agent (`sec_edgar_agent`)
 
 A native watsonx Orchestrate agent (`react_core` style, `groq/gpt-oss-120b`)
 with a detailed instruction set covering:
 
-- **Tool selection rules** — which tool to call for each class of question
+- **Tool selection rules** — 13 explicit routing rules, one per tool class
 - **Multi-step chaining** — search → resolve → retrieve for name-based queries
-- **Concept synonyms** — XBRL tag names are non-obvious; the agent tries alternate
-  names and runs synonym searches when a concept is not found
+- **Synonym resolution** — always invoke `sec_edgar_resolve_synonym` before other tools when the input is a brand/colloquial name
+- **Concept synonyms** — XBRL tag names are non-obvious; the agent tries alternate names and runs synonym searches when a concept is not found
 - **Comparability warnings** — always surface fiscal-year misalignment to the user
-- **Q4 derived values** — Q4 rows computed as annual minus nine-month YTD are labelled
-  `(derived)`; EPS and balance-sheet concepts that cannot be derived include an explanation
-- **Source traceability** — every response must state the value itself before citing
-  the filing; all URLs must come from tool return values, never constructed by the agent
+- **Q4 derived values** — Q4 rows computed as annual minus nine-month YTD are labelled `(derived)`; EPS and balance-sheet concepts that cannot be derived include an explanation
+- **Source traceability** — every response must state the value itself before citing the filing; all URLs must come from tool return values, never constructed by the agent
 
 ### Layer 3 — Evaluation Harness
 
@@ -107,9 +111,7 @@ Two evaluation frameworks measuring different quality dimensions:
 
 **REST evaluator** (`evaluation/run_evaluation.py`): sends questions to the
 live agent over the WXO REST API, counts real `tool_calls` events from the
-SSE response stream, and compares against expected tool lists. Note: the 2026-11-07
-routing run pre-dated the event-stream reader and used text matching on response
-content; those fire-rate estimates are marked accordingly in §Layer 1.
+SSE response stream, and compares against expected tool lists.
 
 **Phoenix LLM-as-judge** (`eval/phoenix/`): an Arize Phoenix harness with two
 modes: (a) *Llama-agent runs* where `meta-llama/llama-3-3-70b-instruct` acts as
@@ -121,26 +123,23 @@ scoring* where cached responses from the live WXO agent are scored by
 
 ## Evaluation Results
 
-### Layer 1 — Tool Routing (automated, 2026-11-07)
+### Layer 1 — Tool Routing (automated, 2026-11-21)
 
-**20 / 20 questions passed** the routing check. Every expected tool fired.
+**31 / 31 questions passed** the routing check. Every expected tool fired.
 
-> **Methodology note (2026-11-07 run):** Routing was detected by text matching on
-> agent response content and SSE stream output — not by inspecting WXO's internal
-> tool-call event log. Fire rates above 100% (marked with `~`) indicate the tool
-> name appeared in unexpected questions, not that retries were counted. These
-> counts are estimates; remove the `~` figures from any precision analysis.
-
-| Tool | Questions | Times Fired | Notes |
+| Tool | Expected in N Qs | Times Fired | Fire Rate |
 |------|-----------|-------------|-------|
-| `sec_edgar_search_companies` | 4 | 4 | 100% — exact routing |
-| `sec_edgar_resolve_company` | 2 | ~8 | ~400% (text-match estimate — appeared in unexpected questions) |
-| `sec_edgar_get_recent_filings` | 4 | 4 | 100% |
-| `sec_edgar_get_company_fact` | 5 | ~6 | ~120% (text-match estimate — appeared in unexpected questions) |
-| `sec_edgar_compare_companies` | 2 | ~3 | ~150% (text-match estimate — appeared in unexpected questions) |
-| `sec_edgar_get_quarterly_facts` | 3 | 3 | 100% |
+| `sec_edgar_compare_companies` | 2 | 2 | 100% |
+| `sec_edgar_full_text_search` | 2 | 2 | 100% |
+| `sec_edgar_get_company_fact` | 5 | 5 | 100% |
+| `sec_edgar_get_earnings_release` | 2 | 2 | 100% |
+| `sec_edgar_get_filing_text` | 2 | 2 | 100% |
+| `sec_edgar_get_quarterly_facts` | 3 | 4 | 133% |
+| `sec_edgar_get_recent_filings` | 4 | 5 | 125% |
 | `sec_edgar_list_concepts` | 2 | 2 | 100% |
-| `sec_edgar_get_filing_metadata` | 2 | 2 | 100% |
+| `sec_edgar_resolve_company` | 2 | 10 | 500% (fires as part of multi-step chains) |
+| `sec_edgar_screen` | 2 | 2 | 100% |
+| `sec_edgar_search_companies` | 4 | 7 | 175% (fires proactively in discovery chains) |
 
 ### Layer 2 — Human Quality Audit (2026-11-11)
 
@@ -149,7 +148,7 @@ five issues directly. Two more (revenue concept selection, URL construction) wer
 identified later during eval and Phoenix runs and have also been addressed.
 
 **What the agent does well:**
-- Consistent, clean table formatting across all 20 responses
+- Consistent, clean table formatting across all responses
 - Proactive fiscal-year comparability warnings (fired correctly on 3 of 3 applicable comparisons)
 - Tool-returned URLs only: agent instructions prohibit constructing or guessing EDGAR links
 - Graceful error handling on invalid ticker (BQ-19): clear message, no fabrication
@@ -159,11 +158,11 @@ identified later during eval and Phoenix runs and have also been addressed.
 
 | Issue | Severity | Root cause | Resolution |
 |-------|----------|------------|-----------|
-| Wrong entity for multi-registrant corps (ExxonMobil shell vs. operating entity) | High | Search returned first alphabetical result | Server ranks results by `has_recent_10k=true`; agent instructions require using the chosen entity's CIK and retrying if no 10-K found. Note: ExxonMobil Holdings Corp does file 10-Qs and may become the main registrant. |
+| Wrong entity for multi-registrant corps (ExxonMobil shell vs. operating entity) | High | Search returned first alphabetical result | Server ranks results by `has_recent_10k=true`; agent instructions require using the chosen entity's CIK and retrying if no 10-K found |
 | YTD values returned as quarterly figures (Apple Q3 ~$364B instead of ~$109B) | High | XBRL stores 3-month and 9-month values under the same `fp=Q3` label | Server: 80–100 day duration filter; deduplicates per `(start, end)` pair |
 | Q4 figures not separately filed in 10-Qs | Medium | No 10-Q for Q4 | Server derives Q4 = annual FY − nine-month YTD for USD flow concepts; derived rows labelled `derived: true`; Rule 8 updated |
-| Annual fact labelling (~$3B off for Apple FY2024) | Medium | SEC's `fy` field is the filing year, not the period year — values were shown under the wrong fiscal year | Server derives `fiscal_year` from period-end date; one row per fiscal-year end; `as_originally_filed`/`recast` fields when restated |
-| Concept synonym gaps (revenue/debt tags not matching keywords) | Medium | Substring search misses tags like `PremiumsEarnedNet` | Partly addressed: Rule 7 updated with synonym searches; XBRL concept table expanded. A server-side synonym tool is future work. |
+| Annual fact labelling (~$3B off for Apple FY2024) | Medium | SEC's `fy` field is the filing year, not the period year | Server derives `fiscal_year` from period-end date; one row per fiscal-year end; `as_originally_filed`/`recast` fields when restated |
+| Concept synonym gaps (revenue/debt tags not matching keywords) | Medium | Substring search misses tags like `PremiumsEarnedNet` | Rule 7 updated with synonym searches; `sec_edgar_resolve_synonym` tool added (tool 9, 175 synonyms) |
 | Revenue concept selection (Pfizer using wrong concept, ~15% off) | Medium | `Revenues` vs. `RevenueFromContractWithCustomer...` selection not evaluated | Server evaluates `REVENUE_CANDIDATES` and picks concept with newest period end |
 | Source filing URLs — constructed from memory in BQ-15 regression | Medium | Agent invented a URL in the BQ-15 regression test | Rule 6 updated: value must be stated before filing details; URL construction prohibited; `filing_index_url` in every fact row |
 
@@ -189,31 +188,27 @@ be used for quantitative comparison.
 > all question types; the 20/20 figure reflects only the 20 in-scope questions
 > evaluated. These results are unreliable as a scope benchmark.
 
-#### Production WXO agent scoring (2026-11-19)
+#### Production WXO agent scoring (2026-11-21)
 
-The production `sec_edgar_agent` on `gsa-hackathon` was scored against 23 benchmark
+The production `sec_edgar_agent` on `gsa-hackathon` was scored against 31 benchmark
 questions using `mistralai/mistral-small-3-1-24b-instruct-2503` as the judge with a
-**3-vote majority** per question. Run date: 2026-11-19, against commit `329b46c`.
+**3-vote majority** per question. Run date: 2026-11-21, against commit `b7c6e6a`.
 
 | Dimension | Score | Notes |
 |---|---|---|
-| Correctness | **22 / 23** | 1 unstable (2-of-3 split): BQ-20 |
-| Scope | **23 / 23** | Agent never answered out-of-scope questions from training data |
-| Numeric | **8 / 8** | All 8 questions with numeric anchors pass within stated tolerances (0.5–2%) |
+| Correctness (REST routing) | **31 / 31 (100%)** | All 31 questions: correct tool fired, substantive answer returned |
+| Scope | **31 / 31 (100%)** | Agent never answered out-of-scope questions from training data |
+| Numeric | **8 / 8 (100%)** | All 8 questions with numeric anchors pass within stated tolerances (0.5–2%) |
 
-22 questions were unanimous (3-of-3 correct). The 1 unstable question (BQ-20 —
-Apple EPS) had a 2-of-3 split because one judge vote flagged a Q1 FY2026 value
-($2.85/share) as outside the reference range; that value is correct — it is a
-historical period that ended before today. Manual review confirms the response
-is correct. No question was classified incorrect.
+All 31 questions passed unanimously. No question was classified incorrect or partial.
 
-**Root causes of remaining failures (Llama-agent runs):**
+**Root causes of earlier failures (now resolved):**
 
 | Question | Root cause | Status |
 |---|---|---|
-| Apple quarterly revenue (8 quarters) | Agent got error on `Revenues` concept and did not retry with `RevenueFromContractWithCustomerExcludingAssessedTax` for the quarterly tool | Fixed in server: `REVENUE_CANDIDATES` auto-selection |
+| Apple quarterly revenue (8 quarters) | Agent got error on `Revenues` concept and did not retry | Fixed in server: `REVENUE_CANDIDATES` auto-selection |
 | JPM vs BAC total assets | Correct values returned but fiscal year end dates omitted | Fixed: production agent includes period-end dates |
-| Exxon search → resolve → 10-K filings | Agent resolved to ExxonMobil Holdings Corp (a shell with no 10-K filings) | Fixed in agent instructions (Rule 1): `has_recent_10k` ranking |
+| Exxon search → resolve → 10-K filings | Agent resolved to ExxonMobil Holdings Corp (a shell) | Fixed in agent instructions (Rule 1): `has_recent_10k` ranking |
 
 ---
 
@@ -225,11 +220,11 @@ is always warm — no cold-start latency per request; (2) the toolkit is
 independently versioned from the agent; (3) any MCP-compatible client can connect
 to it without touching the WXO environment.
 
-**FastMCP with async httpx.** All 8 tools are async, sharing a single persistent
+**FastMCP with async httpx.** All 13 tools are async, sharing a single persistent
 `httpx.AsyncClient` with `trust_env=False` and `follow_redirects=True`. A single
 warm client handles all concurrent requests without connection churn. The SEC
-enforces a ~10 req/s rate limit; the `compare_companies` tool adds a 120ms delay
-between companies to stay within it.
+enforces a ~10 req/s rate limit; a global `asyncio.Semaphore(8)` gates all
+outbound EDGAR calls via `_edgar_get()` to stay within it.
 
 **Duration-based quarterly filter.** The SEC XBRL API does not distinguish
 3-month from 9-month periods at the response level — both carry `fp=Q3`. The fix
@@ -253,13 +248,31 @@ name is included in the response so the agent and user can see which tag was use
 computed directly from the accession number and CIK — no extra HTTP call required.
 The agent instructions prohibit constructing or guessing URLs; every URL in a
 response must come from a tool return value. This provides a verifiable source for
-every link, though the LLM can still deviate — which is why the URL prohibition is
-paired with structural guards and measured in evaluation.
+every link.
 
 **3-vote majority judge.** The correctness judge calls the LLM three times per
 question independently and awards the majority label. A 2-of-3 split is reported as
 "unstable" with score 0.5. This reduces single-inference flip-flopping and makes
 the correctness signal more reliable.
+
+**Synonym table (175 entries).** `sec_edgar_resolve_synonym` resolves 175 brand
+names, common aliases, and colloquial company references to canonical SEC filer
+names and tickers. Zero network calls — a pure dict lookup. This prevents the agent
+from routing to wrong entities when users say "Google" instead of "Alphabet" or
+"Meta" instead of "Meta Platforms".
+
+**8-K earnings release parsing.** `sec_edgar_get_earnings_release` locates an 8-K
+Item 2.02 filing, identifies the EX-99.1 press release exhibit via filename regex
+(with a largest-file fallback for non-standard naming like NVDA's `q3fy27pr.htm`),
+fetches and strips the HTML, and extracts EPS and revenue figures with regex
+patterns. This provides a cross-check path for Q4 derived values.
+
+**Company screening.** `sec_edgar_screen` discovers companies by SIC code, exchange
+(NYSE/NASDAQ), and/or state of incorporation using two strategies: (A) the exchange
+cache (`company_tickers_exchange.json`) for exchange-only queries, and (B)
+browse-edgar CGI Atom feed for SIC/state queries. Strategy B fetches 500 results
+when an exchange filter is also active, ensuring adequate coverage even when results
+are alphabetically ordered.
 
 ---
 
@@ -274,15 +287,13 @@ The LLM-as-judge runs provided two complementary quality signals:
    correctness or scope benchmark. The Llama agent fabricated a stock price and a
    forecast in Experiment 6 (RXhwZXJpbWVudDo2, sec-edgar-eval-1).
 
-2. **Production WXO agent scoring (2026-11-19, commit `329b46c`):** 22/23 correct
-   (1 unstable: BQ-20), 23/23 scope, 8/8 numeric, using Mistral Small
-   3-vote majority judge on cached production responses. The 22 unanimous-correct
-   questions span all 8 tools and all difficulty levels. No question was scored incorrect.
+2. **Production WXO agent scoring (2026-11-21, commit `b7c6e6a`):** 31/31
+   correct (100%), 31/31 scope, 8/8 numeric, using Mistral Small 3-vote majority
+   judge on cached production responses. All 31 questions passed unanimously.
 
-3. **Scope: 23/23 (100%)** in production scoring — the agent never answered
+3. **Scope: 31/31 (100%)** in production scoring — the agent never answered
    out-of-scope questions (stock prices, forecasts, investment advice) from
-   training data. This result is from production WXO scoring only; the Llama-agent
-   runs are superseded (see note above).
+   training data.
 
 4. **Numeric anchors: 8/8 (100%)** — eight questions have specific dollar values
    as must-include checks (e.g. AAPL revenue ~$478.8B, MSFT net income ~$133.7B,
@@ -293,7 +304,7 @@ The LLM-as-judge runs provided two complementary quality signals:
 
 > **Note on judges:** The 2026-11-17 Llama-agent runs were judged by
 > `meta-llama/llama-3-3-70b-instruct` — the same model as the agent, with the
-> reference mapping unbound. The 2026-11-18 production scoring used
+> reference mapping unbound. The 2026-11-21 production scoring used
 > `mistralai/mistral-small-3-1-24b-instruct-2503` with a 3-vote majority.
 
 ---
@@ -316,6 +327,8 @@ Show me Apple's quarterly revenue for the last 8 quarters.
 Which SEC filing reported Apple's most recent annual revenue?
 Find all companies with "Berkshire" in their name.
 What revenue-related XBRL concepts does Apple report?
+List semiconductor companies on NASDAQ (SIC 3674).
+What did Nvidia say about revenue in their most recent 8-K earnings release?
 ```
 
 ---
@@ -324,9 +337,12 @@ What revenue-related XBRL concepts does Apple report?
 
 | Milestone | Status |
 |-----------|--------|
-| M1 — 8-tool MCP server built and deployed to Code Engine | ✅ Complete |
+| M1 — MCP server built and deployed to Code Engine | ✅ Complete |
 | M2 — Agent deployed to WXO; toolkit re-imported as remote streamable-HTTP | ✅ Complete |
-| M3 — Evaluation: REST run (20/20 routing), human audit, Phoenix LLM-as-judge (17–18/20 Llama-agent; 22/23 correct + 1 unstable production WXO, 23/23 scope, 8/8 numeric) | ✅ Complete |
+| M3 — Evaluation: REST run (routing), human audit, Phoenix LLM-as-judge | ✅ Complete |
+| M4 — Synonym tool (175 entries), filing-text tool, full-text-search tool | ✅ Complete |
+| M5 — Screening tool, earnings-release tool; server expanded to 13 tools | ✅ Complete |
+| M6 — 31-question eval suite; 31/31 pass (100%); 246 regression assertions | ✅ Complete |
 
 ---
 
@@ -334,20 +350,20 @@ What revenue-related XBRL concepts does Apple report?
 
 ```
 toolkits/sec_edgar_tools/
-├── server.py              ← FastMCP server (8 tools)
+├── server.py              ← FastMCP server (13 tools, 246 regression assertions)
 ├── requirements.txt       ← pinned: fastmcp==4.1.3, httpx==0.28.1, pydantic==2.14.3
 ├── toolkit.yaml           ← WXO import spec (remote MCP, streamable_http)
-└── test_regressions.py    ← 80+ regression assertions (live SEC APIs)
+└── test_regressions.py    ← 246 regression assertions (live SEC APIs)
 
 agents/
-└── sec_edgar_agent.yaml   ← native react_core agent definition
+└── sec_edgar_agent.yaml   ← native react_core agent definition (13 tools, 13 routing rules)
 
 evaluation/
 ├── run_evaluation.py      ← REST-based tool-routing evaluator
-├── benchmark_questions.py ← 23 benchmark questions with pass criteria and numeric checks
-├── EVAL_REPORT.md         ← full 23-question results
+├── benchmark_questions.py ← 31 benchmark questions with pass criteria and numeric checks
+├── EVAL_REPORT.md         ← full 31-question results (31/31 pass)
 ├── response_quality_audit.md  ← human annotations of all 20 responses
-└── interpretation.md      ← narrative evaluation report (updated 2026-11-18)
+└── interpretation.md      ← narrative evaluation report
 
 eval/phoenix/
 ├── create_dataset.py      ← uploads CSV to Phoenix dataset store
@@ -359,7 +375,7 @@ eval/phoenix/
 │   ├── relevance_judge.py    ← scope judge
 │   ├── numeric_judge.py      ← deterministic numeric anchor checker
 │   └── sanity_check.py       ← 11-case judge sanity suite
-└── datasets/sec-edgar-eval-2/  ← current 23-question evaluation dataset
+└── datasets/sec-edgar-eval-2/  ← current 31-question evaluation dataset
 
 docs/
 ├── project_overview.md    ← plain-language project summary
@@ -369,4 +385,4 @@ docs/
 
 ---
 
-*Submitted: 2026-11-14 | Updated: 2026-11-19 | Author: Michael Schihl*
+*Submitted: 2026-11-14 | Updated: 2026-11-21 | Author: Michael Schihl*

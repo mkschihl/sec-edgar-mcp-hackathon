@@ -2528,7 +2528,11 @@ async def sec_edgar_screen(
         # ---------------------------------------------------------------
         # browse-edgar only accepts specific count values; snap to nearest allowed.
         ALLOWED_COUNTS = (10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 500)
-        cgi_count = min((c for c in ALLOWED_COUNTS if c >= limit), default=500)
+        # When an exchange filter is also requested, fetch 500 from browse-edgar
+        # so we have enough companies to filter against the exchange cache.
+        # Without this, alphabetical browse-edgar results would miss most matches.
+        fetch_limit = 500 if exc_filter else limit
+        cgi_count = min((c for c in ALLOWED_COUNTS if c >= fetch_limit), default=500)
 
         cgi_params: dict[str, str] = {
             "action": "getcompany",

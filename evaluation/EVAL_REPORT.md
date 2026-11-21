@@ -2,8 +2,8 @@
 
 **Agent:** `sec_edgar_agent`  
 **Environment:** `gsa-hackathon` (IBM Cloud Toronto)  
-**Run date:** 2026-11-21 00:36  
-**Duration:** 32s for 31 questions  
+**Run date:** 2026-11-21 00:59  
+**Duration:** 19s for 31 questions  
 
 ---
 
@@ -689,13 +689,13 @@ These are the most recent five Apple 8‑K filings from 2024 that mention **�
 <details><summary>Agent response</summary>
 
 ```
-Here are the Nasdaq‑listed companies that match the pre‑packaged software SIC code 7372. The screen returned a single match:
+Here is the list of Nasdaq‑listed companies that report the pre‑packaged software SIC code 7372. The screening returned **one** matching company (the SEC’s data set only includes this entity for the specified criteria):
 
-| # | Company Name            | Ticker | CIK          | SIC Code | State of Incorporation |
-|---|-------------------------|--------|--------------|----------|------------------------|
-| 1 | ACI WORLDWIDE, INC.     | ACIW   | 0000935036   | 7372     | NE                     |
+| # | Company | Ticker | CIK | SIC Code | State of Incorporation |
+|---|---------|--------|-----|----------|------------------------|
+| 1 | ACI WORLDWIDE, INC. | ACIW | 0000935036 | 7372 | NE |
 
-The search returned only one company that meets all three criteria (Nasdaq exchange, SIC 7372, and pre‑packaged software). If you’d like to broaden the criteria (e.g., include other exchanges or a wider SIC range) or need additional details about this company, let me know!
+If you need additional companies (e.g., from other exchanges) or want to explore related industries, let me know!
 ```
 
 </details>
@@ -708,14 +708,14 @@ The search returned only one company that meets all three criteria (Nasdaq excha
 <details><summary>Agent response</summary>
 
 ```
-Here are the pharmaceutical‑industry companies (SIC 2836) that the SEC’s screening tool found as being incorporated in Delaware (up to 20 results). Only two matches were returned:
+Here are the pharmaceutical‑industry companies (SIC 2836) that the SEC records show as incorporated in Delaware. I limited the results to the first 20 matches, and the screen returned two entities:
 
-| # | Company (legal name)            | Ticker | CIK        | Exchange | SIC Code | State of Incorporation |
-|---|--------------------------------|--------|------------|----------|----------|------------------------|
-| 1 | Inhibikase Therapeutics, Inc.  | IKT    | 0001750149 | Nasdaq   | 2836     | DE |
-| 2 | Old Ayala, Inc                 | —      | 0001797336 | —        | 2836     | DE |
+| # | Company Name                     | Ticker | CIK        | Exchange |
+|---|----------------------------------|--------|-----------|----------|
+| 1 | Inhibikase Therapeutics, Inc.    | IKT    | 0001750149 | Nasdaq   |
+| 2 | Old Ayala, Inc.                  | –      | 0001797336 | –        |
 
-The screen returned only these two entities for the specified SIC code and state. If you need additional companies, you may consider broadening the criteria (e.g., include other states or related SIC codes).
+These are the only firms matching the SIC 2836 / Delaware criteria in the SEC’s screening database. If you need additional details (e.g., recent filings, financial facts) for any of these companies, just let me know.
 ```
 
 </details>

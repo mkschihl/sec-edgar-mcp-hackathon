@@ -2,8 +2,8 @@
 
 **Agent:** `sec_edgar_agent`  
 **Environment:** `gsa-hackathon` (IBM Cloud Toronto)  
-**Run date:** 2026-11-21 00:59  
-**Duration:** 19s for 31 questions  
+**Run date:** 2026-11-21 03:58  
+**Duration:** 18s for 33 questions  
 
 ---
 
@@ -11,8 +11,8 @@
 
 | Metric | Value |
 |---|---|
-| Total questions | 31 |
-| ✅ Pass | 31 (100%) |
+| Total questions | 33 |
+| ✅ Pass | 33 (100%) |
 | ⚠️ Partial | 0 (0%) |
 | ❌ Fail | 0 (0%) |
 
@@ -53,6 +53,8 @@
 | BQ-29 | 🟡 medium | screen | ✅ pass | routing_ok | `screen` | `screen` | routing_ok — all expected tools fired. |
 | BQ-30 | 🟢 easy | earnings_release | ✅ pass | routing_ok | `get_earnings_release` | `get_earnings_release` | routing_ok — all expected tools fired. |
 | BQ-31 | 🟡 medium | earnings_release | ✅ pass | routing_ok | `get_earnings_release` | `get_earnings_release` | routing_ok — all expected tools fired. |
+| BQ-32 | 🟢 easy | synonym_resolution | ✅ pass | routing_ok | `resolve_synonym` | `resolve_synonym` | routing_ok — all expected tools fired. |
+| BQ-33 | 🟡 medium | synonym_resolution | ✅ pass | routing_ok | `resolve_synonym`, `resolve_company` | `resolve_synonym`, `resolve_company` | routing_ok — all expected tools fired. |
 
 ---
 
@@ -774,6 +776,33 @@ Thus, NVIDIA announced a **GAAP diluted earnings per share of $2.70** (with a no
 
 </details>
 
+### BQ-32 — ✅ PASS
+**Question:** Who is 'Google' registered as with the SEC? What is their ticker symbol?  
+**Expected tools:** sec_edgar_resolve_synonym  
+**Tools fired:** sec_edgar_resolve_synonym  
+
+<details><summary>Agent response</summary>
+
+```
+Alphabet Inc. (canonical name) – ticker: **GOOGL**.
+```
+
+</details>
+
+### BQ-33 — ✅ PASS
+**Question:** What SIC industry code is 'Meta' classified under with the SEC? What state are they incorporated in?  
+**Expected tools:** sec_edgar_resolve_synonym, sec_edgar_resolve_company  
+**Tools fired:** sec_edgar_resolve_synonym, sec_edgar_resolve_company  
+
+<details><summary>Agent response</summary>
+
+```
+Meta Platforms, Inc. (ticker META) is classified under SIC code **7370 – Services‑Computer Programming, Data Processing, Etc.**  
+The company is incorporated in the state of **Delaware (DE)**.
+```
+
+</details>
+
 ---
 
 ## Tool Utilisation
@@ -788,7 +817,8 @@ Thus, NVIDIA announced a **GAAP diluted earnings per share of $2.70** (with a no
 | `sec_edgar_get_quarterly_facts` | 3 | 3 | 100% | 4 |
 | `sec_edgar_get_recent_filings` | 4 | 5 | 125% | 5 |
 | `sec_edgar_list_concepts` | 2 | 2 | 100% | 2 |
-| `sec_edgar_resolve_company` | 2 | 10 | 500% | 10 |
+| `sec_edgar_resolve_company` | 3 | 11 | 367% | 11 |
+| `sec_edgar_resolve_synonym` | 2 | 2 | 100% | 2 |
 | `sec_edgar_screen` | 2 | 2 | 100% | 2 |
 | `sec_edgar_search_companies` | 4 | 7 | 175% | 7 |
 
@@ -813,6 +843,7 @@ Thus, NVIDIA announced a **GAAP diluted earnings per share of $2.70** (with a no
 | quarterly_facts | 2 | 2 | 0 | 0 |
 | recent_filings | 2 | 2 | 0 | 0 |
 | screen | 2 | 2 | 0 | 0 |
+| synonym_resolution | 2 | 2 | 0 | 0 |
 
 ---
 

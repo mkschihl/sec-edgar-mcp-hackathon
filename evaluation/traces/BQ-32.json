@@ -1,0 +1,353 @@
+{
+  "id": "BQ-32",
+  "question": "Who is 'Google' registered as with the SEC? What is their ticker symbol?",
+  "score": "pass",
+  "routing": "routing_ok",
+  "tools_fired": [
+    "sec_edgar_resolve_synonym"
+  ],
+  "call_counts": {
+    "sec_edgar_resolve_synonym": 1
+  },
+  "sse_events": [
+    {
+      "id": "1795233523184-5",
+      "object": "thread.run.step.delta",
+      "thread_id": "cd01e8c6-402e-4e5f-999c-688fba9705b8",
+      "run_id": "3356073e-a331-4048-8362-0a6a10bec499",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795233523,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "step_details": {
+              "type": "tool_calls",
+              "content": "",
+              "tool_calls": [
+                {
+                  "name": "sec_edgar_resolve_synonym",
+                  "args": {
+                    "name": "Google"
+                  },
+                  "id": "fc_0ed5727c-6240-4527-b708-854ad8ec3e50"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795233526725-11",
+      "object": "thread.message.delta",
+      "thread_id": "cd01e8c6-402e-4e5f-999c-688fba9705b8",
+      "run_id": "3356073e-a331-4048-8362-0a6a10bec499",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795233526,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "Alphabet"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795233526725-12",
+      "object": "thread.message.delta",
+      "thread_id": "cd01e8c6-402e-4e5f-999c-688fba9705b8",
+      "run_id": "3356073e-a331-4048-8362-0a6a10bec499",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795233526,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "\u202f"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795233526727-13",
+      "object": "thread.message.delta",
+      "thread_id": "cd01e8c6-402e-4e5f-999c-688fba9705b8",
+      "run_id": "3356073e-a331-4048-8362-0a6a10bec499",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795233526,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "Inc"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795233526729-14",
+      "object": "thread.message.delta",
+      "thread_id": "cd01e8c6-402e-4e5f-999c-688fba9705b8",
+      "run_id": "3356073e-a331-4048-8362-0a6a10bec499",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795233526,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "."
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795233526731-15",
+      "object": "thread.message.delta",
+      "thread_id": "cd01e8c6-402e-4e5f-999c-688fba9705b8",
+      "run_id": "3356073e-a331-4048-8362-0a6a10bec499",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795233526,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " ("
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795233526733-16",
+      "object": "thread.message.delta",
+      "thread_id": "cd01e8c6-402e-4e5f-999c-688fba9705b8",
+      "run_id": "3356073e-a331-4048-8362-0a6a10bec499",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795233526,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "canonical"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795233526735-17",
+      "object": "thread.message.delta",
+      "thread_id": "cd01e8c6-402e-4e5f-999c-688fba9705b8",
+      "run_id": "3356073e-a331-4048-8362-0a6a10bec499",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795233526,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " name"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795233526737-18",
+      "object": "thread.message.delta",
+      "thread_id": "cd01e8c6-402e-4e5f-999c-688fba9705b8",
+      "run_id": "3356073e-a331-4048-8362-0a6a10bec499",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795233526,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": ")"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795233526739-19",
+      "object": "thread.message.delta",
+      "thread_id": "cd01e8c6-402e-4e5f-999c-688fba9705b8",
+      "run_id": "3356073e-a331-4048-8362-0a6a10bec499",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795233526,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " \u2013"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795233526740-20",
+      "object": "thread.message.delta",
+      "thread_id": "cd01e8c6-402e-4e5f-999c-688fba9705b8",
+      "run_id": "3356073e-a331-4048-8362-0a6a10bec499",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795233526,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " ticker"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795233526744-21",
+      "object": "thread.message.delta",
+      "thread_id": "cd01e8c6-402e-4e5f-999c-688fba9705b8",
+      "run_id": "3356073e-a331-4048-8362-0a6a10bec499",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795233526,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": ":"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795233526745-22",
+      "object": "thread.message.delta",
+      "thread_id": "cd01e8c6-402e-4e5f-999c-688fba9705b8",
+      "run_id": "3356073e-a331-4048-8362-0a6a10bec499",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795233526,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": " **"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795233526747-23",
+      "object": "thread.message.delta",
+      "thread_id": "cd01e8c6-402e-4e5f-999c-688fba9705b8",
+      "run_id": "3356073e-a331-4048-8362-0a6a10bec499",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795233526,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "GO"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795233526749-24",
+      "object": "thread.message.delta",
+      "thread_id": "cd01e8c6-402e-4e5f-999c-688fba9705b8",
+      "run_id": "3356073e-a331-4048-8362-0a6a10bec499",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795233526,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "O"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795233526751-25",
+      "object": "thread.message.delta",
+      "thread_id": "cd01e8c6-402e-4e5f-999c-688fba9705b8",
+      "run_id": "3356073e-a331-4048-8362-0a6a10bec499",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795233526,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "GL"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795233526753-26",
+      "object": "thread.message.delta",
+      "thread_id": "cd01e8c6-402e-4e5f-999c-688fba9705b8",
+      "run_id": "3356073e-a331-4048-8362-0a6a10bec499",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795233526,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "**"
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795233526755-27",
+      "object": "thread.message.delta",
+      "thread_id": "cd01e8c6-402e-4e5f-999c-688fba9705b8",
+      "run_id": "3356073e-a331-4048-8362-0a6a10bec499",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795233526,
+      "choices": [
+        {
+          "delta": {
+            "role": "assistant",
+            "content": "."
+          }
+        }
+      ]
+    },
+    {
+      "id": "1795233527058-28",
+      "object": "thread.message.completed",
+      "thread_id": "cd01e8c6-402e-4e5f-999c-688fba9705b8",
+      "run_id": "3356073e-a331-4048-8362-0a6a10bec499",
+      "trace_id": "56c95367a4e07fa26cdd5be1659e13bb",
+      "model": "groq/openai/gpt-oss-120b",
+      "created": 1795233527,
+      "data": {
+        "message": {
+          "content": [
+            {
+              "response_type": "text",
+              "id": "1",
+              "text": "Alphabet\u202fInc. (canonical name) \u2013 ticker: **GOOGL**."
+            }
+          ],
+          "role": "assistant"
+        }
+      },
+      "choices": [
+        {
+          "message": {
+            "role": "assistant",
+            "content": "Alphabet\u202fInc. (canonical name) \u2013 ticker: **GOOGL**."
+          }
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 14658,
+        "completion_tokens": 54,
+        "total_tokens": 14712,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        }
+      }
+    }
+  ],
+  "response_text": "Alphabet\u202fInc. (canonical name) \u2013 ticker: **GOOGL**.",
+  "notes": "routing_ok \u2014 all expected tools fired."
+}

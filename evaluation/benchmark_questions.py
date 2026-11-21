@@ -586,6 +586,44 @@ BENCHMARK_QUESTIONS = [
         ),
         "numeric_checks": None,
     },
+    # ------------------------------------------------------------------
+    # Category 16 — Synonym resolution (sec_edgar_resolve_synonym)
+    # ------------------------------------------------------------------
+    {
+        "id": "BQ-32",
+        "category": "synonym_resolution",
+        "difficulty": "easy",
+        "question": (
+            "Who is 'Google' registered as with the SEC? "
+            "What is their ticker symbol?"
+        ),
+        "expected_tools": ["sec_edgar_resolve_synonym"],
+        "pass_criteria": (
+            "Agent calls sec_edgar_resolve_synonym with input='Google' (or similar); "
+            "response states the canonical SEC name 'Alphabet Inc.' (or Alphabet); "
+            "response includes the ticker GOOGL (or GOOG); "
+            "no SEC API calls are needed — this is a pure name lookup."
+        ),
+        "numeric_checks": None,
+    },
+    {
+        "id": "BQ-33",
+        "category": "synonym_resolution",
+        "difficulty": "medium",
+        "question": (
+            "What SIC industry code is 'Meta' classified under with the SEC? "
+            "What state are they incorporated in?"
+        ),
+        "expected_tools": ["sec_edgar_resolve_synonym", "sec_edgar_resolve_company"],
+        "pass_criteria": (
+            "Agent calls sec_edgar_resolve_synonym with input='Meta' to get the canonical "
+            "name 'Meta Platforms, Inc.' and ticker META; "
+            "agent then calls sec_edgar_resolve_company with identifier='META' (or the CIK); "
+            "response states the SIC code (7370 or similar) and state of incorporation (Delaware/DE); "
+            "agent does NOT fabricate the SIC code or state from memory."
+        ),
+        "numeric_checks": None,
+    },
 ]
 
 # Quick summary when run directly

@@ -253,6 +253,21 @@ _REFERENCE_ANSWERS: dict[str, str] = {
         "If the tool's extracted_figures does not contain a clean EPS, agent quotes the "
         "relevant text passage from the press release instead of fabricating a figure."
     ),
+    "BQ-32": (
+        "Agent calls sec_edgar_resolve_synonym with input 'Google' (or 'google'). "
+        "Response states the canonical SEC registrant name: 'Alphabet Inc.' (or Alphabet). "
+        "Response includes the ticker symbol GOOGL (or GOOG). "
+        "No network calls to SEC EDGAR are required — this is a pure dict lookup. "
+        "Response does NOT fabricate a CIK or other details not in the synonym table."
+    ),
+    "BQ-33": (
+        "Agent calls sec_edgar_resolve_synonym with input 'Meta' to identify "
+        "the canonical name 'Meta Platforms, Inc.' and ticker META. "
+        "Agent then calls sec_edgar_resolve_company with identifier='META' or the CIK. "
+        "Response states: SIC code 7370 (or 7371/7372/similar internet/software code) "
+        "and state of incorporation Delaware (DE). "
+        "Values come from tool return values — not fabricated from memory."
+    ),
 }
 
 

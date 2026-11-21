@@ -23,6 +23,7 @@ from server import (
     sec_edgar_resolve_synonym,
     sec_edgar_get_filing_text,
     sec_edgar_full_text_search,
+    sec_edgar_screen,
     _strip_html,
     _find_section_offset,
     SEC_USER_AGENT,
@@ -858,10 +859,61 @@ async def test_full_text_search():
     check("fts limit=5: ≤ 5 results", len(r_lim.get("results", [])) <= 5, str(len(r_lim.get("results", []))))
 
 
+async def test_screen():
+    print("\n[19] sec_edgar_screen — exchange/SIC/state screening")
+
+    # -- No filters → error ---------------------------------------------------
+    r = await sec_edgar_screen()
+    check("screen no filters: returns error", "error" in r, str(r))
+
+    # -- Exchange-only (Strategy A: exchange cache) ----------------------------
+    r = await sec_edgar_screen(exchange="Nasdaq", limit=10)
+    check("screen Nasdaq: no error", "error" not in r, str(r.get("error", "")))
+    check("screen Nasdaq: results list", isinstance(r.get("results"), list), str(r))
+    check("screen Nasdaq: results non-empty", len(r.get("results", [])) > 0, str(len(r.get("results", []))))
+    check("screen Nasdaq: total_found > 0", r.get("total_found", 0) > 0, str(r.get("total_found")))
+    check("screen Nasdaq: filters reflect exchange", r.get("filters", {}).get("exchange") == "Nasdaq", str(r.get("filters")))
+    if r.get("results"):
+        first = r["results"][0]
+        check("screen Nasdaq result: has name", bool(first.get("name")), str(first))
+        check("screen Nasdaq result: has cik", bool(first.get("cik")), str(first))
+        check("screen Nasdaq result: exchange contains nasdaq (ci)",
+              "nasdaq" in first.get("exchange", "").lower(), str(first))
+
+    # -- NYSE + name filter (Strategy A) --------------------------------------
+    r_nyse = await sec_edgar_screen(exchange="NYSE", name_contains="bank", limit=5)
+    check("screen NYSE+bank: no error", "error" not in r_nyse, str(r_nyse.get("error", "")))
+    check("screen NYSE+bank: results ≤ 5", len(r_nyse.get("results", [])) <= 5, str(len(r_nyse.get("results", []))))
+
+    # -- SIC-only (Strategy B: EFTS) ------------------------------------------
+    r_sic = await sec_edgar_screen(sic_code="7372", limit=10)  # Prepackaged Software
+    check("screen SIC 7372: no error", "error" not in r_sic, str(r_sic.get("error", "")))
+    check("screen SIC 7372: results non-empty", len(r_sic.get("results", [])) > 0, str(len(r_sic.get("results", []))))
+    check("screen SIC 7372: total_found > 0", r_sic.get("total_found", 0) > 0, str(r_sic.get("total_found")))
+    if r_sic.get("results"):
+        first_sic = r_sic["results"][0]
+        check("screen SIC 7372 result: sic_code == 7372", first_sic.get("sic_code") == "7372", str(first_sic))
+        check("screen SIC 7372 result: has name", bool(first_sic.get("name")), str(first_sic))
+        check("screen SIC 7372 result: has cik", bool(first_sic.get("cik")), str(first_sic))
+
+    # -- State-only (Strategy B: EFTS) ----------------------------------------
+    r_state = await sec_edgar_screen(state_of_incorporation="DE", limit=10)
+    check("screen state=DE: no error", "error" not in r_state, str(r_state.get("error", "")))
+    check("screen state=DE: results non-empty", len(r_state.get("results", [])) > 0, str(len(r_state.get("results", []))))
+    if r_state.get("results"):
+        first_st = r_state["results"][0]
+        check("screen state=DE result: inc state is DE", first_st.get("state_of_incorporation") == "DE", str(first_st))
+
+    # -- limit clamping -------------------------------------------------------
+    r_lim = await sec_edgar_screen(exchange="Nasdaq", limit=200)
+    check("screen limit clamped to 100", len(r_lim.get("results", [])) <= 100, str(len(r_lim.get("results", []))))
+
+
 async def main():
     await test_synonym_tool()
     await test_filing_text()
     await test_full_text_search()
+    await test_screen()
     await test_aapl_net_income()
     await test_aapl_revenues_quarterly()
     await test_aapl_eps()

@@ -22,6 +22,7 @@ from __future__ import annotations
 import asyncio
 import re
 import time
+import xml.etree.ElementTree as ET
 from datetime import date, datetime, timedelta
 from typing import Annotated
 from urllib.parse import quote as _url_quote
@@ -43,6 +44,10 @@ _TICKER_CACHE: dict[str, dict] = {}
 # Secondary index keyed by zero-padded 10-digit CIK string
 _CIK_CACHE: dict[str, dict] = {}
 
+# Exchange cache: populated once per process lifetime from company_tickers_exchange.json.
+# Keys are uppercase tickers; values are {cik_str, name, ticker, exchange}.
+_EXCHANGE_CACHE: list[dict] = []
+
 # Revenue concept candidates, in fallback priority order.
 # When the requested concept is any of these, all candidates present in the
 # company's facts are evaluated; the one whose most-recent period_end is
@@ -57,7 +62,7 @@ REVENUE_CANDIDATES = [
 mcp = FastMCP(
     "sec_edgar_tools",
     instructions=(
-        "SEC EDGAR toolkit with eleven tools for authoritative SEC filing data.\n\n"
+        "SEC EDGAR toolkit with twelve tools for authoritative SEC filing data.\n\n"
         "TOOL SELECTION GUIDE:\n"
         "- Resolve a common nickname/alias to canonical name + ticker → sec_edgar_resolve_synonym\n"
         "- Find companies by partial name → sec_edgar_search_companies\n"
@@ -69,7 +74,8 @@ mcp = FastMCP(
         "- Look up a specific filing by accession number → sec_edgar_get_filing_metadata\n"
         "- Read narrative text from a filing document → sec_edgar_get_filing_text\n"
         "- Search EDGAR full-text for any keyword across all filings → sec_edgar_full_text_search\n"
-        "- Discover what XBRL concepts a company reports → sec_edgar_list_concepts\n\n"
+        "- Discover what XBRL concepts a company reports → sec_edgar_list_concepts\n"
+        "- Screen/discover companies by exchange, SIC industry code, or state → sec_edgar_screen\n\n"
         "No authentication required. All tools return dicts; errors include "
         "an 'error' key and a 'hint' key with recovery guidance."
     ),
@@ -193,6 +199,32 @@ async def _ensure_ticker_cache() -> None:
         }
         _TICKER_CACHE[ticker] = record
         _CIK_CACHE[padded_cik] = record
+
+
+async def _ensure_exchange_cache() -> None:
+    """Fetch company_tickers_exchange.json and populate _EXCHANGE_CACHE if empty."""
+    global _EXCHANGE_CACHE
+    if _EXCHANGE_CACHE:
+        return
+    resp = await _edgar_get(
+        "https://www.sec.gov/files/company_tickers_exchange.json",
+        headers=_make_headers(),
+    )
+    resp.raise_for_status()
+    data = resp.json()
+    fields = data.get("fields", [])  # ['cik', 'name', 'ticker', 'exchange']
+    cik_idx = fields.index("cik")
+    name_idx = fields.index("name")
+    ticker_idx = fields.index("ticker")
+    exchange_idx = fields.index("exchange")
+    for row in data.get("data", []):
+        padded_cik = f"{int(row[cik_idx]):010d}"
+        _EXCHANGE_CACHE.append({
+            "cik_str": padded_cik,
+            "name": row[name_idx],
+            "ticker": (row[ticker_idx] or "").upper(),
+            "exchange": row[exchange_idx] or "",
+        })
 
 
 # ---------------------------------------------------------------------------
@@ -2375,6 +2407,228 @@ async def sec_edgar_full_text_search(
 
     except (httpx.HTTPStatusError, httpx.RequestError) as exc:
         return {"error": str(exc), "hint": "EDGAR full-text search may be temporarily unavailable; try again shortly."}
+    except Exception as exc:
+        return {
+            "error": f"Unexpected error: {type(exc).__name__}: {exc}",
+            "hint": "Report this to the toolkit maintainer; do not retry with the same arguments.",
+        }
+
+
+# ---------------------------------------------------------------------------
+# Tool 12 — Screen / discover companies by exchange, SIC code, or state
+# ---------------------------------------------------------------------------
+
+@mcp.tool(
+    name="sec_edgar_screen",
+    annotations={
+        "title": "Screen Companies by Exchange, SIC Code, or State",
+        "readOnlyHint": True,
+        "destructiveHint": False,
+        "idempotentHint": True,
+        "openWorldHint": True,
+    },
+)
+async def sec_edgar_screen(
+    exchange: Annotated[str, (
+        "Stock exchange to filter by. Common values: 'Nasdaq', 'NYSE', 'NYSE MKT', 'NYSE Arca'. "
+        "Case-insensitive substring match, e.g. 'nasdaq' matches 'Nasdaq'. "
+        "Leave empty to include all exchanges."
+    )] = "",
+    sic_code: Annotated[str, (
+        "4-digit SIC (Standard Industrial Classification) code, e.g. '7372' for Prepackaged Software, "
+        "'3841' for Surgical Instruments, '6020' for State commercial banks. "
+        "Leave empty to include all industries."
+    )] = "",
+    state_of_incorporation: Annotated[str, (
+        "2-letter US state/territory code or country code for state of incorporation, "
+        "e.g. 'DE' for Delaware, 'CA' for California, 'NY' for New York. "
+        "Leave empty to include all states."
+    )] = "",
+    name_contains: Annotated[str, (
+        "Optional substring filter on company name, e.g. 'bank', 'pharma', 'technologies'. "
+        "Case-insensitive. Leave empty for no name filter."
+    )] = "",
+    limit: Annotated[int, "Maximum number of results to return (default 20, max 100)."] = 20,
+) -> dict:
+    """Discover companies listed on a specific exchange, in a specific SIC industry, or
+    incorporated in a specific state.  At least one filter must be supplied.
+
+    Examples:
+      exchange='Nasdaq', sic_code='7372'  → Nasdaq-listed prepackaged software companies
+      sic_code='3714'                     → motor vehicle parts manufacturers
+      exchange='NYSE', state_of_incorporation='DE'  → NYSE companies incorporated in Delaware
+      sic_code='6020', name_contains='bank'  → state commercial banks with 'bank' in name
+
+    SIC codes reference: https://www.sec.gov/info/edgar/siccodes.htm
+
+    Returns a dict with keys:
+      filters        — the applied filters (for confirmation)
+      total_found    — number of unique companies matched (before limit)
+      results        — list of up to `limit` companies, each with:
+                         name, ticker, cik, exchange, sic_code, state_of_incorporation
+    """
+    # Validate: at least one filter must be supplied
+    if not exchange.strip() and not sic_code.strip() and not state_of_incorporation.strip() and not name_contains.strip():
+        return {
+            "error": "At least one filter is required.",
+            "hint": "Provide at least one of: exchange, sic_code, state_of_incorporation, name_contains.",
+        }
+
+    limit = max(1, min(limit, 100))
+
+    exc_filter = exchange.strip().lower()
+    sic_filter = sic_code.strip()
+    state_filter = state_of_incorporation.strip().upper()
+    name_filter = name_contains.strip().lower()
+
+    try:
+        # ---------------------------------------------------------------
+        # Strategy A: exchange-only or exchange+name filters
+        # Use company_tickers_exchange.json (one cached HTTP call, no EFTS).
+        # ---------------------------------------------------------------
+        if exc_filter and not sic_filter and not state_filter:
+            await _ensure_exchange_cache()
+            matched: list[dict] = []
+            seen_ciks: set[str] = set()
+            for rec in _EXCHANGE_CACHE:
+                if exc_filter not in rec["exchange"].lower():
+                    continue
+                if name_filter and name_filter not in rec["name"].lower():
+                    continue
+                if rec["cik_str"] in seen_ciks:
+                    continue
+                seen_ciks.add(rec["cik_str"])
+                matched.append({
+                    "name": rec["name"],
+                    "ticker": rec["ticker"],
+                    "cik": rec["cik_str"],
+                    "exchange": rec["exchange"],
+                    "sic_code": "",
+                    "state_of_incorporation": "",
+                })
+
+            return {
+                "filters": {
+                    "exchange": exchange.strip(),
+                    "sic_code": "",
+                    "state_of_incorporation": "",
+                    "name_contains": name_contains.strip(),
+                },
+                "total_found": len(matched),
+                "results": matched[:limit],
+                "note": "SIC code and state_of_incorporation not available from exchange listing; use sic_code or state_of_incorporation filters separately to retrieve those fields.",
+            }
+
+        # ---------------------------------------------------------------
+        # Strategy B: SIC and/or state filters.
+        # Use the SEC browse-edgar CGI (Atom feed) which natively supports
+        # SIC= and State= query parameters and returns per-company records
+        # (not per-filing), so no deduplication is needed.
+        # ---------------------------------------------------------------
+        # browse-edgar only accepts specific count values; snap to nearest allowed.
+        ALLOWED_COUNTS = (10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 500)
+        cgi_count = min((c for c in ALLOWED_COUNTS if c >= limit), default=500)
+
+        cgi_params: dict[str, str] = {
+            "action": "getcompany",
+            "company": name_filter,   # SEC does case-insensitive substring match
+            "CIK": "",
+            "type": "10-K",
+            "dateb": "",
+            "owner": "include",
+            "count": str(cgi_count),
+            "search_text": "",
+            "output": "atom",
+        }
+        if sic_filter:
+            cgi_params["SIC"] = sic_filter
+        if state_filter:
+            cgi_params["State"] = state_filter
+
+        resp = await _edgar_get(
+            "https://www.sec.gov/cgi-bin/browse-edgar",
+            params=cgi_params,
+            headers=_make_headers(),
+        )
+        resp.raise_for_status()
+
+        # The CGI endpoint returns XML declared as ISO-8859-1 / latin-1.
+        # Decode the raw bytes as latin-1 and strip the encoding declaration
+        # so Python's ET parser does not reject it.
+        raw_text = resp.content.decode("latin-1")
+        raw_text = raw_text.replace(
+            '<?xml version="1.0" encoding="ISO-8859-1" ?>',
+            '<?xml version="1.0"?>',
+        )
+        root = ET.fromstring(raw_text)
+
+        # All elements in the response share the Atom namespace.
+        A = "http://www.w3.org/2005/Atom"
+
+        # Build exchange + ticker lookups from exchange cache (always load
+        # for ticker enrichment; also needed for exchange filtering).
+        await _ensure_exchange_cache()
+        exc_lookup: dict[str, str] = {}
+        ticker_lookup: dict[str, str] = {}
+        for rec in _EXCHANGE_CACHE:
+            exc_lookup[rec["cik_str"]] = rec["exchange"]
+            ticker_lookup[rec["cik_str"]] = rec["ticker"]
+
+        matched_b: list[dict] = []
+        for entry in root.findall(f"{{{A}}}entry"):
+            content = entry.find(f"{{{A}}}content")
+            if content is None:
+                continue
+            company_info = content.find(f"{{{A}}}company-info")
+            if company_info is None:
+                continue
+
+            cik_elem = company_info.find(f"{{{A}}}cik")
+            name_elem = company_info.find(f"{{{A}}}name")
+            sic_elem = company_info.find(f"{{{A}}}sic")
+            state_elem = company_info.find(f"{{{A}}}state")
+
+            if cik_elem is None or name_elem is None:
+                continue
+
+            cik_raw = (cik_elem.text or "").strip()
+            if not cik_raw:
+                continue
+            cik = f"{int(cik_raw):010d}"
+            company = (name_elem.text or "").strip()
+            sic_val = (sic_elem.text or "").strip() if sic_elem is not None else ""
+            state_val = (state_elem.text or "").strip() if state_elem is not None else ""
+
+            # Apply exchange filter via exchange cache
+            exch_val = exc_lookup.get(cik, "")
+            if exc_filter and exc_filter not in exch_val.lower():
+                continue
+
+            # Look up ticker from exchange cache
+            ticker = ticker_lookup.get(cik, "")
+
+            matched_b.append({
+                "name": company,
+                "ticker": ticker,
+                "cik": cik,
+                "exchange": exch_val,
+                "sic_code": sic_val,
+                "state_of_incorporation": state_val,
+            })
+
+        return {
+            "filters": {
+                "exchange": exchange.strip(),
+                "sic_code": sic_code.strip(),
+                "state_of_incorporation": state_of_incorporation.strip(),
+                "name_contains": name_contains.strip(),
+            },
+            "total_found": len(matched_b),
+            "results": matched_b[:limit],
+        }
+
+    except (httpx.HTTPStatusError, httpx.RequestError) as exc:
+        return {"error": str(exc), "hint": "EDGAR may be temporarily unavailable; try again shortly."}
     except Exception as exc:
         return {
             "error": f"Unexpected error: {type(exc).__name__}: {exc}",

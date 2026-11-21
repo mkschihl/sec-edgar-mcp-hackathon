@@ -62,7 +62,7 @@ REVENUE_CANDIDATES = [
 mcp = FastMCP(
     "sec_edgar_tools",
     instructions=(
-        "SEC EDGAR toolkit with twelve tools for authoritative SEC filing data.\n\n"
+        "SEC EDGAR toolkit with thirteen tools for authoritative SEC filing data.\n\n"
         "TOOL SELECTION GUIDE:\n"
         "- Resolve a common nickname/alias to canonical name + ticker → sec_edgar_resolve_synonym\n"
         "- Find companies by partial name → sec_edgar_search_companies\n"
@@ -75,7 +75,8 @@ mcp = FastMCP(
         "- Read narrative text from a filing document → sec_edgar_get_filing_text\n"
         "- Search EDGAR full-text for any keyword across all filings → sec_edgar_full_text_search\n"
         "- Discover what XBRL concepts a company reports → sec_edgar_list_concepts\n"
-        "- Screen/discover companies by exchange, SIC industry code, or state → sec_edgar_screen\n\n"
+        "- Screen/discover companies by exchange, SIC industry code, or state → sec_edgar_screen\n"
+        "- Fetch the 8-K earnings press release for a company → sec_edgar_get_earnings_release\n\n"
         "No authentication required. All tools return dicts; errors include "
         "an 'error' key and a 'hint' key with recovery guidance."
     ),
@@ -2625,6 +2626,241 @@ async def sec_edgar_screen(
             },
             "total_found": len(matched_b),
             "results": matched_b[:limit],
+        }
+
+    except (httpx.HTTPStatusError, httpx.RequestError) as exc:
+        return {"error": str(exc), "hint": "EDGAR may be temporarily unavailable; try again shortly."}
+    except Exception as exc:
+        return {
+            "error": f"Unexpected error: {type(exc).__name__}: {exc}",
+            "hint": "Report this to the toolkit maintainer; do not retry with the same arguments.",
+        }
+
+
+# ---------------------------------------------------------------------------
+# Tool 13 — Fetch 8-K earnings press release text and extract key figures
+# ---------------------------------------------------------------------------
+
+# Regex patterns for extracting EPS and revenue from press release text.
+# These are intentionally broad to capture the many ways companies phrase
+# EPS/revenue headlines (GAAP, non-GAAP, diluted, basic, quarterly, annual).
+
+_EPS_RE = re.compile(
+    r"(?:diluted\s+)?(?:earnings|(?:loss|income)\s+(?:per\s+)?(?:share|ADS))[^$\n]*"
+    r"(?:was|were|of|at)\s+"
+    r"(?:\(?(?:loss|deficit)\)?\s*)?"
+    r"\$\s*([\d,]+(?:\.\d{1,4})?)",
+    re.IGNORECASE,
+)
+
+_REVENUE_RE = re.compile(
+    r"(?:net\s+)?(?:revenue|sales|net\s+sales)[^$\n]*"
+    r"(?:was|were|of|reached|totaled?|amounted?\s+to)\s+"
+    r"\$\s*([\d,]+(?:\.\d{1,2})?)\s*(billion|million|thousand|B|M)?",
+    re.IGNORECASE,
+)
+
+
+def _extract_earnings_figures(text: str) -> dict:
+    """Extract EPS and revenue mentions from press release plain text.
+
+    Returns:
+      eps_mentions     — list of raw EPS strings found in text (up to 5)
+      revenue_mentions — list of raw revenue strings found in text (up to 5)
+    """
+    eps_hits: list[str] = []
+    for m in _EPS_RE.finditer(text):
+        snippet = text[max(0, m.start() - 20):m.end() + 10].strip()
+        eps_hits.append(snippet)
+        if len(eps_hits) >= 5:
+            break
+
+    rev_hits: list[str] = []
+    for m in _REVENUE_RE.finditer(text):
+        snippet = text[max(0, m.start() - 10):m.end() + 20].strip()
+        rev_hits.append(snippet)
+        if len(rev_hits) >= 5:
+            break
+
+    return {"eps_mentions": eps_hits, "revenue_mentions": rev_hits}
+
+
+@mcp.tool(
+    name="sec_edgar_get_earnings_release",
+    annotations={
+        "title": "Get 8-K Earnings Press Release",
+        "readOnlyHint": True,
+        "destructiveHint": False,
+        "idempotentHint": True,
+        "openWorldHint": True,
+    },
+)
+async def sec_edgar_get_earnings_release(
+    identifier: Annotated[str, "Company ticker or CIK, e.g. 'AAPL', 'MSFT', or '0000320193'."],
+    period: Annotated[str, (
+        "Optional period-of-report date (YYYY-MM-DD) to target a specific earnings release, "
+        "e.g. '2026-09-26' for Apple's FY2026 Q4. Leave empty to fetch the most recent "
+        "8-K earnings release."
+    )] = "",
+    max_chars: Annotated[int, (
+        "Maximum characters of press release text to return (default 10000, max 32000)."
+    )] = 10000,
+) -> dict:
+    """Fetch the earnings press release (EX-99.1 exhibit) from a company's most recent
+    8-K filing that reports Results of Operations (Item 2.02).
+
+    Use this tool to:
+      - Get the actual reported EPS and revenue figures announced by management
+      - Cross-check Q4 derived values from sec_edgar_get_quarterly_facts
+      - Read the narrative context around earnings announcements
+
+    The tool locates the EX-99.1 (or equivalent) press release document in the
+    8-K filing index, fetches its HTML, strips tags, and returns plain text.
+    It also runs a lightweight regex pass to extract EPS and revenue mentions.
+
+    Returns a dict with keys:
+      company                — company name
+      cik                    — zero-padded 10-digit CIK
+      accession_number       — dashed accession number of the 8-K
+      filing_date            — YYYY-MM-DD date the 8-K was filed
+      period_of_report       — period covered by the 8-K
+      press_release_document — filename of the press release document
+      press_release_url      — direct URL to the press release on EDGAR
+      text                   — extracted plain text (up to max_chars characters)
+      truncated              — true if the document was longer than max_chars
+      extracted_figures      — {eps_mentions: [...], revenue_mentions: [...]}
+
+    On failure returns {"error": "...", "hint": "..."}.
+    """
+    max_chars = max(100, min(max_chars, _FILING_TEXT_MAX_CHARS))
+
+    try:
+        resolved = await _resolve_identifier(identifier)
+        if isinstance(resolved, dict):
+            return resolved
+        padded_cik, _ = resolved
+
+        sub = await _fetch_submission(padded_cik)
+        company_name = sub.get("name", identifier)
+        numeric_cik = str(int(padded_cik))
+
+        recent = sub.get("filings", {}).get("recent", {})
+        forms = recent.get("form", [])
+        items_list = recent.get("items", [])
+        accessions = recent.get("accessionNumber", [])
+        filing_dates = recent.get("filingDate", [])
+        report_dates = recent.get("reportDate", [])
+
+        # Find the 8-K that reports Item 2.02 (Results of Operations),
+        # optionally filtered to a specific period of report.
+        target_idx: int | None = None
+        for i, (f, item_str) in enumerate(zip(forms, items_list)):
+            if f != "8-K":
+                continue
+            if "2.02" not in item_str:
+                continue
+            if period.strip():
+                # Earnings releases are filed 2–8 weeks after fiscal period end.
+                # Match against the filing date within a ±100-day window of the
+                # requested period.  reportDate on 8-Ks is usually the filing
+                # date, not the fiscal period end, so we check filing_date.
+                f_date = filing_dates[i] if i < len(filing_dates) else ""
+                if not f_date:
+                    continue
+                if _days_between(f_date, period.strip()) > 100:
+                    continue
+            target_idx = i
+            break
+
+        if target_idx is None:
+            if period.strip():
+                return {
+                    "error": f"No 8-K earnings release found for period near {period.strip()}.",
+                    "hint": "Check the period date format (YYYY-MM-DD) or try a nearby date. "
+                            "Use sec_edgar_get_recent_filings to list available 8-K filings.",
+                }
+            return {
+                "error": "No 8-K earnings release (Item 2.02) found.",
+                "hint": "This company may not file earnings press releases as 8-K Item 2.02. "
+                        "Try sec_edgar_get_recent_filings to browse recent 8-K filings.",
+            }
+
+        accession_dashed = _normalize_accession(accessions[target_idx])
+        accession_path = _accession_to_path(accession_dashed)
+        filing_date = filing_dates[target_idx] if target_idx < len(filing_dates) else ""
+        period_of_report = report_dates[target_idx] if target_idx < len(report_dates) else ""
+        base_url = f"https://www.sec.gov/Archives/edgar/data/{numeric_cik}/{accession_path}"
+
+        # Fetch the filing index to locate the press release document
+        index_resp = await _edgar_get(f"{base_url}/index.json", headers=_make_headers())
+        index_resp.raise_for_status()
+        index_items = index_resp.json().get("directory", {}).get("item", [])
+
+        # Identify the press release document:
+        # 1. First choice: filename containing 'ex' followed by '99' (EX-99.1 / EX-99)
+        # 2. Second choice: largest HTML file excluding the primary 8-K document
+        primary_doc_name = (
+            recent.get("primaryDocument", [])[target_idx]
+            if target_idx < len(recent.get("primaryDocument", []))
+            else ""
+        )
+
+        htm_items = [
+            it for it in index_items
+            if it.get("name", "").lower().endswith((".htm", ".html"))
+            and it.get("name", "") != primary_doc_name
+            and "index" not in it.get("name", "").lower()
+        ]
+
+        press_release_doc = ""
+
+        # 1. EX-99 filename heuristic
+        ex99_pattern = re.compile(r"ex.?99", re.IGNORECASE)
+        for it in htm_items:
+            if ex99_pattern.search(it.get("name", "")):
+                press_release_doc = it["name"]
+                break
+
+        # 2. Fallback: largest HTML file (press releases are typically the largest)
+        if not press_release_doc and htm_items:
+            def _size_key(it: dict) -> int:
+                try:
+                    return int(it.get("size", 0) or 0)
+                except (ValueError, TypeError):
+                    return 0
+            largest = max(htm_items, key=_size_key)
+            if _size_key(largest) > 5000:  # at least 5 KB
+                press_release_doc = largest["name"]
+
+        if not press_release_doc:
+            return {
+                "error": "Could not identify the press release document in this 8-K filing.",
+                "hint": f"Check the filing index manually at {base_url}/",
+                "accession_number": accession_dashed,
+                "filing_date": filing_date,
+            }
+
+        doc_url = f"{base_url}/{press_release_doc}"
+        doc_resp = await _edgar_get(doc_url, headers=_make_headers())
+        doc_resp.raise_for_status()
+
+        text_full = _strip_html(doc_resp.text)
+        truncated = len(text_full) > max_chars
+        text_out = text_full[:max_chars]
+
+        figures = _extract_earnings_figures(text_full[:20000])  # parse first 20k for figures
+
+        return {
+            "company": company_name,
+            "cik": padded_cik,
+            "accession_number": accession_dashed,
+            "filing_date": filing_date,
+            "period_of_report": period_of_report,
+            "press_release_document": press_release_doc,
+            "press_release_url": doc_url,
+            "text": text_out,
+            "truncated": truncated,
+            "extracted_figures": figures,
         }
 
     except (httpx.HTTPStatusError, httpx.RequestError) as exc:

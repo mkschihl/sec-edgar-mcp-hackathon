@@ -24,6 +24,7 @@ from server import (
     sec_edgar_get_filing_text,
     sec_edgar_full_text_search,
     sec_edgar_screen,
+    sec_edgar_get_earnings_release,
     _strip_html,
     _find_section_offset,
     SEC_USER_AGENT,
@@ -909,11 +910,72 @@ async def test_screen():
     check("screen limit clamped to 100", len(r_lim.get("results", [])) <= 100, str(len(r_lim.get("results", []))))
 
 
+async def test_earnings_release():
+    print("\n[20] sec_edgar_get_earnings_release — AAPL, MSFT, NVDA press releases")
+
+    # -- AAPL most recent earnings release ------------------------------------
+    r = await sec_edgar_get_earnings_release("AAPL")
+    check("earnings AAPL: no error", "error" not in r, str(r.get("error", "")))
+    check("earnings AAPL: company contains Apple", "Apple" in r.get("company", ""), str(r.get("company")))
+    check("earnings AAPL: cik is AAPL CIK", r.get("cik") == "0000320193", str(r.get("cik")))
+    check("earnings AAPL: accession_number present", bool(r.get("accession_number")), str(r))
+    check("earnings AAPL: filing_date present", bool(r.get("filing_date")), str(r))
+    check("earnings AAPL: period_of_report present", bool(r.get("period_of_report")), str(r))
+    check("earnings AAPL: press_release_document present", bool(r.get("press_release_document")), str(r))
+    check("earnings AAPL: press_release_url is https", r.get("press_release_url", "").startswith("https://"), str(r))
+    check("earnings AAPL: text non-empty", len(r.get("text", "")) > 100, str(len(r.get("text", ""))))
+    check("earnings AAPL: truncated key present", "truncated" in r, str(r))
+    check("earnings AAPL: extracted_figures key present", "extracted_figures" in r, str(r))
+    if "extracted_figures" in r:
+        ef = r["extracted_figures"]
+        check("earnings AAPL: extracted_figures has eps_mentions", "eps_mentions" in ef, str(ef))
+        check("earnings AAPL: extracted_figures has revenue_mentions", "revenue_mentions" in ef, str(ef))
+        # Apple press releases are well-structured; should find at least some revenue mention
+        check("earnings AAPL: at least one revenue mention found",
+              len(ef.get("revenue_mentions", [])) > 0, str(ef.get("revenue_mentions")))
+
+    # -- MSFT earnings release ------------------------------------------------
+    r_msft = await sec_edgar_get_earnings_release("MSFT")
+    check("earnings MSFT: no error", "error" not in r_msft, str(r_msft.get("error", "")))
+    check("earnings MSFT: company contains Microsoft (ci)",
+          "microsoft" in r_msft.get("company", "").lower(), str(r_msft.get("company")))
+    check("earnings MSFT: press_release_url is https",
+          r_msft.get("press_release_url", "").startswith("https://"), str(r_msft))
+    check("earnings MSFT: text non-empty", len(r_msft.get("text", "")) > 100,
+          str(len(r_msft.get("text", ""))))
+
+    # -- NVDA earnings release (uses largest-file fallback, no ex99 in filename) --
+    r_nvda = await sec_edgar_get_earnings_release("NVDA")
+    check("earnings NVDA: no error", "error" not in r_nvda, str(r_nvda.get("error", "")))
+    check("earnings NVDA: text non-empty", len(r_nvda.get("text", "")) > 100,
+          str(len(r_nvda.get("text", ""))))
+
+    # -- max_chars clamping ---------------------------------------------------
+    r_short = await sec_edgar_get_earnings_release("AAPL", max_chars=500)
+    check("earnings max_chars=500: text ≤ 500 chars",
+          len(r_short.get("text", "")) <= 500, str(len(r_short.get("text", ""))))
+
+    # -- No earnings release found (bad ticker) --------------------------------
+    r_bad = await sec_edgar_get_earnings_release("XXXXXXXXBADTICKER")
+    check("earnings bad ticker: returns error", "error" in r_bad, str(r_bad))
+
+    # -- period filter --------------------------------------------------------
+    # Apple FY2026 Q4 ended 2026-09-26
+    r_period = await sec_edgar_get_earnings_release("AAPL", period="2026-09-26")
+    check("earnings AAPL period filter: no error",
+          "error" not in r_period, str(r_period.get("error", "")))
+    check("earnings AAPL period filter: period_of_report near 2026-09-26",
+          abs(len(r_period.get("period_of_report", "")) - len("2026-09-26")) == 0 or
+          "2026" in r_period.get("period_of_report", ""),
+          str(r_period.get("period_of_report")))
+
+
 async def main():
     await test_synonym_tool()
     await test_filing_text()
     await test_full_text_search()
     await test_screen()
+    await test_earnings_release()
     await test_aapl_net_income()
     await test_aapl_revenues_quarterly()
     await test_aapl_eps()

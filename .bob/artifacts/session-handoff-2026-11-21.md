@@ -113,13 +113,12 @@ Key facts:
 
 ### Phoenix dataset state
 
-- `sec-edgar-eval-2` in Phoenix: **31 rows** (uploaded session 8; BQ-32/33 not yet added)
-- Local CSV at `eval/phoenix/datasets/sec-edgar-eval-2/examples/sec-edgar-eval-2.csv`: **31 rows** (stale — missing BQ-32/33)
-- **Before next Phoenix run**: rebuild CSV and re-upload:
-  ```bash
-  cd eval/phoenix && python build_dataset.py
-  python create_dataset.py --dataset-name sec-edgar-eval-2
-  ```
+- `sec-edgar-eval-2` in Phoenix: **33 rows** (re-uploaded end of session 10 ✅)
+- Local CSV at `eval/phoenix/datasets/sec-edgar-eval-2/examples/sec-edgar-eval-2.csv`: **33 rows** ✅
+- **Experiment 15** (`RXhwZXJpbWVudDoxNQ==`) started end of session 10 — 30/33 tasks completed
+  (3 multi-tool tasks hit watsonx.ai single-tool-call limit and recorded as errors — normal)
+  - View: http://localhost:6006/datasets/RGF0YXNldDoz/compare?experimentId=RXhwZXJpbWVudDoxNQ==
+  - Judges (correctness/scope/numeric) run after tasks complete; check Phoenix UI on next session start
 
 ---
 

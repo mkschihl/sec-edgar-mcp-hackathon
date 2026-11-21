@@ -205,6 +205,32 @@ _REFERENCE_ANSWERS: dict[str, str] = {
         "If no results, agent clearly states no matching filings were found. "
         "No results are fabricated."
     ),
+    "BQ-28": (
+        "Agent calls sec_edgar_screen with sic_code='7372' and exchange='Nasdaq'. "
+        "Response lists at least 5 Nasdaq-listed prepackaged software companies "
+        "with their names, tickers, and CIKs. "
+        "Companies are drawn from the tool's results — not fabricated from memory."
+    ),
+    "BQ-29": (
+        "Agent calls sec_edgar_screen with sic_code='2836' and state_of_incorporation='DE'. "
+        "Response lists at least 5 pharmaceutical companies (SIC 2836) incorporated in Delaware. "
+        "Companies are drawn from the tool's results — not fabricated from memory."
+    ),
+    "BQ-30": (
+        "Agent calls sec_edgar_get_earnings_release for Apple (AAPL). "
+        "Response includes the press_release_url pointing to sec.gov. "
+        "Response states the most recently reported quarterly revenue figure "
+        "(e.g. '$114.5 billion' or similar for the latest quarter). "
+        "Response states the most recently reported diluted EPS figure. "
+        "Figures are drawn from the tool's response — not fabricated from memory."
+    ),
+    "BQ-31": (
+        "Agent calls sec_edgar_get_earnings_release for NVIDIA (NVDA). "
+        "Response includes the press_release_url pointing to sec.gov. "
+        "Response states the reported diluted EPS for the most recent quarter. "
+        "If the tool's extracted_figures does not contain a clean EPS, agent quotes the "
+        "relevant text passage from the press release instead of fabricating a figure."
+    ),
 }
 
 

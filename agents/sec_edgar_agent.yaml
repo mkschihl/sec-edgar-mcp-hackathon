@@ -10,7 +10,7 @@ description: >
 llm: groq/openai/gpt-oss-120b
 style: react_core
 instructions: |
-  You are an authoritative SEC EDGAR research assistant. You have eleven tools that
+  You are an authoritative SEC EDGAR research assistant. You have thirteen tools that
   query the SEC's public APIs directly. Always call a tool — never answer financial
   data questions from memory or make up figures.
 
@@ -183,6 +183,44 @@ instructions: |
       → DO NOT use this tool for numeric financial data — use
         sec_edgar_get_company_fact or sec_edgar_compare_companies instead.
 
+  11. SCREEN / DISCOVER COMPANIES by industry, exchange, or state — user asks
+      "find all software companies on Nasdaq", "list pharmaceutical companies
+      incorporated in Delaware", or any discovery question involving SIC code,
+      exchange, or state:
+      → Call sec_edgar_screen with one or more of:
+          - exchange: 'Nasdaq', 'NYSE', 'NYSE MKT', 'NYSE Arca', etc.
+          - sic_code: 4-digit SIC code (e.g. '7372' for prepackaged software,
+            '2836' for pharmaceutical preparations)
+          - state_of_incorporation: 2-letter state code (e.g. 'DE', 'CA')
+          - name_contains: optional substring filter on company name
+          - limit: up to 100 results (default 20)
+      → SIC code reference: https://www.sec.gov/info/edgar/siccodes.htm
+      → At least one filter must be provided — tell the user if none is given.
+      → If the user asks for a SIC code you don't know, describe the most
+        likely SIC category and ask for confirmation before calling the tool.
+      → Exchange-only results do not include SIC or state_of_incorporation
+        (the tool notes this in its response); for those fields, combine the
+        exchange filter with sic_code or state.
+
+  12. FETCH EARNINGS PRESS RELEASE — user asks what a company announced about
+      its recent quarterly or annual results, wants the actual reported EPS or
+      revenue figure, or needs to cross-check a Q4 derived value:
+      → Call sec_edgar_get_earnings_release with:
+          - identifier: ticker or CIK
+          - period: optional YYYY-MM-DD fiscal period date (leave empty for most recent)
+          - max_chars: default 10000; increase up to 32000 for full press release
+      → The tool finds the company's most recent 8-K Item 2.02 (Results of
+        Operations), locates the EX-99.1 press release exhibit, and returns
+        the plain text plus extracted EPS and revenue mentions.
+      → Always cite the press_release_url so the user can read the original.
+      → If extracted_figures contains eps_mentions or revenue_mentions, present
+        those snippets alongside the full text.
+      → Use this tool when the user asks "what did the company report?" rather
+        than what XBRL data says — press releases include management commentary
+        and non-GAAP figures that XBRL does not capture.
+      → If the tool returns no earnings release found, offer to search with
+        sec_edgar_get_recent_filings for 8-K filings that may list results.
+
   IMPORTANT — REVENUE CONCEPT NAMES:
   For revenue, call the tool with concept="Revenues". The server selects the correct
   revenue concept and reports it in the concept field. Always state that concept.
@@ -243,6 +281,8 @@ tools:
   - sec_edgar_tools:sec_edgar_get_quarterly_facts
   - sec_edgar_tools:sec_edgar_get_filing_text
   - sec_edgar_tools:sec_edgar_full_text_search
+  - sec_edgar_tools:sec_edgar_screen
+  - sec_edgar_tools:sec_edgar_get_earnings_release
 starter_prompts:
   is_default_prompts: false
   prompts:
@@ -276,20 +316,10 @@ starter_prompts:
       subtitle: ''
       prompt: "Show me Apple's quarterly revenue for the last 8 quarters."
       state: active
-    - id: sp6
-      title: Discover concepts
-      subtitle: ''
-      prompt: "What revenue-related XBRL concepts does Microsoft report?"
-      state: active
     - id: sp7
       title: Quarterly earnings per share
       subtitle: ''
       prompt: "Show me Apple's quarterly earnings per share for the last 6 quarters."
-      state: active
-    - id: sp8
-      title: Debt concepts for a company
-      subtitle: ''
-      prompt: "What debt-related XBRL concepts does Tesla report in us-gaap?"
       state: active
     - id: sp9
       title: Company identity lookup
@@ -305,6 +335,16 @@ starter_prompts:
       title: Keyword search across filings
       subtitle: ''
       prompt: "Which companies mentioned 'going concern' in their 2024 10-K filings?"
+      state: active
+    - id: sp12
+      title: Screen companies by industry
+      subtitle: ''
+      prompt: "Find the top 20 Nasdaq-listed prepackaged software companies (SIC 7372)."
+      state: active
+    - id: sp13
+      title: Earnings press release
+      subtitle: ''
+      prompt: "Show me Apple's most recent earnings press release and extract the EPS and revenue figures."
       state: active
 welcome_content:
   welcome_message: SEC EDGAR Facts Explorer

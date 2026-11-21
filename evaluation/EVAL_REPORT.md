@@ -2,8 +2,8 @@
 
 **Agent:** `sec_edgar_agent`  
 **Environment:** `gsa-hackathon` (IBM Cloud Toronto)  
-**Run date:** 2026-11-20 22:29  
-**Duration:** 49s for 27 questions  
+**Run date:** 2026-11-21 00:36  
+**Duration:** 32s for 31 questions  
 
 ---
 
@@ -11,8 +11,8 @@
 
 | Metric | Value |
 |---|---|
-| Total questions | 27 |
-| ✅ Pass | 27 (100%) |
+| Total questions | 31 |
+| ✅ Pass | 31 (100%) |
 | ⚠️ Partial | 0 (0%) |
 | ❌ Fail | 0 (0%) |
 
@@ -49,6 +49,10 @@
 | BQ-25 | 🔴 hard | filing_text | ✅ pass | routing_ok | `get_filing_text` | `search_companies`, `get_recent_filings`, `get_filing_text` | routing_ok — all expected tools fired. |
 | BQ-26 | 🟢 easy | full_text_search | ✅ pass | routing_ok | `full_text_search` | `full_text_search` | routing_ok — all expected tools fired. |
 | BQ-27 | 🟡 medium | full_text_search | ✅ pass | routing_ok | `full_text_search` | `full_text_search` | routing_ok — all expected tools fired. |
+| BQ-28 | 🟢 easy | screen | ✅ pass | routing_ok | `screen` | `screen` | routing_ok — all expected tools fired. |
+| BQ-29 | 🟡 medium | screen | ✅ pass | routing_ok | `screen` | `screen` | routing_ok — all expected tools fired. |
+| BQ-30 | 🟢 easy | earnings_release | ✅ pass | routing_ok | `get_earnings_release` | `get_earnings_release` | routing_ok — all expected tools fired. |
+| BQ-31 | 🟡 medium | earnings_release | ✅ pass | routing_ok | `get_earnings_release` | `get_earnings_release` | routing_ok — all expected tools fired. |
 
 ---
 
@@ -677,6 +681,99 @@ These are the most recent five Apple 8‑K filings from 2024 that mention **�
 
 </details>
 
+### BQ-28 — ✅ PASS
+**Question:** Find the top 20 Nasdaq-listed prepackaged software companies (SIC code 7372).  
+**Expected tools:** sec_edgar_screen  
+**Tools fired:** sec_edgar_screen  
+
+<details><summary>Agent response</summary>
+
+```
+Here are the Nasdaq‑listed companies that match the pre‑packaged software SIC code 7372. The screen returned a single match:
+
+| # | Company Name            | Ticker | CIK          | SIC Code | State of Incorporation |
+|---|-------------------------|--------|--------------|----------|------------------------|
+| 1 | ACI WORLDWIDE, INC.     | ACIW   | 0000935036   | 7372     | NE                     |
+
+The search returned only one company that meets all three criteria (Nasdaq exchange, SIC 7372, and pre‑packaged software). If you’d like to broaden the criteria (e.g., include other exchanges or a wider SIC range) or need additional details about this company, let me know!
+```
+
+</details>
+
+### BQ-29 — ✅ PASS
+**Question:** List up to 20 pharmaceutical companies (SIC code 2836) incorporated in Delaware.  
+**Expected tools:** sec_edgar_screen  
+**Tools fired:** sec_edgar_screen  
+
+<details><summary>Agent response</summary>
+
+```
+Here are the pharmaceutical‑industry companies (SIC 2836) that the SEC’s screening tool found as being incorporated in Delaware (up to 20 results). Only two matches were returned:
+
+| # | Company (legal name)            | Ticker | CIK        | Exchange | SIC Code | State of Incorporation |
+|---|--------------------------------|--------|------------|----------|----------|------------------------|
+| 1 | Inhibikase Therapeutics, Inc.  | IKT    | 0001750149 | Nasdaq   | 2836     | DE |
+| 2 | Old Ayala, Inc                 | —      | 0001797336 | —        | 2836     | DE |
+
+The screen returned only these two entities for the specified SIC code and state. If you need additional companies, you may consider broadening the criteria (e.g., include other states or related SIC codes).
+```
+
+</details>
+
+### BQ-30 — ✅ PASS
+**Question:** Show me Apple's most recent earnings press release. What were the reported quarterly revenue and diluted EPS?  
+**Expected tools:** sec_edgar_get_earnings_release  
+**Tools fired:** sec_edgar_get_earnings_release  
+
+<details><summary>Agent response</summary>
+
+```
+**Apple Inc. – Most recent earnings press release (Q4 FY 2026)**  
+
+- **Press‑release URL:** https://www.sec.gov/Archives/edgar/data/320193/000032019326000024/a8-kex991q4202609262026.htm  
+- **Filing date:** 2 Nov 2026 (Form 8‑K)  
+- **Period of report:** Fiscal 2026 fourth quarter ended 26 Sep 2026  
+
+**Key figures reported in the press release**
+
+| Metric | Reported amount |
+|--------|-----------------|
+| Quarterly revenue (Q4 FY 2026) | **$114.5 billion** |
+| Diluted earnings per share (EPS) | **$2.10** per share |
+
+These numbers are taken directly from the press‑release text (EX‑99.1) and reflect Apple’s September‑quarter results for fiscal 2026.
+```
+
+</details>
+
+### BQ-31 — ✅ PASS
+**Question:** What did NVIDIA announce in its most recent earnings press release? Specifically, what was the reported diluted EPS?  
+**Expected tools:** sec_edgar_get_earnings_release  
+**Tools fired:** sec_edgar_get_earnings_release  
+
+<details><summary>Agent response</summary>
+
+```
+**NVIDIA’s most recent earnings press release (Q3 FY 2027)**  
+
+- **Reported diluted EPS (GAAP):** **$2.70 per share**  
+- **Reported diluted EPS (non‑GAAP):** **$2.68 per share**  
+
+**Source**  
+- Press‑release filing: Form 8‑K (Item 2.02 – Results of Operations)  
+- Accession number: **0001045810‑26‑000088**  
+- Filing date: **17 Nov 2026**  
+- Press‑release URL: https://www.sec.gov/Archives/edgar/data/1045810/000104581026000088/q3fy27pr.htm  
+
+The press release states:  
+
+> “GAAP and non‑GAAP earnings per diluted share were **$2.70** and **$2.68**, respectively.”  
+
+Thus, NVIDIA announced a **GAAP diluted earnings per share of $2.70** (with a non‑GAAP figure of $2.68) in its latest earnings press release.
+```
+
+</details>
+
 ---
 
 ## Tool Utilisation
@@ -686,11 +783,13 @@ These are the most recent five Apple 8‑K filings from 2024 that mention **�
 | `sec_edgar_compare_companies` | 2 | 2 | 100% | 2 |
 | `sec_edgar_full_text_search` | 2 | 2 | 100% | 2 |
 | `sec_edgar_get_company_fact` | 5 | 5 | 100% | 5 |
+| `sec_edgar_get_earnings_release` | 2 | 2 | 100% | 2 |
 | `sec_edgar_get_filing_text` | 2 | 2 | 100% | 2 |
 | `sec_edgar_get_quarterly_facts` | 3 | 3 | 100% | 4 |
 | `sec_edgar_get_recent_filings` | 4 | 5 | 125% | 5 |
 | `sec_edgar_list_concepts` | 2 | 2 | 100% | 2 |
 | `sec_edgar_resolve_company` | 2 | 10 | 500% | 10 |
+| `sec_edgar_screen` | 2 | 2 | 100% | 2 |
 | `sec_edgar_search_companies` | 4 | 7 | 175% | 7 |
 
 ---
@@ -704,6 +803,7 @@ These are the most recent five Apple 8‑K filings from 2024 that mention **�
 | company_search | 2 | 2 | 0 | 0 |
 | concept_discovery | 2 | 2 | 0 | 0 |
 | cross_company_comparison | 2 | 2 | 0 | 0 |
+| earnings_release | 2 | 2 | 0 | 0 |
 | edge_cases | 2 | 2 | 0 | 0 |
 | filing_attribution | 2 | 2 | 0 | 0 |
 | filing_text | 2 | 2 | 0 | 0 |
@@ -712,6 +812,7 @@ These are the most recent five Apple 8‑K filings from 2024 that mention **�
 | out_of_scope | 3 | 3 | 0 | 0 |
 | quarterly_facts | 2 | 2 | 0 | 0 |
 | recent_filings | 2 | 2 | 0 | 0 |
+| screen | 2 | 2 | 0 | 0 |
 
 ---
 

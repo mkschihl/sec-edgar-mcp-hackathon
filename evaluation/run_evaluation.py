@@ -226,6 +226,8 @@ ALL_TOOL_NAMES = [
     "sec_edgar_resolve_synonym",
     "sec_edgar_get_filing_text",
     "sec_edgar_full_text_search",
+    "sec_edgar_screen",
+    "sec_edgar_get_earnings_release",
 ]
 
 REFUSAL_PATTERNS = [

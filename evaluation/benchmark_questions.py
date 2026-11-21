@@ -511,6 +511,81 @@ BENCHMARK_QUESTIONS = [
         ),
         "numeric_checks": None,
     },
+    # ------------------------------------------------------------------
+    # Category 14 — Company screening (sec_edgar_screen)
+    # ------------------------------------------------------------------
+    {
+        "id": "BQ-28",
+        "category": "screen",
+        "difficulty": "easy",
+        "question": (
+            "Find the top 20 Nasdaq-listed prepackaged software companies (SIC code 7372)."
+        ),
+        "expected_tools": ["sec_edgar_screen"],
+        "pass_criteria": (
+            "Agent calls sec_edgar_screen with sic_code='7372' and exchange='Nasdaq' (or similar); "
+            "response lists at least 5 companies with name, ticker, and CIK; "
+            "results contain known Nasdaq software companies (e.g. MSFT, AAPL is not SIC 7372 — "
+            "agent should report actual results from the tool, not fabricate); "
+            "agent does NOT fabricate company names."
+        ),
+        "numeric_checks": None,
+    },
+    {
+        "id": "BQ-29",
+        "category": "screen",
+        "difficulty": "medium",
+        "question": (
+            "List up to 20 pharmaceutical companies (SIC code 2836) incorporated in Delaware."
+        ),
+        "expected_tools": ["sec_edgar_screen"],
+        "pass_criteria": (
+            "Agent calls sec_edgar_screen with sic_code='2836' and state_of_incorporation='DE'; "
+            "response lists at least 5 companies; "
+            "results show companies with sic_code='2836' and state_of_incorporation='DE'; "
+            "agent does NOT fabricate company names."
+        ),
+        "numeric_checks": None,
+    },
+    # ------------------------------------------------------------------
+    # Category 15 — 8-K earnings press release (sec_edgar_get_earnings_release)
+    # ------------------------------------------------------------------
+    {
+        "id": "BQ-30",
+        "category": "earnings_release",
+        "difficulty": "easy",
+        "question": (
+            "Show me Apple's most recent earnings press release. "
+            "What were the reported quarterly revenue and diluted EPS?"
+        ),
+        "expected_tools": ["sec_edgar_get_earnings_release"],
+        "pass_criteria": (
+            "Agent calls sec_edgar_get_earnings_release with identifier='AAPL' (or '0000320193'); "
+            "response includes the press_release_url; "
+            "response states the reported quarterly revenue figure (in dollars); "
+            "response states the diluted EPS figure (in dollars per share); "
+            "figures come from the tool's extracted_figures or text — not fabricated."
+        ),
+        "numeric_checks": None,
+    },
+    {
+        "id": "BQ-31",
+        "category": "earnings_release",
+        "difficulty": "medium",
+        "question": (
+            "What did NVIDIA announce in its most recent earnings press release? "
+            "Specifically, what was the reported diluted EPS?"
+        ),
+        "expected_tools": ["sec_edgar_get_earnings_release"],
+        "pass_criteria": (
+            "Agent calls sec_edgar_get_earnings_release with identifier='NVDA' (or similar); "
+            "response includes a diluted EPS figure extracted from the press release text; "
+            "response includes the press_release_url; "
+            "agent does NOT fabricate EPS if the tool fails to extract it — instead states "
+            "it could not extract a clean figure and quotes the relevant text passage."
+        ),
+        "numeric_checks": None,
+    },
 ]
 
 # Quick summary when run directly

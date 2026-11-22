@@ -84,7 +84,7 @@ def _make_langchain_tool(mcp_tool, session):
         return "\n".join(parts) if parts else "(no output)"
 
     def _call(**kwargs: Any) -> str:
-        return asyncio.get_event_loop().run_until_complete(_acall(**kwargs))
+        return asyncio.run(_acall(**kwargs))
 
     # Build args_schema from the MCP tool's JSON Schema
     try:

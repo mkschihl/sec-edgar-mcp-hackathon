@@ -334,21 +334,31 @@ async def _resolve_identifier(identifier: str) -> tuple[str, str] | dict:
 
 
 # Cache for submissions JSON (filing history) keyed by padded CIK.
+# Values are (data_dict, fetch_timestamp_monotonic).  TTL = 24 h.
 # Avoids redundant HTTP round-trips when multiple tools query the same company
 # in the same agent turn (e.g. get_recent_filings then get_filing_metadata).
-_SUBMISSION_CACHE: dict[str, dict] = {}
+_SUBMISSION_CACHE: dict[str, tuple[dict, float]] = {}
+_SUBMISSION_CACHE_TTL_SECONDS: float = 86_400.0  # 24 hours
 
 
 async def _fetch_submission(cik: str) -> dict:
-    """Fetch and cache the submissions JSON for a company by padded CIK."""
-    if cik not in _SUBMISSION_CACHE:
-        resp = await _edgar_get(
-            f"https://data.sec.gov/submissions/CIK{cik}.json",
-            headers=_make_headers(),
-        )
-        resp.raise_for_status()
-        _SUBMISSION_CACHE[cik] = resp.json()
-    return _SUBMISSION_CACHE[cik]
+    """Fetch and TTL-cache the submissions JSON for a company by padded CIK.
+
+    Re-fetches if the cached entry is older than _SUBMISSION_CACHE_TTL_SECONDS (24 h).
+    """
+    cached = _SUBMISSION_CACHE.get(cik)
+    if cached is not None:
+        data, fetched_at = cached
+        if time.monotonic() - fetched_at < _SUBMISSION_CACHE_TTL_SECONDS:
+            return data
+    resp = await _edgar_get(
+        f"https://data.sec.gov/submissions/CIK{cik}.json",
+        headers=_make_headers(),
+    )
+    resp.raise_for_status()
+    data = resp.json()
+    _SUBMISSION_CACHE[cik] = (data, time.monotonic())
+    return data
 
 
 # Cache for companyfacts JSON (all XBRL data) keyed by padded CIK.
@@ -1076,7 +1086,7 @@ async def sec_edgar_get_company_fact(
         padded_cik, _ = resolved
 
         # Fetch submission and companyfacts concurrently to reduce latency.
-        # _fetch_company_facts uses a 24h TTL cache; second call for same CIK is free.
+        # Both use a 24h TTL cache; second call for same CIK is free.
         sub, facts = await asyncio.gather(
             _fetch_submission(padded_cik),
             _fetch_company_facts(padded_cik),
@@ -1924,7 +1934,7 @@ async def sec_edgar_get_quarterly_facts(
         padded_cik, _ = resolved
 
         # Fetch submission and companyfacts concurrently to reduce latency.
-        # _fetch_company_facts uses a 24h TTL cache; second call for same CIK is free.
+        # Both use a 24h TTL cache; second call for same CIK is free.
         sub, facts = await asyncio.gather(
             _fetch_submission(padded_cik),
             _fetch_company_facts(padded_cik),

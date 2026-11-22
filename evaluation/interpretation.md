@@ -5,7 +5,7 @@
 **Environment:** `gsa-hackathon` (IBM Cloud Toronto, ca-tor)  
 **Initial evaluation run:** 2026-11-07 (20 questions, 557 seconds)  
 **Human audit completed:** 2026-11-11 (review of all 20 agent responses)  
-**Production WXO scoring:** 2026-11-21 (31 questions, Mistral Small 3-vote majority judge)
+**Production WXO scoring:** 2026-11-21 (33 questions, Mistral Small 3-vote majority judge)
 
 ---
 
@@ -37,9 +37,9 @@ with a 3-vote majority.
 
 ## 2. Tool routing results (Layer 1)
 
-All 31 questions passed the tool-routing check. Every expected tool fired.
+All 33 questions passed the tool-routing check. Every expected tool fired.
 
-**Tool utilisation summary (2026-11-21, 31 questions):**
+**Tool utilisation summary (2026-11-21, 33 questions):**
 
 | Tool | Expected in N Qs | Times Fired | Fire Rate |
 |---|---|---|---|
@@ -52,6 +52,7 @@ All 31 questions passed the tool-routing check. Every expected tool fired.
 | `sec_edgar_get_recent_filings` | 4 | 5 | 125% |
 | `sec_edgar_list_concepts` | 2 | 2 | 100% |
 | `sec_edgar_resolve_company` | 2 | 10 | 500% |
+| `sec_edgar_resolve_synonym` | 2 | 2 | 100% |
 | `sec_edgar_screen` | 2 | 2 | 100% |
 | `sec_edgar_search_companies` | 4 | 7 | 175% |
 
@@ -60,6 +61,8 @@ refuse answerable questions and correctly chained multi-tool sequences
 (search → resolve → retrieve) for hard questions. Tools firing above expected (e.g.
 `resolve_company` at 500%) reflect the agent proactively resolving company identity
 before retrieving financial data — the correct behaviour for name-based queries.
+`sec_edgar_resolve_synonym` now has two dedicated BQs (BQ-32/BQ-33) confirming it
+fires correctly for brand-name lookups ("Google" → Alphabet; "Meta" → Meta Platforms).
 
 > **Note on the 2026-11-07 run (now superseded):** That initial run counted tool
 > appearances by text-matching the SSE stream and response content. Fire rates
@@ -99,7 +102,7 @@ search by company name. It did not fabricate a response. The agent enforces this
 through structural guards: a tool-call mandate (every financial figure must come
 from a tool return value), URL prohibition, and refusal rules. These reduce, but
 cannot eliminate, the risk of an LLM stating unsupported figures; the evaluation
-measures this directly (31/31 scope, 31/31 correctness, 8/8 numeric).
+measures this directly (33/33 scope, 33/33 correctness, 8/8 numeric).
 
 **Multi-step discovery.** Hard questions requiring search → resolve → retrieve chains
 (BQ-17 Pfizer, BQ-18 Exxon) were attempted in the correct sequence, demonstrating
@@ -274,26 +277,26 @@ concept retry, Exxon entity disambiguation) have since been fixed.
 
 ### 6b. Production WXO agent scoring (2026-11-21)
 
-The production `sec_edgar_agent` on `gsa-hackathon` was run against 31 benchmark
+The production `sec_edgar_agent` on `gsa-hackathon` was run against 33 benchmark
 questions (`sec-edgar-eval-2`). Responses were scored using
 `mistralai/mistral-small-3-1-24b-instruct-2503` as the judge with a **3-vote
 majority** per question (each question judged three times independently; label
 awarded to the majority; a 2-of-3 split is reported as "unstable"). Run date:
-2026-11-21, commit `b7c6e6a`.
+2026-11-21, commit `73751a9`.
 
 **Results:**
 
 | Dimension | Score | Notes |
 |---|---|---|
-| Correctness (REST routing) | **31 / 31 (100%)** | All 31 questions: correct tool fired, substantive answer returned |
-| Scope | **31 / 31 (100%)** | Agent never answered out-of-scope questions from training data |
+| Correctness (REST routing) | **33 / 33 (100%)** | All 33 questions: correct tool fired, substantive answer returned |
+| Scope | **33 / 33 (100%)** | Agent never answered out-of-scope questions from training data |
 | Numeric | **8 / 8 (100%)** | All 8 questions with numeric anchors pass within stated tolerances (0.5–2%) |
 
-All 31 questions passed unanimously. No question was classified incorrect or partial.
+All 33 questions passed unanimously. No question was classified incorrect or partial.
 
 ### 6c. Consistency with human audit and production scoring
 
-- Production scoring: scope = 31/31 — the agent never fabricated an answer for an
+- Production scoring: scope = 33/33 — the agent never fabricated an answer for an
   out-of-scope question. The Llama-agent runs predate the refusal rules and are
   superseded; scope 100% is a production-only result.
 - YTD-vs-quarterly fix (BQ-09, BQ-10): production scoring shows these passing after
@@ -305,6 +308,8 @@ All 31 questions passed unanimously. No question was classified incorrect or par
   numeric pass ($93.7B and $97.0B both present).
 - New tool coverage (BQ-24–BQ-31): all 8 new questions covering `get_filing_text`,
   `full_text_search`, `screen`, and `get_earnings_release` passed on first run.
+- BQ-32/BQ-33: both new questions for `sec_edgar_resolve_synonym` passed on first
+  run, confirming the synonym tool fires correctly for brand-name inputs.
 
 ### 6d. Evaluation method changes
 
@@ -315,6 +320,7 @@ The evaluation harness evolved significantly across three dataset generations:
 | `sec-edgar-eval-0` → `sec-edgar-eval-1` | Added 3 questions (20 → 23); first scope/relevance judge |
 | `sec-edgar-eval-1` → `sec-edgar-eval-2` | Corrected schema; numeric judge; date-aware judge prompt; 3-vote majority |
 | `sec-edgar-eval-2` extended (27 → 31 Qs) | Added BQ-24–BQ-27 (filing_text, full_text_search); BQ-28–31 (screen, earnings_release) |
+| `sec-edgar-eval-2` extended (31 → 33 Qs) | Added BQ-32–BQ-33 (resolve_synonym); commit `73751a9` |
 | Deterministic numeric judge | `must_include`, `rel_tol`, `max_value` checks separate from LLM correctness |
 | Date-aware judge prompt | Fiscal-year clarification paragraph prevents training-cutoff contamination |
 | 3-vote majority judge | Each question judged 3× independently; 2-of-3 split reported as "unstable" |
@@ -324,5 +330,5 @@ The evaluation harness evolved significantly across three dataset generations:
 
 *Human audit: Michael Schihl, 2026-11-11*  
 *Llama-agent Phoenix experiments: 2026-11-17*  
-*Production WXO scoring (31 Qs): 2026-11-21*  
-*Report updated: 2026-11-21*
+*Production WXO scoring (33 Qs): 2026-11-21*
+*Report updated: 2026-11-21 (33 BQs)*

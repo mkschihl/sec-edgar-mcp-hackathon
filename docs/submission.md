@@ -20,11 +20,11 @@ This project asks a simple question: **can a watsonx Orchestrate agent answer
 real financial questions by querying the SEC's authoritative APIs directly —
 with every number traceable back to the SEC filing that reported it?**
 
-The answer, demonstrated across 31 evaluation questions, is yes. The agent
+The answer, demonstrated across 33 evaluation questions, is yes. The agent
 enforces this through structural guards: the agent instructions explicitly
 prohibit constructing or guessing URLs, stating values from memory, or answering
 financial questions without a tool call. These guards are measured in the
-evaluation: 31/31 routing pass, 31/31 correctness (100%), and 8/8 numeric
+evaluation: 33/33 routing pass, 33/33 correctness (100%), and 8/8 numeric
 anchors — all values confirmed against live SEC API responses.
 
 ---
@@ -125,7 +125,7 @@ scoring* where cached responses from the live WXO agent are scored by
 
 ### Layer 1 — Tool Routing (automated, 2026-11-21)
 
-**31 / 31 questions passed** the routing check. Every expected tool fired.
+**33 / 33 questions passed** the routing check. Every expected tool fired.
 
 | Tool | Expected in N Qs | Times Fired | Fire Rate |
 |------|-----------|-------------|-------|
@@ -138,6 +138,7 @@ scoring* where cached responses from the live WXO agent are scored by
 | `sec_edgar_get_recent_filings` | 4 | 5 | 125% |
 | `sec_edgar_list_concepts` | 2 | 2 | 100% |
 | `sec_edgar_resolve_company` | 2 | 10 | 500% (fires as part of multi-step chains) |
+| `sec_edgar_resolve_synonym` | 2 | 2 | 100% |
 | `sec_edgar_screen` | 2 | 2 | 100% |
 | `sec_edgar_search_companies` | 4 | 7 | 175% (fires proactively in discovery chains) |
 
@@ -190,17 +191,17 @@ be used for quantitative comparison.
 
 #### Production WXO agent scoring (2026-11-21)
 
-The production `sec_edgar_agent` on `gsa-hackathon` was scored against 31 benchmark
+The production `sec_edgar_agent` on `gsa-hackathon` was scored against 33 benchmark
 questions using `mistralai/mistral-small-3-1-24b-instruct-2503` as the judge with a
-**3-vote majority** per question. Run date: 2026-11-21, against commit `b7c6e6a`.
+**3-vote majority** per question. Run date: 2026-11-21, against commit `73751a9`.
 
 | Dimension | Score | Notes |
 |---|---|---|
-| Correctness (REST routing) | **31 / 31 (100%)** | All 31 questions: correct tool fired, substantive answer returned |
-| Scope | **31 / 31 (100%)** | Agent never answered out-of-scope questions from training data |
+| Correctness (REST routing) | **33 / 33 (100%)** | All 33 questions: correct tool fired, substantive answer returned |
+| Scope | **33 / 33 (100%)** | Agent never answered out-of-scope questions from training data |
 | Numeric | **8 / 8 (100%)** | All 8 questions with numeric anchors pass within stated tolerances (0.5–2%) |
 
-All 31 questions passed unanimously. No question was classified incorrect or partial.
+All 33 questions passed unanimously. No question was classified incorrect or partial.
 
 **Root causes of earlier failures (now resolved):**
 
@@ -287,17 +288,17 @@ The LLM-as-judge runs provided two complementary quality signals:
    correctness or scope benchmark. The Llama agent fabricated a stock price and a
    forecast in Experiment 6 (RXhwZXJpbWVudDo2, sec-edgar-eval-1).
 
-2. **Production WXO agent scoring (2026-11-21, commit `b7c6e6a`):** 31/31
-   correct (100%), 31/31 scope, 8/8 numeric, using Mistral Small 3-vote majority
-   judge on cached production responses. All 31 questions passed unanimously.
+2. **Production WXO agent scoring (2026-11-21, commit `73751a9`):** 33/33
+    correct (100%), 33/33 scope, 8/8 numeric, using Mistral Small 3-vote majority
+    judge on cached production responses. All 33 questions passed unanimously.
 
-3. **Scope: 31/31 (100%)** in production scoring — the agent never answered
-   out-of-scope questions (stock prices, forecasts, investment advice) from
-   training data.
+3. **Scope: 33/33 (100%)** in production scoring — the agent never answered
+    out-of-scope questions (stock prices, forecasts, investment advice) from
+    training data.
 
 4. **Numeric anchors: 8/8 (100%)** — eight questions have specific dollar values
-   as must-include checks (e.g. AAPL revenue ~$478.8B, MSFT net income ~$133.7B,
-   MSFT Q4 FY2026 derived ~$35.8B). All pass within stated tolerances (0.5–2%).
+    as must-include checks (e.g. AAPL revenue ~$478.8B, MSFT net income ~$133.7B,
+    MSFT Q4 FY2026 derived ~$35.8B). All pass within stated tolerances (0.5–2%).
 
 5. **Per-question traces** are viewable in the Phoenix UI
    (http://localhost:6006) → Datasets → `sec-edgar-eval-2`.
@@ -343,6 +344,7 @@ What did Nvidia say about revenue in their most recent 8-K earnings release?
 | M4 — Synonym tool (175 entries), filing-text tool, full-text-search tool | ✅ Complete |
 | M5 — Screening tool, earnings-release tool; server expanded to 13 tools | ✅ Complete |
 | M6 — 31-question eval suite; 31/31 pass (100%); 246 regression assertions | ✅ Complete |
+| M7 — 33-question eval suite; BQ-32/BQ-33 for `sec_edgar_resolve_synonym`; 33/33 pass (100%) | ✅ Complete |
 
 ---
 
@@ -360,8 +362,8 @@ agents/
 
 evaluation/
 ├── run_evaluation.py      ← REST-based tool-routing evaluator
-├── benchmark_questions.py ← 31 benchmark questions with pass criteria and numeric checks
-├── EVAL_REPORT.md         ← full 31-question results (31/31 pass)
+├── benchmark_questions.py ← 33 benchmark questions with pass criteria and numeric checks
+├── EVAL_REPORT.md         ← full 33-question results (33/33 pass)
 ├── response_quality_audit.md  ← human annotations of all 20 responses
 └── interpretation.md      ← narrative evaluation report
 
@@ -375,7 +377,7 @@ eval/phoenix/
 │   ├── relevance_judge.py    ← scope judge
 │   ├── numeric_judge.py      ← deterministic numeric anchor checker
 │   └── sanity_check.py       ← 11-case judge sanity suite
-└── datasets/sec-edgar-eval-2/  ← current 31-question evaluation dataset
+└── datasets/sec-edgar-eval-2/  ← current 33-question evaluation dataset
 
 docs/
 ├── project_overview.md    ← plain-language project summary
@@ -385,4 +387,4 @@ docs/
 
 ---
 
-*Submitted: 2026-11-14 | Updated: 2026-11-21 | Author: Michael Schihl*
+*Submitted: 2026-11-14 | Updated: 2026-11-21 (33 BQs) | Author: Michael Schihl*

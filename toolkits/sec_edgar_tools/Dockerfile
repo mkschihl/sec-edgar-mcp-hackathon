@@ -30,7 +30,7 @@ COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code.
-COPY server.py app.py ./
+COPY server.py app.py xbrl_concepts_data.py ./
 
 EXPOSE 8080
 

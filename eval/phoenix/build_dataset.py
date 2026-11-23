@@ -286,6 +286,17 @@ _REFERENCE_ANSWERS: dict[str, str] = {
         "Values are in the range of $10–25 billion per year (Pfizer's historical operating cash flow). "
         "Values come from tool return values — not fabricated from memory."
     ),
+    "BQ-36": (
+        "Agent calls sec_edgar_resolve_xbrl_concept with query 'deferred revenue' "
+        "(or 'contract liabilities' / 'unearned revenue') to identify the correct XBRL concept "
+        "(e.g. DeferredRevenueCurrent, DeferredRevenue, or ContractWithCustomerLiabilityCurrent). "
+        "Agent then calls sec_edgar_compare_companies with identifiers for Apple (AAPL), "
+        "Microsoft (MSFT), and Alphabet (GOOGL) using the resolved concept name. "
+        "Response shows deferred revenue values for all three companies with period end dates. "
+        "Response names the company with the highest deferred revenue. "
+        "Microsoft typically reports the largest deferred revenue among the three (~$50–70B). "
+        "Values come from tool return values — not fabricated from memory."
+    ),
 }
 
 

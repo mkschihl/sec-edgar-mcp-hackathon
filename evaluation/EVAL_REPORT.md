@@ -2,8 +2,8 @@
 
 **Agent:** `sec_edgar_agent`  
 **Environment:** `gsa-hackathon` (IBM Cloud Toronto)  
-**Run date:** 2026-11-23 06:19  
-**Duration:** 356s for 35 questions  
+**Run date:** 2026-11-23 07:33  
+**Duration:** 24s for 36 questions  
 
 ---
 
@@ -11,8 +11,8 @@
 
 | Metric | Value |
 |---|---|
-| Total questions | 35 |
-| ✅ Pass | 35 (100%) |
+| Total questions | 36 |
+| ✅ Pass | 36 (100%) |
 | ⚠️ Partial | 0 (0%) |
 | ❌ Fail | 0 (0%) |
 
@@ -57,6 +57,7 @@
 | BQ-33 | 🟡 medium | synonym_resolution | ✅ pass | routing_ok | `resolve_synonym`, `resolve_company` | `resolve_synonym`, `resolve_company` | routing_ok — all expected tools fired. |
 | BQ-34 | 🟢 easy | xbrl_concept_resolution | ✅ pass | routing_ok | `resolve_xbrl_concept` | `resolve_xbrl_concept` | routing_ok — all expected tools fired. |
 | BQ-35 | 🟡 medium | xbrl_concept_resolution | ✅ pass | routing_ok | `resolve_xbrl_concept`, `get_company_fact` | `search_companies`, `resolve_xbrl_concept`, `get_company_fact` | routing_ok — all expected tools fired. |
+| BQ-36 | 🔴 hard | xbrl_concept_chain | ✅ pass | routing_ok | `resolve_xbrl_concept`, `compare_companies` | `resolve_xbrl_concept`, `search_companies`, `compare_companies` | routing_ok — all expected tools fired. |
 
 ---
 
@@ -864,13 +865,42 @@ The primary XBRL concept for **“operating cash flow”** in the FASB US‑GA
 
 </details>
 
+### BQ-36 — ✅ PASS
+**Question:** Compare deferred revenue across Apple, Microsoft, and Alphabet for the most recent fiscal year. Which company had the highest deferred revenue?  
+**Expected tools:** sec_edgar_resolve_xbrl_concept, sec_edgar_compare_companies  
+**Tools fired:** sec_edgar_resolve_xbrl_concept, sec_edgar_search_companies, sec_edgar_compare_companies  
+
+<details><summary>Agent response</summary>
+
+```
+**Deferred Revenue (Current) – most recent FY values reported in the X‑BRL filings**
+
+| Company | FY‑End | Deferred Revenue (Current) | Filing Form | Accession Number | Filing Index URL |
+|--------|-------|----------------------------|-------------|------------------|------------------|
+| Apple Inc. | 2018‑09‑29 | **$7.543 billion** | 10‑K | 0000320193‑18‑000145 | https://www.sec.gov/Archives/edgar/data/320193/000032019318000145/ |
+| Microsoft Corp. | 2017‑06‑30 | **$34.102 billion** | 10‑K | 0001564590‑17‑014900 | https://www.sec.gov/Archives/edgar/data/789019/000156459017014900/ |
+| Alphabet Inc. | 2017‑12‑31 | **$1.432 billion** | 10‑K | 0001652044‑18‑000007 | https://www.sec.gov/Archives/edgar/data/1652044/000165204418000007/ |
+
+**Which company had the highest deferred revenue?**  
+Microsoft Corp. reported the highest deferred revenue (Current) at **$34.1 billion** for its most recent fiscal year.
+
+**Caveats / Warnings from the SEC data**
+
+* The most recent values for each company are from different fiscal years (Apple FY 2018, Microsoft FY 2017, Alphabet FY 2017).  
+* Each company may also report deferred revenue under other related concepts (e.g., DeferredRevenueNoncurrent, DeferredRevenueAndCredits). The figures shown are the “DeferredRevenueCurrent” concept as defined in the US‑GAAP taxonomy.  
+
+If you need total deferred revenue (current + non‑current) or a more recent figure for any of the companies, let me know and I can retrieve the additional concepts.
+```
+
+</details>
+
 ---
 
 ## Tool Utilisation
 
 | Tool | Expected in N Qs | Qs Fired | Fire Rate | Total Calls |
 |---|---|---|---|---|
-| `sec_edgar_compare_companies` | 2 | 2 | 100% | 2 |
+| `sec_edgar_compare_companies` | 3 | 3 | 100% | 4 |
 | `sec_edgar_full_text_search` | 2 | 2 | 100% | 2 |
 | `sec_edgar_get_company_fact` | 5 | 6 | 120% | 6 |
 | `sec_edgar_get_earnings_release` | 2 | 2 | 100% | 2 |
@@ -881,9 +911,9 @@ The primary XBRL concept for **“operating cash flow”** in the FASB US‑GA
 | `sec_edgar_list_concepts` | 2 | 2 | 100% | 2 |
 | `sec_edgar_resolve_company` | 3 | 11 | 367% | 13 |
 | `sec_edgar_resolve_synonym` | 2 | 10 | 500% | 10 |
-| `sec_edgar_resolve_xbrl_concept` | 2 | 3 | 150% | 4 |
+| `sec_edgar_resolve_xbrl_concept` | 3 | 4 | 133% | 5 |
 | `sec_edgar_screen` | 3 | 3 | 100% | 3 |
-| `sec_edgar_search_companies` | 2 | 6 | 300% | 6 |
+| `sec_edgar_search_companies` | 2 | 7 | 350% | 9 |
 
 ---
 
@@ -907,6 +937,7 @@ The primary XBRL concept for **“operating cash flow”** in the FASB US‑GA
 | recent_filings | 2 | 2 | 0 | 0 |
 | screen | 2 | 2 | 0 | 0 |
 | synonym_resolution | 2 | 2 | 0 | 0 |
+| xbrl_concept_chain | 1 | 1 | 0 | 0 |
 | xbrl_concept_resolution | 2 | 2 | 0 | 0 |
 
 ---

@@ -31,6 +31,11 @@ Difficulty rubric:
 #  11  out_of_scope            BQ-21, BQ-22, BQ-23
 #  12  filing_text             BQ-24, BQ-25   ← new (sec_edgar_get_filing_text)
 #  13  full_text_search        BQ-26, BQ-27   ← new (sec_edgar_full_text_search)
+#  14  screen                  BQ-28, BQ-29
+#  15  earnings_release        BQ-30, BQ-31
+#  16  synonym_resolution      BQ-32, BQ-33
+#  17  xbrl_concept_resolution BQ-34, BQ-35
+#  18  xbrl_concept_chain      BQ-36          ← new (resolve_xbrl_concept → compare_companies)
 
 BENCHMARK_QUESTIONS = [
     # ------------------------------------------------------------------
@@ -674,6 +679,35 @@ BENCHMARK_QUESTIONS = [
             "agent calls sec_edgar_get_company_fact with identifier='PFE' and that concept; "
             "response shows at least 3 fiscal years of operating cash flow values for Pfizer "
             "(PFE); values are in billions USD and include the period end date."
+        ),
+        "numeric_checks": None,
+    },
+    # ------------------------------------------------------------------
+    # Category 18 — XBRL concept chain (resolve_xbrl_concept → compare_companies)
+    # ------------------------------------------------------------------
+    {
+        "id": "BQ-36",
+        "category": "xbrl_concept_chain",
+        "difficulty": "hard",
+        "question": (
+            "Compare deferred revenue across Apple, Microsoft, and Alphabet "
+            "for the most recent fiscal year. Which company had the highest "
+            "deferred revenue?"
+        ),
+        "expected_tools": [
+            "sec_edgar_resolve_xbrl_concept",
+            "sec_edgar_compare_companies",
+        ],
+        "pass_criteria": (
+            "Agent calls sec_edgar_resolve_xbrl_concept with query='deferred revenue' "
+            "(or 'contract liabilities' or 'unearned revenue') to identify the correct "
+            "XBRL concept (DeferredRevenueCurrent or DeferredRevenue or "
+            "ContractWithCustomerLiabilityCurrent); "
+            "agent calls sec_edgar_compare_companies with identifiers for Apple (AAPL), "
+            "Microsoft (MSFT), and Alphabet (GOOGL or GOOG) using the resolved concept; "
+            "response shows deferred revenue values for all three companies with period "
+            "end dates; response names the company with the highest deferred revenue; "
+            "values come from tool return values — not fabricated from memory."
         ),
         "numeric_checks": None,
     },

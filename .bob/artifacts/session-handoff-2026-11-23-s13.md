@@ -1,4 +1,4 @@
-# SEC EDGAR Project — Session Handoff (2026-11-23, end of session 13+deploy)
+# SEC EDGAR Project — Session Handoff (2026-11-23, end of session 13+BQ-37)
 
 Read this file first before doing any work in a new session.
 
@@ -33,8 +33,8 @@ SEC filings and XBRL financial data for any publicly traded company.
 | Phoenix run command | `source .env && export WATSONX_URL WATSONX_API_KEY WATSONX_PROJECT_ID AGENT_MODEL JUDGE_MODEL && venv/bin/python eval/phoenix/run_experiment.py --dataset-name sec-edgar-eval-2 --system-prompt-version yaml` |
 | Run evaluator (no Phoenix) | `source .env && export WXO_API_KEY WATSONX_URL WATSONX_API_KEY WATSONX_PROJECT_ID && venv/bin/python evaluation/run_evaluation.py` |
 | Git remote | `github.com:mkschihl/wxo-agentic-workflow.git` |
-| Active branch | `main` at `58e9d9c` |
-| Last commit | `1cfc4f3` — "chore: session handoff 2026-11-23 (session 13 complete — ADR synonyms, 274 assertions, BQ-36, 36/36, v1.5.0)" |
+| Active branch | `main` at `c0cf335` |
+| Last commit | `c0cf335` — "feat(eval): add BQ-37 4-company compare_companies stress test; 37/37 pass (100%)" |
 | WXO instance ID | `76b76ce7-8b9e-4f7e-885b-967fbaef80c9` |
 | WXO agent ID | `dd7fadae-34b2-478b-98c4-2fc48cbd35e5` (sec_edgar_agent) |
 | Re-import toolkit | `venv/bin/orchestrate toolkits add --kind mcp --name sec_edgar_tools --description "SEC EDGAR toolkit: company lookup, filing history, and XBRL financial-statement facts from the SEC's public APIs." --url "https://sec-edgar-tools-mks.2flzosib5d1z.ca-tor.codeengine.appdomain.cloud/mcp" --transport streamable_http --tools "*"` |
@@ -51,6 +51,7 @@ SEC filings and XBRL financial data for any publicly traded company.
 | M38 — ADR synonym additions (TSMC/SAP/ASML/Sony) | ✅ Complete | 13 new entries, 274 assertions; commit `f834a9a` |
 | M39 — BQ-36 chain eval (xbrl_concept → compare_companies) | ✅ Complete | 36/36 pass; commit `58e9d9c`; tagged `v1.5.0` |
 | M40 — CE redeploy for session 13 synonym changes | ✅ Complete | Build run `sec-edgar-tools-mks-run-261123-073757546`; smoke-tested BQ-32/BQ-33 ✅ |
+| M41 — BQ-37 4-company compare_companies stress test | ✅ Complete | 37/37 pass; commit `c0cf335`; tagged `v1.6.0` |
 
 ---
 
@@ -104,14 +105,15 @@ Tags: `v1.5.0` → `58e9d9c`
 
 ## Current evaluation state (canonical — `run_evaluation.py`)
 
-**36/36 pass (100%)** — last run 2026-11-23, commit `58e9d9c`.
+**37/37 pass (100%)** — last run 2026-11-23, commit `c0cf335`.
 
 ---
 
 ## Git log (last 10 commits)
 
 ```
-58e9d9c  feat(eval): add BQ-36 xbrl_concept_chain (resolve→compare deferred revenue); 36/36 pass (100%)  ← HEAD, main, v1.5.0
+c0cf335  feat(eval): add BQ-37 4-company compare_companies stress test; 37/37 pass (100%)  ← HEAD, main, v1.6.0
+58e9d9c  feat(eval): add BQ-36 xbrl_concept_chain (resolve→compare deferred revenue); 36/36 pass (100%)  v1.5.0
 f834a9a  feat(server): add international ADR synonyms (TSMC/TSM, SAP SE, ASML, Sony); 274 assertions
 1555677  chore: session handoff 2026-11-23 (session 12 complete — 35/35 eval, 73 XBRL overrides, Exp 17)
 db927d2  feat(server): expand XBRL canonical overrides 40→73; add test_xbrl_concept_resolver (256 assertions)
@@ -123,7 +125,7 @@ db927d2  feat(server): expand XBRL canonical overrides 40→73; add test_xbrl_co
 ffee5f4  fix(server): update FastMCP instructions to fourteen tools, add resolve_xbrl_concept entry
 ```
 
-Tags: `v1.0.0` → `e604b36`, `v1.1.0` → `752e86d`, `v1.2.0` → `ed168e7`, `v1.3.0` → `0ebb2dd`, `v1.4.0` → `55b1a8d`, **`v1.5.0` → `58e9d9c`**
+Tags: `v1.0.0` → `e604b36`, `v1.1.0` → `752e86d`, `v1.2.0` → `ed168e7`, `v1.3.0` → `0ebb2dd`, `v1.4.0` → `55b1a8d`, `v1.5.0` → `58e9d9c`, **`v1.6.0` → `c0cf335`**
 
 ---
 
@@ -139,12 +141,12 @@ toolkits/sec_edgar_tools/Dockerfile      ← COPY includes xbrl_concepts_data.py
 toolkits/sec_edgar_tools/test_regressions.py    ← 21 test functions, 274 assertions; all pass
 
 evaluation/run_evaluation.py             ← supports any_of_tools field
-evaluation/benchmark_questions.py        ← 36 Qs; 18 categories; BQ-36 = xbrl_concept_chain
-evaluation/raw_results.json              ← 36 results (36/36 pass, run 2026-11-23)
-evaluation/EVAL_REPORT.md                ← 36/36 pass, run 2026-11-23
+evaluation/benchmark_questions.py        ← 37 Qs; 18 categories; BQ-36 = xbrl_concept_chain, BQ-37 = compare ×4
+evaluation/raw_results.json              ← 37 results (37/37 pass, run 2026-11-23)
+evaluation/EVAL_REPORT.md                ← 37/37 pass, run 2026-11-23
 
-eval/phoenix/build_dataset.py            ← _REFERENCE_ANSWERS for BQ-01–BQ-36
-eval/phoenix/datasets/sec-edgar-eval-2/examples/sec-edgar-eval-2.csv  ← 36 rows
+eval/phoenix/build_dataset.py            ← _REFERENCE_ANSWERS for BQ-01–BQ-37
+eval/phoenix/datasets/sec-edgar-eval-2/examples/sec-edgar-eval-2.csv  ← 37 rows
 
 docs/submission.md                       ← updated through session 12 (35 BQs, 14 tools, Exp 17)
 evaluation/interpretation.md             ← updated through session 12
@@ -161,7 +163,8 @@ they still reference 35 BQs and Experiment 17. They should be updated in session
 successfully. All new synonym entries (TSMC aliases, SAP SE, ASML, Sony, Toyota ADR aliases) are
 live on the CE container. Smoke-tested via eval runner: BQ-32 ✅ BQ-33 ✅.
 
-The server is fully current at HEAD `1cfc4f3`. No CE deploy is needed at the start of session 14.
+The server is fully current at HEAD `f834a9a` (server.py). No CE deploy is needed at the start of session 14.
+(BQ-37 is eval-only — no server.py changes.)
 
 ---
 
@@ -203,13 +206,9 @@ Never run `python create_dataset.py` — always use `venv/bin/python create_data
 
 ### High priority
 
-1. **sec_edgar_compare_companies 3rd BQ (BQ-37)** (~20 min):
-   Only 2 BQs (BQ-13, BQ-14) for a complex tool. A 4+ company comparison or
-   multi-year trend would stress-test it. Add BQ-37 (category 7 / cross_company_comparison).
-
-2. **docs/submission.md + interpretation.md update** (~20 min):
+1. **docs/submission.md + interpretation.md update** (~20 min):
    Both files still reference 35 BQs, 14 tools, Experiment 17. Update to reflect
-   36 BQs, v1.5.0 tag, and session 13 synonym additions.
+   37 BQs, v1.6.0 tag, and session 13 changes.
 
 ### Medium priority
 
@@ -243,10 +242,12 @@ Never run `python create_dataset.py` — always use `venv/bin/python create_data
 
 **No CE deploy needed** — server is fully current at HEAD `1cfc4f3`, deployed and smoke-tested end of session 13.
 
-**Start with BQ-37** (item 1 above, ~20 min) — a 4-company `compare_companies` stress test.
-Then update **docs/submission.md + interpretation.md** (item 2, ~20 min) to reflect 36 BQs and v1.5.0.
+**Start with docs/submission.md + interpretation.md** (item 1 above, ~20 min) — both still reference
+35 BQs and Experiment 17. Update them to reflect 37 BQs, v1.6.0, and the new tools/categories.
 
-Both together are ~40 min and leave the project fully documented.
+Then run **Phoenix Experiment 18** (item 3, ~1 hr) — the CSV is at 37 rows and ready to go.
+
+Both together are ~80 min and leave the project fully documented and evaluated.
 
 ---
 

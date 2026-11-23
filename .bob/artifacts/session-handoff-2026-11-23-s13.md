@@ -1,4 +1,4 @@
-# SEC EDGAR Project — Session Handoff (2026-11-23, end of session 13)
+# SEC EDGAR Project — Session Handoff (2026-11-23, end of session 13+deploy)
 
 Read this file first before doing any work in a new session.
 
@@ -34,7 +34,7 @@ SEC filings and XBRL financial data for any publicly traded company.
 | Run evaluator (no Phoenix) | `source .env && export WXO_API_KEY WATSONX_URL WATSONX_API_KEY WATSONX_PROJECT_ID && venv/bin/python evaluation/run_evaluation.py` |
 | Git remote | `github.com:mkschihl/wxo-agentic-workflow.git` |
 | Active branch | `main` at `58e9d9c` |
-| Last commit | `58e9d9c` — "feat(eval): add BQ-36 xbrl_concept_chain (resolve→compare deferred revenue); 36/36 pass (100%)" |
+| Last commit | `1cfc4f3` — "chore: session handoff 2026-11-23 (session 13 complete — ADR synonyms, 274 assertions, BQ-36, 36/36, v1.5.0)" |
 | WXO instance ID | `76b76ce7-8b9e-4f7e-885b-967fbaef80c9` |
 | WXO agent ID | `dd7fadae-34b2-478b-98c4-2fc48cbd35e5` (sec_edgar_agent) |
 | Re-import toolkit | `venv/bin/orchestrate toolkits add --kind mcp --name sec_edgar_tools --description "SEC EDGAR toolkit: company lookup, filing history, and XBRL financial-statement facts from the SEC's public APIs." --url "https://sec-edgar-tools-mks.2flzosib5d1z.ca-tor.codeengine.appdomain.cloud/mcp" --transport streamable_http --tools "*"` |
@@ -50,6 +50,7 @@ SEC filings and XBRL financial data for any publicly traded company.
 | M1–M37 | ✅ Complete | See session-12 handoff for details |
 | M38 — ADR synonym additions (TSMC/SAP/ASML/Sony) | ✅ Complete | 13 new entries, 274 assertions; commit `f834a9a` |
 | M39 — BQ-36 chain eval (xbrl_concept → compare_companies) | ✅ Complete | 36/36 pass; commit `58e9d9c`; tagged `v1.5.0` |
+| M40 — CE redeploy for session 13 synonym changes | ✅ Complete | Build run `sec-edgar-tools-mks-run-261123-073757546`; smoke-tested BQ-32/BQ-33 ✅ |
 
 ---
 
@@ -156,22 +157,11 @@ they still reference 35 BQs and Experiment 17. They should be updated in session
 
 ## CE deploy status
 
-**No CE deploy done this session.** The server (`server.py`) synonym table changes are
-in-process (dict lookup, no network calls) but the **server is a running CE instance**.
-The deployed container at `58e9d9c`'s base (`db927d2`) has the old synonym table.
+**✅ Deployed end of session 13.** Build run `sec-edgar-tools-mks-run-261123-073757546` completed
+successfully. All new synonym entries (TSMC aliases, SAP SE, ASML, Sony, Toyota ADR aliases) are
+live on the CE container. Smoke-tested via eval runner: BQ-32 ✅ BQ-33 ✅.
 
-**To deploy the new synonyms to CE**, run in session 14:
-```bash
-source .env && export IBMCLOUD_API_KEY
-ibmcloud login --apikey "$IBMCLOUD_API_KEY" -r ca-tor -g Default
-ibmcloud target -g eid-6ac40a21a8799c11a48dc107
-ibmcloud ce project select --name ce-550000w6t0
-ibmcloud ce app update --name sec-edgar-tools-mks --build-source toolkits/sec_edgar_tools --build-dockerfile Dockerfile
-```
-The eval suite (which calls the WXO agent → CE server) still passes 36/36 because BQ-36 and the
-synonym changes don't collide — BQ-36 uses AAPL/MSFT/GOOGL which were already in the table.
-But if someone asks the live agent about SONY or ASML as free text, the old synonym table on CE
-won't have those entries. **Deploy is recommended but not blocking for eval correctness.**
+The server is fully current at HEAD `1cfc4f3`. No CE deploy is needed at the start of session 14.
 
 ---
 
@@ -213,23 +203,17 @@ Never run `python create_dataset.py` — always use `venv/bin/python create_data
 
 ### High priority
 
-1. **CE deploy for ADR synonyms** (~15 min):
-   The new synonym entries (TSMC aliases, SAP SE, ASML, Sony, Toyota ADR aliases) are only
-   in the git-committed `server.py`. The live CE container still runs the pre-session-13
-   image. Deploy as described in the CE deploy status section above.
-   After deploy, re-run WXO token refresh and optionally re-run the full eval suite.
-
-2. **sec_edgar_compare_companies 3rd BQ (BQ-37)** (~20 min):
+1. **sec_edgar_compare_companies 3rd BQ (BQ-37)** (~20 min):
    Only 2 BQs (BQ-13, BQ-14) for a complex tool. A 4+ company comparison or
    multi-year trend would stress-test it. Add BQ-37 (category 7 / cross_company_comparison).
 
-3. **docs/submission.md + interpretation.md update** (~20 min):
+2. **docs/submission.md + interpretation.md update** (~20 min):
    Both files still reference 35 BQs, 14 tools, Experiment 17. Update to reflect
    36 BQs, v1.5.0 tag, and session 13 synonym additions.
 
 ### Medium priority
 
-4. **Phoenix Experiment 18** (~1 hr):
+3. **Phoenix Experiment 18** (~1 hr):
    Re-run the Phoenix eval experiment (Exp 17 was at 35 Qs). CSV is now 36 rows.
    Run:
    ```bash
@@ -237,7 +221,7 @@ Never run `python create_dataset.py` — always use `venv/bin/python create_data
    venv/bin/python eval/phoenix/run_experiment.py --dataset-name sec-edgar-eval-2 --system-prompt-version yaml
    ```
 
-5. **Additional XBRL canonical override additions** (15 min):
+4. **Additional XBRL canonical override additions** (15 min):
    The 73-entry table still has gaps. Useful additions:
    - `net debt` → `LongTermDebt` + offset note (not a single concept)
    - `working capital` → `AssetsCurrent` / `LiabilitiesCurrent` (derived, not a concept)
@@ -245,7 +229,7 @@ Never run `python create_dataset.py` — always use `venv/bin/python create_data
    - `minority interest` → `MinorityInterest` (deprecated) / `NoncontrollingInterestMember`
    - `other comprehensive income` → `OtherComprehensiveIncomeLossNetOfTax`
 
-6. **Additional international ADR synonyms** (~30 min):
+5. **Additional international ADR synonyms** (~30 min):
    Other frequently queried ADRs still missing from the synonym table:
    - Alibaba (`BABA`) — Alibaba Group Holding Ltd
    - LVMH (`LVMUY`) — LVMH Moët Hennessy Louis Vuitton SE
@@ -257,12 +241,12 @@ Never run `python create_dataset.py` — always use `venv/bin/python create_data
 
 ## Recommended start for session 14
 
-**Start with CE deploy** (item 1 above, ~15 min) — the synonym table changes are code-complete
-but not live. After deploy, run a quick smoke test via `run_evaluation.py --ids BQ-32 BQ-33`.
+**No CE deploy needed** — server is fully current at HEAD `1cfc4f3`, deployed and smoke-tested end of session 13.
 
-Then tackle **BQ-37** (item 2, ~20 min) — a 4-company compare_companies stress test.
+**Start with BQ-37** (item 1 above, ~20 min) — a 4-company `compare_companies` stress test.
+Then update **docs/submission.md + interpretation.md** (item 2, ~20 min) to reflect 36 BQs and v1.5.0.
 
-Both together are ~35 min and produce a clean 37-BQ eval suite.
+Both together are ~40 min and leave the project fully documented.
 
 ---
 

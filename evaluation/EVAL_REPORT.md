@@ -2,8 +2,8 @@
 
 **Agent:** `sec_edgar_agent`  
 **Environment:** `gsa-hackathon` (IBM Cloud Toronto)  
-**Run date:** 2026-11-23 07:33  
-**Duration:** 24s for 36 questions  
+**Run date:** 2026-11-23 07:46  
+**Duration:** 8s for 37 questions  
 
 ---
 
@@ -11,8 +11,8 @@
 
 | Metric | Value |
 |---|---|
-| Total questions | 36 |
-| ✅ Pass | 36 (100%) |
+| Total questions | 37 |
+| ✅ Pass | 37 (100%) |
 | ⚠️ Partial | 0 (0%) |
 | ❌ Fail | 0 (0%) |
 
@@ -58,6 +58,7 @@
 | BQ-34 | 🟢 easy | xbrl_concept_resolution | ✅ pass | routing_ok | `resolve_xbrl_concept` | `resolve_xbrl_concept` | routing_ok — all expected tools fired. |
 | BQ-35 | 🟡 medium | xbrl_concept_resolution | ✅ pass | routing_ok | `resolve_xbrl_concept`, `get_company_fact` | `search_companies`, `resolve_xbrl_concept`, `get_company_fact` | routing_ok — all expected tools fired. |
 | BQ-36 | 🔴 hard | xbrl_concept_chain | ✅ pass | routing_ok | `resolve_xbrl_concept`, `compare_companies` | `resolve_xbrl_concept`, `search_companies`, `compare_companies` | routing_ok — all expected tools fired. |
+| BQ-37 | 🔴 hard | cross_company_comparison | ✅ pass | routing_ok | `compare_companies` | `compare_companies` | routing_ok — all expected tools fired. |
 
 ---
 
@@ -801,7 +802,7 @@ You can review the full press release at the URL above for additional context an
 <details><summary>Agent response</summary>
 
 ```
-Alphabet Inc. – ticker **GOOGL** (the primary SEC‑registered name for “Google”).
+Alphabet Inc. – Ticker: **GOOGL**. This is the SEC‑registered entity that “Google” operates under.
 ```
 
 </details>
@@ -814,12 +815,12 @@ Alphabet Inc. – ticker **GOOGL** (the primary SEC‑registered name for 
 <details><summary>Agent response</summary>
 
 ```
-**Meta Platforms, Inc. (Ticker: META, CIK: 0001326801)**  
+**Meta Platforms, Inc. (ticker META, CIK 0001326801)**  
 
-- **SIC industry code:** **7370** – *Services‑Computer Programming, Data Processing, Etc.*  
-- **State of incorporation:** **Delaware (DE)**  
+- **SIC industry code:** **7370** – “Services‑Computer Programming, Data Processing, Etc.”  
+- **State of incorporation:** **Delaware (DE)**  
 
-These details are taken from the SEC’s official company registration information.
+These details come directly from the SEC’s company registration information.
 ```
 
 </details>
@@ -894,13 +895,39 @@ If you need total deferred revenue (current + non‑current) or a more recen
 
 </details>
 
+### BQ-37 — ✅ PASS
+**Question:** Compare the most recent annual revenue for Apple, Microsoft, Amazon, and Alphabet. Rank them from highest to lowest.  
+**Expected tools:** sec_edgar_compare_companies  
+**Tools fired:** sec_edgar_compare_companies  
+
+<details><summary>Agent response</summary>
+
+```
+**Most recent annual revenue (USD)**  
+
+| Rank | Company | Fiscal Year | Period End | Revenue | Form | Accession Number | Filing Index URL |
+|------|---------|------------|------------|----------|------|------------------|------------------|
+| 1 | Amazon.com, Inc. | 2025 | 2025‑12‑31 | $716.9 billion | 10‑K | 0001018724‑26‑000004 | https://www.sec.gov/Archives/edgar/data/1018724/000101872426000004/ |
+| 2 | Apple Inc. | 2026 | 2026‑09‑26 | $478.8 billion | 10‑K | 0000320193‑26‑000026 | https://www.sec.gov/Archives/edgar/data/320193/000032019326000026/ |
+| 3 | Alphabet Inc. | 2025 | 2025‑12‑31 | $402.8 billion | 10‑K | 0001652044‑26‑000018 | https://www.sec.gov/Archives/edgar/data/1652044/000165204426000018/ |
+| 4 | Microsoft Corp. | 2026 | 2026‑06‑30 | $331.8 billion | 10‑K | 0001193125‑26‑323660 | https://www.sec.gov/Archives/edgar/data/789019/000119312526323660/ |
+
+**Notes**
+
+* The SEC XBRL concept used for Apple, Microsoft, and Amazon is **RevenueFromContractWithCustomerExcludingAssessedTax** (the most recent revenue concept). For Alphabet the standard **Revenues** tag was available.  
+* Fiscal year‑ends differ across the companies (e.g., Apple ends September 26, Microsoft June 30). This can affect direct year‑to‑year comparability; see the warnings returned by the comparison tool.  
+* All values are in **U.S. dollars (USD)** and represent the most recent full‑year revenue reported in each company’s latest Form 10‑K filing.
+```
+
+</details>
+
 ---
 
 ## Tool Utilisation
 
 | Tool | Expected in N Qs | Qs Fired | Fire Rate | Total Calls |
 |---|---|---|---|---|
-| `sec_edgar_compare_companies` | 3 | 3 | 100% | 4 |
+| `sec_edgar_compare_companies` | 4 | 4 | 100% | 5 |
 | `sec_edgar_full_text_search` | 2 | 2 | 100% | 2 |
 | `sec_edgar_get_company_fact` | 5 | 6 | 120% | 6 |
 | `sec_edgar_get_earnings_release` | 2 | 2 | 100% | 2 |
@@ -925,7 +952,7 @@ If you need total deferred revenue (current + non‑current) or a more recen
 | company_resolution | 2 | 2 | 0 | 0 |
 | company_search | 2 | 2 | 0 | 0 |
 | concept_discovery | 2 | 2 | 0 | 0 |
-| cross_company_comparison | 2 | 2 | 0 | 0 |
+| cross_company_comparison | 3 | 3 | 0 | 0 |
 | earnings_release | 2 | 2 | 0 | 0 |
 | edge_cases | 2 | 2 | 0 | 0 |
 | filing_attribution | 2 | 2 | 0 | 0 |

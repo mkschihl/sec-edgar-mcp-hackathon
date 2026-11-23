@@ -24,7 +24,7 @@ Difficulty rubric:
 #   4  annual_facts            BQ-07, BQ-08
 #   5  quarterly_facts         BQ-09, BQ-10
 #   6  concept_discovery       BQ-11, BQ-12
-#   7  cross_company_comparison BQ-13, BQ-14
+#   7  cross_company_comparison BQ-13, BQ-14, BQ-37
 #   8  filing_attribution      BQ-15, BQ-16
 #   9  multi_step_discovery    BQ-17, BQ-18
 #  10  edge_cases              BQ-19, BQ-20
@@ -707,6 +707,30 @@ BENCHMARK_QUESTIONS = [
             "Microsoft (MSFT), and Alphabet (GOOGL or GOOG) using the resolved concept; "
             "response shows deferred revenue values for all three companies with period "
             "end dates; response names the company with the highest deferred revenue; "
+            "values come from tool return values — not fabricated from memory."
+        ),
+        "numeric_checks": None,
+    },
+    # ------------------------------------------------------------------
+    # Category 7 continued — Cross-company comparison, 4+ companies
+    # (sec_edgar_compare_companies stress test)
+    # ------------------------------------------------------------------
+    {
+        "id": "BQ-37",
+        "category": "cross_company_comparison",
+        "difficulty": "hard",
+        "question": (
+            "Compare the most recent annual revenue for Apple, Microsoft, "
+            "Amazon, and Alphabet. Rank them from highest to lowest."
+        ),
+        "expected_tools": ["sec_edgar_compare_companies"],
+        "pass_criteria": (
+            "Agent calls sec_edgar_compare_companies with identifiers for all four companies "
+            "(AAPL, MSFT, AMZN, GOOGL or their CIKs) and an appropriate revenue concept "
+            "(Revenues, RevenueFromContractWithCustomerExcludingAssessedTax, or similar); "
+            "response shows annual revenue values for all four companies with fiscal year "
+            "end dates; response ranks them from highest to lowest revenue; "
+            "Amazon is the largest by revenue (~$590–650B); "
             "values come from tool return values — not fabricated from memory."
         ),
         "numeric_checks": None,

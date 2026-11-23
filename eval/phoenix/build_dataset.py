@@ -297,6 +297,16 @@ _REFERENCE_ANSWERS: dict[str, str] = {
         "Microsoft typically reports the largest deferred revenue among the three (~$50–70B). "
         "Values come from tool return values — not fabricated from memory."
     ),
+    "BQ-37": (
+        "Agent calls sec_edgar_compare_companies with identifiers for all four companies: "
+        "Apple (AAPL), Microsoft (MSFT), Amazon (AMZN), and Alphabet (GOOGL or GOOG), "
+        "using an annual revenue concept (Revenues or RevenueFromContractWithCustomerExcludingAssessedTax). "
+        "Response shows annual revenue values for all four companies with fiscal year end dates. "
+        "Response ranks them from highest to lowest — Amazon is highest (~$590–650B), "
+        "followed by Apple (~$390–480B), Alphabet (~$340–380B), then Microsoft (~$230–280B). "
+        "(Exact ordering may vary slightly by fiscal year alignment.) "
+        "Values come from tool return values — not fabricated from memory."
+    ),
 }
 
 

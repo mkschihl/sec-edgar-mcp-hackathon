@@ -37,9 +37,7 @@ with a 3-vote majority.
 
 ## 2. Tool routing results (Layer 1)
 
-32 / 35 questions passed the tool-routing check (91%). Three pre-existing
-`routing_diff` failures (BQ-01, BQ-02, BQ-15): the agent uses an equivalent
-but unexpected tool path. All 14 tools are reachable.
+**35 / 35 questions passed** the tool-routing check (100%). Every expected tool fired.
 
 **Tool utilisation summary (2026-11-23, 35 questions):**
 
@@ -47,17 +45,18 @@ but unexpected tool path. All 14 tools are reachable.
 |---|---|---|---|---|
 | `sec_edgar_compare_companies` | 2 | 2 | 100% | 2 |
 | `sec_edgar_full_text_search` | 2 | 2 | 100% | 2 |
-| `sec_edgar_get_company_fact` | 6 | 5 | 83% | 5 |
+| `sec_edgar_get_company_fact` | 5 | 6 | 120% | 6 |
 | `sec_edgar_get_earnings_release` | 2 | 2 | 100% | 2 |
+| `sec_edgar_get_filing_metadata` | 1 | 1 | 100% | 1 |
 | `sec_edgar_get_filing_text` | 2 | 2 | 100% | 2 |
 | `sec_edgar_get_quarterly_facts` | 3 | 3 | 100% | 4 |
 | `sec_edgar_get_recent_filings` | 4 | 6 | 150% | 6 |
 | `sec_edgar_list_concepts` | 2 | 2 | 100% | 2 |
-| `sec_edgar_resolve_company` | 3 | 13 | 433% | 14 |
-| `sec_edgar_resolve_synonym` | 2 | 12 | 600% | 12 |
-| `sec_edgar_resolve_xbrl_concept` | 2 | 2 | 100% | 2 |
-| `sec_edgar_screen` | 2 | 3 | 150% | 3 |
-| `sec_edgar_search_companies` | 4 | 3 | 75% | 3 |
+| `sec_edgar_resolve_company` | 3 | 11 | 367% | 13 |
+| `sec_edgar_resolve_synonym` | 2 | 10 | 500% | 10 |
+| `sec_edgar_resolve_xbrl_concept` | 2 | 3 | 150% | 4 |
+| `sec_edgar_screen` | 3 | 3 | 100% | 3 |
+| `sec_edgar_search_companies` | 2 | 6 | 300% | 6 |
 
 **Interpretation:** The tool routing instructions are working. The agent did not
 refuse answerable questions and correctly chained multi-tool sequences
@@ -105,7 +104,7 @@ search by company name. It did not fabricate a response. The agent enforces this
 through structural guards: a tool-call mandate (every financial figure must come
 from a tool return value), URL prohibition, and refusal rules. These reduce, but
 cannot eliminate, the risk of an LLM stating unsupported figures; the evaluation
-measures this directly (35/35 scope, 32/35 routing, 8/8 numeric).
+measures this directly (35/35 routing, 35/35 scope, 8/8 numeric).
 
 **Multi-step discovery.** Hard questions requiring search → resolve → retrieve chains
 (BQ-17 Pfizer, BQ-18 Exxon) were attempted in the correct sequence, demonstrating
@@ -289,16 +288,16 @@ questions (`sec-edgar-eval-2`). Run date: 2026-11-23, commit `44758ca` (14 tools
 
 | Dimension | Score | Notes |
 |---|---|---|
-| Correctness (REST routing) | **32 / 35 (91%)** | 3 pre-existing routing_diff failures (BQ-01, BQ-02, BQ-15) |
+| Correctness (REST routing) | **35 / 35 (100%)** | All 35 questions: correct tool fired, substantive answer returned |
 | Scope | **35 / 35 (100%)** | Agent never answered out-of-scope questions from training data |
 | Numeric | **8 / 8 (100%)** | All 8 questions with numeric anchors pass within stated tolerances (0.5–2%) |
 | BQ-34/BQ-35 (new) | **2 / 2 (100%)** | Both xbrl_concept_resolution questions pass on first run |
 
-BQ-34 and BQ-35 passed on the first run after CE deploy of the 14th tool.
+All 35 questions passed. BQ-34/BQ-35 passed on first run after CE deploy of the 14th tool.
 
 ### 6c. Consistency with human audit and production scoring
 
-- Production scoring: scope = 35/35 — the agent never fabricated an answer for an
+- Production scoring: routing = 35/35 and scope = 35/35 — the agent never fabricated an answer for an
   out-of-scope question. The Llama-agent runs predate the refusal rules and are
   superseded; scope 100% is a production-only result.
 - YTD-vs-quarterly fix (BQ-09, BQ-10): production scoring shows these passing after

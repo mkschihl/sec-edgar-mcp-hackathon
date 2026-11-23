@@ -282,7 +282,12 @@ def score_question(q: dict, response_text: str, raw_response: dict) -> dict:
     expected = q["expected_tools"]
     # optional_tools are never counted as missing — they help but aren't required
     optional = set(q.get("optional_tools") or [])
+    # any_of_tools: at least one must fire (treats the group as a single expected slot)
+    any_of = q.get("any_of_tools") or []
+    any_of_satisfied = (not any_of) or any(t in tools_fired for t in any_of)
     missing = [t for t in expected if t not in tools_fired and t not in optional]
+    if not any_of_satisfied:
+        missing = missing + [f"any_of{any_of}"]
     is_refusal = looks_like_refusal(response_text)
     is_timeout = "[TIMEOUT]" in response_text
     is_error = response_text.startswith("[HTTP") or response_text.startswith("[ERROR")

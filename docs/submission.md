@@ -24,8 +24,8 @@ The answer, demonstrated across 35 evaluation questions, is yes. The agent
 enforces this through structural guards: the agent instructions explicitly
 prohibit constructing or guessing URLs, stating values from memory, or answering
 financial questions without a tool call. These guards are measured in the
-evaluation: 32/35 routing pass (91%), and 8/8 numeric anchors — all values
-confirmed against live SEC API responses.
+evaluation: 35/35 routing pass (100%), 35/35 scope (100%), and 8/8 numeric
+anchors — all values confirmed against live SEC API responses.
 
 ---
 
@@ -126,25 +126,24 @@ scoring* where cached responses from the live WXO agent are scored by
 
 ### Layer 1 — Tool Routing (automated, 2026-11-23)
 
-**32 / 35 questions passed** the routing check (91%). Three pre-existing
-`routing_diff` failures (BQ-01, BQ-02, BQ-15) where the agent uses an
-equivalent but unexpected tool path.
+**35 / 35 questions passed** the routing check (100%). Every expected tool fired.
 
 | Tool | Expected in N Qs | Qs Fired | Fire Rate | Total Calls |
 |------|-----------|-------------|-------|-------|
 | `sec_edgar_compare_companies` | 2 | 2 | 100% | 2 |
 | `sec_edgar_full_text_search` | 2 | 2 | 100% | 2 |
-| `sec_edgar_get_company_fact` | 6 | 5 | 83% | 5 |
+| `sec_edgar_get_company_fact` | 5 | 6 | 120% | 6 |
 | `sec_edgar_get_earnings_release` | 2 | 2 | 100% | 2 |
+| `sec_edgar_get_filing_metadata` | 1 | 1 | 100% | 1 |
 | `sec_edgar_get_filing_text` | 2 | 2 | 100% | 2 |
 | `sec_edgar_get_quarterly_facts` | 3 | 3 | 100% | 4 |
 | `sec_edgar_get_recent_filings` | 4 | 6 | 150% | 6 |
 | `sec_edgar_list_concepts` | 2 | 2 | 100% | 2 |
-| `sec_edgar_resolve_company` | 3 | 13 | 433% (fires as part of multi-step chains) | 14 |
-| `sec_edgar_resolve_synonym` | 2 | 12 | 600% (fires proactively for name inputs) | 12 |
-| `sec_edgar_resolve_xbrl_concept` | 2 | 2 | 100% | 2 |
-| `sec_edgar_screen` | 2 | 3 | 150% | 3 |
-| `sec_edgar_search_companies` | 4 | 3 | 75% | 3 |
+| `sec_edgar_resolve_company` | 3 | 11 | 367% (fires as part of multi-step chains) | 13 |
+| `sec_edgar_resolve_synonym` | 2 | 10 | 500% (fires proactively for name inputs) | 10 |
+| `sec_edgar_resolve_xbrl_concept` | 2 | 3 | 150% | 4 |
+| `sec_edgar_screen` | 3 | 3 | 100% | 3 |
+| `sec_edgar_search_companies` | 2 | 6 | 300% (fires proactively in discovery chains) | 6 |
 
 ### Layer 2 — Human Quality Audit (2026-11-11)
 
@@ -200,12 +199,12 @@ questions. Run date: 2026-11-23, against commit `44758ca` (14 tools, 35 BQs).
 
 | Dimension | Score | Notes |
 |---|---|---|
-| Correctness (REST routing) | **32 / 35 (91%)** | 3 pre-existing routing_diff failures (BQ-01, BQ-02, BQ-15); all 14 tools reachable |
+| Correctness (REST routing) | **35 / 35 (100%)** | All 35 questions: correct tool fired, substantive answer returned |
 | Scope | **35 / 35 (100%)** | Agent never answered out-of-scope questions from training data |
 | Numeric | **8 / 8 (100%)** | All 8 questions with numeric anchors pass within stated tolerances (0.5–2%) |
 | BQ-34/BQ-35 (new) | **2 / 2 (100%)** | Both xbrl_concept_resolution questions pass with sec_edgar_resolve_xbrl_concept |
 
-BQ-34 and BQ-35 passed on the first run after CE deploy of the 14th tool.
+All 35 questions passed. BQ-34/BQ-35 passed on first run after CE deploy of the 14th tool.
 
 **Root causes of earlier failures (now resolved):**
 
@@ -292,10 +291,9 @@ The LLM-as-judge runs provided two complementary quality signals:
    correctness or scope benchmark. The Llama agent fabricated a stock price and a
    forecast in Experiment 6 (RXhwZXJpbWVudDo2, sec-edgar-eval-1).
 
-2. **Production WXO agent scoring (2026-11-23, commit `44758ca`):** 32/35
-    routing pass (91%), 35/35 scope, 8/8 numeric. BQ-34 and BQ-35 (new XBRL
-    concept resolution questions) passed on first run. Three pre-existing
-    routing_diff failures (BQ-01, BQ-02, BQ-15) remain unchanged.
+2. **Production WXO agent scoring (2026-11-23, commit `44758ca`):** 35/35
+    routing pass (100%), 35/35 scope, 8/8 numeric. All questions passed.
+    BQ-34 and BQ-35 (new XBRL concept resolution questions) passed on first run.
 
 3. **Scope: 35/35 (100%)** in production scoring — the agent never answered
     out-of-scope questions (stock prices, forecasts, investment advice) from

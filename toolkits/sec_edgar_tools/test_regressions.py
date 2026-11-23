@@ -750,6 +750,54 @@ async def test_synonym_tool():
     r = await sec_edgar_resolve_synonym("DoorDash")
     check("DoorDash → DoorDash Inc.", r.get("canonical_name") == "DoorDash Inc.", str(r))
 
+    # -- International ADR additions (session 13) ----------------------------
+    # TSMC / Taiwan Semiconductor
+    r = await sec_edgar_resolve_synonym("TSMC")
+    check("TSMC → Taiwan Semiconductor Manufacturing Co", r.get("canonical_name") == "Taiwan Semiconductor Manufacturing Co", str(r))
+    check("TSMC → TSM ticker", r.get("ticker") == "TSM", str(r))
+
+    r = await sec_edgar_resolve_synonym("Taiwan Semiconductor")
+    check("Taiwan Semiconductor → Taiwan Semiconductor Manufacturing Co", r.get("canonical_name") == "Taiwan Semiconductor Manufacturing Co", str(r))
+
+    r = await sec_edgar_resolve_synonym("TSM")
+    check("TSM → Taiwan Semiconductor Manufacturing Co", r.get("canonical_name") == "Taiwan Semiconductor Manufacturing Co", str(r))
+    check("TSM → TSM ticker", r.get("ticker") == "TSM", str(r))
+
+    # SAP SE
+    r = await sec_edgar_resolve_synonym("SAP")
+    check("SAP → SAP SE", r.get("canonical_name") == "SAP SE", str(r))
+    check("SAP → SAP ticker", r.get("ticker") == "SAP", str(r))
+
+    r = await sec_edgar_resolve_synonym("SAP SE")
+    check("SAP SE → SAP SE", r.get("canonical_name") == "SAP SE", str(r))
+
+    # ASML
+    r = await sec_edgar_resolve_synonym("ASML")
+    check("ASML → ASML Holding N.V.", r.get("canonical_name") == "ASML Holding N.V.", str(r))
+    check("ASML → ASML ticker", r.get("ticker") == "ASML", str(r))
+
+    r = await sec_edgar_resolve_synonym("ASML Holding")
+    check("ASML Holding → ASML Holding N.V.", r.get("canonical_name") == "ASML Holding N.V.", str(r))
+
+    # Sony
+    r = await sec_edgar_resolve_synonym("Sony")
+    check("Sony → Sony Group Corp", r.get("canonical_name") == "Sony Group Corp", str(r))
+    check("Sony → SONY ticker", r.get("ticker") == "SONY", str(r))
+
+    r = await sec_edgar_resolve_synonym("Sony Group")
+    check("Sony Group → Sony Group Corp", r.get("canonical_name") == "Sony Group Corp", str(r))
+
+    r = await sec_edgar_resolve_synonym("Sony Corp")
+    check("Sony Corp → Sony Group Corp (rebranded)", r.get("canonical_name") == "Sony Group Corp", str(r))
+
+    # Toyota ADR aliases
+    r = await sec_edgar_resolve_synonym("Toyota Motor")
+    check("Toyota Motor → Toyota Motor Corp", r.get("canonical_name") == "Toyota Motor Corp", str(r))
+
+    r = await sec_edgar_resolve_synonym("TM")
+    check("TM → Toyota Motor Corp (ADR ticker)", r.get("canonical_name") == "Toyota Motor Corp", str(r))
+    check("TM → TM ticker", r.get("ticker") == "TM", str(r))
+
 
 async def test_filing_text():
     print("\n[17] sec_edgar_get_filing_text — Apple 10-K text extraction")

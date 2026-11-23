@@ -798,6 +798,47 @@ async def test_synonym_tool():
     check("TM → Toyota Motor Corp (ADR ticker)", r.get("canonical_name") == "Toyota Motor Corp", str(r))
     check("TM → TM ticker", r.get("ticker") == "TM", str(r))
 
+    # Alibaba / BABA
+    r = await sec_edgar_resolve_synonym("Alibaba")
+    check("Alibaba → Alibaba Group Holding Ltd", r.get("canonical_name") == "Alibaba Group Holding Ltd", str(r))
+    check("Alibaba → BABA ticker", r.get("ticker") == "BABA", str(r))
+
+    r = await sec_edgar_resolve_synonym("alibaba group")
+    check("alibaba group → Alibaba Group Holding Ltd", r.get("canonical_name") == "Alibaba Group Holding Ltd", str(r))
+
+    r = await sec_edgar_resolve_synonym("BABA")
+    check("BABA → Alibaba Group Holding Ltd (ADR ticker)", r.get("canonical_name") == "Alibaba Group Holding Ltd", str(r))
+    check("BABA → BABA ticker", r.get("ticker") == "BABA", str(r))
+
+    # LVMH / LVMUY
+    r = await sec_edgar_resolve_synonym("LVMH")
+    check("LVMH → LVMH Moet Hennessy Louis Vuitton SE", r.get("canonical_name") == "LVMH Moet Hennessy Louis Vuitton SE", str(r))
+    check("LVMH → LVMUY ticker", r.get("ticker") == "LVMUY", str(r))
+
+    r = await sec_edgar_resolve_synonym("Louis Vuitton")
+    check("Louis Vuitton → LVMH Moet Hennessy Louis Vuitton SE", r.get("canonical_name") == "LVMH Moet Hennessy Louis Vuitton SE", str(r))
+
+    r = await sec_edgar_resolve_synonym("LVMUY")
+    check("LVMUY → LVMH Moet Hennessy Louis Vuitton SE (ADR ticker)", r.get("canonical_name") == "LVMH Moet Hennessy Louis Vuitton SE", str(r))
+
+    # Novo Nordisk / NVO
+    r = await sec_edgar_resolve_synonym("Novo Nordisk")
+    check("Novo Nordisk → Novo Nordisk A/S", r.get("canonical_name") == "Novo Nordisk A/S", str(r))
+    check("Novo Nordisk → NVO ticker", r.get("ticker") == "NVO", str(r))
+
+    r = await sec_edgar_resolve_synonym("NVO")
+    check("NVO → Novo Nordisk A/S (ADR ticker)", r.get("canonical_name") == "Novo Nordisk A/S", str(r))
+    check("NVO → NVO ticker", r.get("ticker") == "NVO", str(r))
+
+    # Rio Tinto / RIO
+    r = await sec_edgar_resolve_synonym("Rio Tinto")
+    check("Rio Tinto → Rio Tinto PLC", r.get("canonical_name") == "Rio Tinto PLC", str(r))
+    check("Rio Tinto → RIO ticker", r.get("ticker") == "RIO", str(r))
+
+    r = await sec_edgar_resolve_synonym("RIO")
+    check("RIO → Rio Tinto PLC (ADR ticker)", r.get("canonical_name") == "Rio Tinto PLC", str(r))
+    check("RIO → RIO ticker", r.get("ticker") == "RIO", str(r))
+
 
 async def test_filing_text():
     print("\n[17] sec_edgar_get_filing_text — Apple 10-K text extraction")
@@ -1080,6 +1121,64 @@ def test_xbrl_concept_resolver():
     r = sec_edgar_resolve_xbrl_concept("goodwill impairment")
     check("goodwill impairment: no error", "error" not in r, str(r))
     check("goodwill impairment: at least 1 result", len(r.get("results", [])) >= 1, "")
+
+    # Derived-metric entries — derivation_note + component concepts returned
+    r = sec_edgar_resolve_xbrl_concept("net debt")
+    check("net debt: no error", "error" not in r, str(r))
+    check("net debt: has derivation_note", "derivation_note" in r, str(list(r.keys())))
+    names = [x["concept_name"] for x in r.get("results", [])]
+    check("net debt: LongTermDebt in results", "LongTermDebt" in names, str(names[:5]))
+    check("net debt: CashAndCashEquivalentsAtCarryingValue in results",
+          "CashAndCashEquivalentsAtCarryingValue" in names, str(names[:5]))
+
+    r = sec_edgar_resolve_xbrl_concept("working capital")
+    check("working capital: no error", "error" not in r, str(r))
+    check("working capital: has derivation_note", "derivation_note" in r, str(list(r.keys())))
+    names = [x["concept_name"] for x in r.get("results", [])]
+    check("working capital: AssetsCurrent in results", "AssetsCurrent" in names, str(names[:5]))
+    check("working capital: LiabilitiesCurrent in results", "LiabilitiesCurrent" in names, str(names[:5]))
+
+    r = sec_edgar_resolve_xbrl_concept("ebitda")
+    check("ebitda: no error", "error" not in r, str(r))
+    check("ebitda: has derivation_note", "derivation_note" in r, str(list(r.keys())))
+    names = [x["concept_name"] for x in r.get("results", [])]
+    check("ebitda: OperatingIncomeLoss in results", "OperatingIncomeLoss" in names, str(names[:5]))
+    check("ebitda: DepreciationAndAmortization in results",
+          "DepreciationAndAmortization" in names or "DepreciationDepletionAndAmortization" in names,
+          str(names[:5]))
+
+    # Minority / noncontrolling interest
+    r = sec_edgar_resolve_xbrl_concept("minority interest")
+    check("minority interest: no error", "error" not in r, str(r))
+    names = [x["concept_name"] for x in r.get("results", [])]
+    check("minority interest: MinorityInterest first",
+          names and names[0] == "MinorityInterest", str(names[:3]))
+    check("minority interest: no spurious derivation_note", "derivation_note" not in r, "")
+
+    r = sec_edgar_resolve_xbrl_concept("noncontrolling interest")
+    check("noncontrolling interest: no error", "error" not in r, str(r))
+    names = [x["concept_name"] for x in r.get("results", [])]
+    check("noncontrolling interest: MinorityInterest in results",
+          "MinorityInterest" in names, str(names[:5]))
+
+    # Other comprehensive income
+    r = sec_edgar_resolve_xbrl_concept("other comprehensive income")
+    check("other comprehensive income: no error", "error" not in r, str(r))
+    names = [x["concept_name"] for x in r.get("results", [])]
+    check("other comprehensive income: OtherComprehensiveIncomeLossNetOfTax first",
+          names and names[0] == "OtherComprehensiveIncomeLossNetOfTax", str(names[:3]))
+
+    r = sec_edgar_resolve_xbrl_concept("oci")
+    check("oci: no error", "error" not in r, str(r))
+    names = [x["concept_name"] for x in r.get("results", [])]
+    check("oci: OtherComprehensiveIncomeLossNetOfTax in results",
+          "OtherComprehensiveIncomeLossNetOfTax" in names, str(names[:5]))
+
+    r = sec_edgar_resolve_xbrl_concept("aoci")
+    check("aoci: no error", "error" not in r, str(r))
+    names = [x["concept_name"] for x in r.get("results", [])]
+    check("aoci: AccumulatedOtherComprehensiveIncomeLossNetOfTax first",
+          names and names[0] == "AccumulatedOtherComprehensiveIncomeLossNetOfTax", str(names[:3]))
 
     # Empty / nonsense query
     r = sec_edgar_resolve_xbrl_concept("xyzzy_no_match_ever")

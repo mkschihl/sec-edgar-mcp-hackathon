@@ -702,6 +702,18 @@ _SYNONYM_TABLE: dict[str, dict] = {
     "charter":          {"canonical_name": "Charter Communications Inc.", "ticker": "CHTR", "note": "Charter Communications Inc. is the SEC-registered legal name."},
     "dish":             {"canonical_name": "EchoStar Corp", "ticker": "SATS", "note": "DISH Network merged into EchoStar Corp in 2024."},
     "dish network":     {"canonical_name": "EchoStar Corp", "ticker": "SATS", "note": "DISH Network merged into EchoStar Corp in 2024."},
+    # Additional international ADR synonyms ----------------------------------
+    "alibaba":          {"canonical_name": "Alibaba Group Holding Ltd", "ticker": "BABA", "note": "Alibaba Group Holding Ltd is the SEC-registered legal name (ADR: BABA)."},
+    "alibaba group":    {"canonical_name": "Alibaba Group Holding Ltd", "ticker": "BABA", "note": "Alibaba Group Holding Ltd is the SEC-registered legal name."},
+    "baba":             {"canonical_name": "Alibaba Group Holding Ltd", "ticker": "BABA", "note": "BABA is the ADR ticker for Alibaba Group Holding Ltd."},
+    "lvmh":             {"canonical_name": "LVMH Moet Hennessy Louis Vuitton SE", "ticker": "LVMUY", "note": "LVMH Moet Hennessy Louis Vuitton SE is the SEC-registered legal name (ADR: LVMUY)."},
+    "louis vuitton":    {"canonical_name": "LVMH Moet Hennessy Louis Vuitton SE", "ticker": "LVMUY", "note": "Louis Vuitton is a brand of LVMH Moet Hennessy Louis Vuitton SE."},
+    "moet hennessy":    {"canonical_name": "LVMH Moet Hennessy Louis Vuitton SE", "ticker": "LVMUY", "note": "Moët Hennessy is a division of LVMH Moet Hennessy Louis Vuitton SE."},
+    "lvmuy":            {"canonical_name": "LVMH Moet Hennessy Louis Vuitton SE", "ticker": "LVMUY", "note": "LVMUY is the OTC ADR ticker for LVMH Moet Hennessy Louis Vuitton SE."},
+    "novo nordisk":     {"canonical_name": "Novo Nordisk A/S", "ticker": "NVO", "note": "Novo Nordisk A/S is the SEC-registered legal name (ADR: NVO)."},
+    "nvo":              {"canonical_name": "Novo Nordisk A/S", "ticker": "NVO", "note": "NVO is the ADR ticker for Novo Nordisk A/S."},
+    "rio tinto":        {"canonical_name": "Rio Tinto PLC", "ticker": "RIO", "note": "Rio Tinto PLC is the SEC-registered legal name (ADR: RIO)."},
+    "rio":              {"canonical_name": "Rio Tinto PLC", "ticker": "RIO", "note": "RIO is the ADR ticker for Rio Tinto PLC."},
 }
 
 
@@ -2963,6 +2975,33 @@ async def sec_edgar_resolve_xbrl_concept(
         "Optional filter: 'debit' or 'credit'. Leave blank to return both.",
     ] = "",
 ) -> dict:
+    # Derived-metric hints: these terms do not map to a single XBRL concept.
+    # When matched, the response includes a 'derivation_note' explaining the formula
+    # and returns the nearest component concepts for reference.
+    _DERIVED_HINTS: dict[str, str] = {
+        "net debt": (
+            "Net Debt is not a single XBRL concept — it is a derived metric: "
+            "Net Debt = LongTermDebt + ShortTermBorrowings + DebtCurrent "
+            "- CashAndCashEquivalentsAtCarryingValue. "
+            "Retrieve each component separately using sec_edgar_get_company_fact, "
+            "then compute the difference."
+        ),
+        "working capital": (
+            "Working Capital is not a single XBRL concept — it is a derived metric: "
+            "Working Capital = AssetsCurrent - LiabilitiesCurrent. "
+            "Retrieve each component separately using sec_edgar_get_company_fact, "
+            "then subtract."
+        ),
+        "ebitda": (
+            "EBITDA is not a single US-GAAP XBRL concept — it is a derived metric: "
+            "EBITDA = OperatingIncomeLoss + DepreciationAndAmortization "
+            "(or DepreciationDepletionAndAmortization). "
+            "Retrieve each component separately using sec_edgar_get_company_fact, "
+            "then add. Some companies disclose Adjusted EBITDA in earnings releases "
+            "(use sec_edgar_get_earnings_release for press-release figures)."
+        ),
+    }
+
     # Canonical concept overrides: when the normalised query exactly matches a key,
     # the listed concept(s) are boosted to the top of results regardless of score.
     # These cover the most common financial metrics where the taxonomy has many
@@ -3020,6 +3059,10 @@ async def sec_edgar_resolve_xbrl_concept(
         "product warranty":                ["ProductWarrantyAccrual", "ProductWarrantyAccrualClassifiedCurrent"],
         "pension liability":               ["PensionAndOtherPostretirementDefinedBenefitPlansLiabilitiesNoncurrent"],
         "net pension liability":           ["PensionAndOtherPostretirementDefinedBenefitPlansLiabilitiesNoncurrent"],
+        # Derived-metric components (see _DERIVED_HINTS for full derivation notes)
+        "net debt":                        ["LongTermDebt", "ShortTermBorrowings", "DebtCurrent", "CashAndCashEquivalentsAtCarryingValue"],
+        "working capital":                 ["AssetsCurrent", "LiabilitiesCurrent"],
+        "ebitda":                          ["OperatingIncomeLoss", "DepreciationAndAmortization", "DepreciationDepletionAndAmortization"],
         # -- Balance sheet: equity --------------------------------------------
         "stockholders equity":             ["StockholdersEquity"],
         "shareholders equity":             ["StockholdersEquity"],
@@ -3029,6 +3072,15 @@ async def sec_edgar_resolve_xbrl_concept(
         "apic":                            ["AdditionalPaidInCapital"],
         "shares outstanding":              ["CommonStockSharesOutstanding"],
         "market capitalization":           ["MarketCapitalization"],
+        # Noncontrolling / minority interest (renamed in 2009 FASB reorg)
+        "minority interest":               ["MinorityInterest", "RedeemableNoncontrollingInterestEquityCarryingAmount"],
+        "noncontrolling interest":         ["MinorityInterest", "RedeemableNoncontrollingInterestEquityCarryingAmount"],
+        "non-controlling interest":        ["MinorityInterest", "RedeemableNoncontrollingInterestEquityCarryingAmount"],
+        # Other comprehensive income
+        "other comprehensive income":      ["OtherComprehensiveIncomeLossNetOfTax", "OtherComprehensiveIncomeLossNetOfTaxPortionAttributableToParent"],
+        "oci":                             ["OtherComprehensiveIncomeLossNetOfTax", "OtherComprehensiveIncomeLossNetOfTaxPortionAttributableToParent"],
+        "aoci":                            ["AccumulatedOtherComprehensiveIncomeLossNetOfTax"],
+        "accumulated other comprehensive income": ["AccumulatedOtherComprehensiveIncomeLossNetOfTax"],
         # -- Cash flow statement ----------------------------------------------
         "operating cash flow":             ["NetCashProvidedByUsedInOperatingActivities"],
         "cash from operations":            ["NetCashProvidedByUsedInOperatingActivities"],
@@ -3071,6 +3123,37 @@ async def sec_edgar_resolve_xbrl_concept(
     terms = [t for t in raw_terms if t]
     if not terms:
         return {"error": "Query is empty after tokenisation.", "results": []}
+
+    # Early-exit for derived metrics: return a derivation_note with component concepts
+    # before the inverted-index search, so acronyms like "ebitda" that don't appear
+    # in the taxonomy still return useful guidance.
+    _early_canonical = _CANONICAL.get(query.strip().lower(), [])
+    _early_derived = _DERIVED_HINTS.get(query.strip().lower())
+    if _early_canonical and _early_derived:
+        # Build _name_to_idx inline for this early path
+        _name_to_idx_early = {row[0]: i for i, row in enumerate(XBRL_CONCEPTS)}
+        _early_results: list[dict] = []
+        for cname in _early_canonical:
+            idx = _name_to_idx_early.get(cname)
+            if idx is not None:
+                name, label, pt, bal, xbrl_type = XBRL_CONCEPTS[idx]
+                if not (period_type and pt != period_type) and not (balance_filter and bal != balance_filter and balance_filter != ""):
+                    _early_results.append({"concept_name": name, "label": label,
+                                           "period_type": pt, "balance": bal, "xbrl_type": xbrl_type})
+        if _early_results:
+            return {
+                "query": query,
+                "total_matches": len(_early_results),
+                "returned": len(_early_results),
+                "results": _early_results,
+                "derivation_note": _early_derived,
+                "usage_hint": (
+                    "Pass 'concept_name' directly to sec_edgar_get_company_fact, "
+                    "sec_edgar_get_quarterly_facts, or sec_edgar_compare_companies. "
+                    "Use period_type='duration' for income-statement metrics, "
+                    "'instant' for balance-sheet snapshots."
+                ),
+            }
 
     # Build per-term hit sets (exact + prefix for terms ≥ 4 chars)
     per_term_hits: list[set[int]] = []
@@ -3204,7 +3287,7 @@ async def sec_edgar_resolve_xbrl_concept(
         if len(results) >= max_results:
             break
 
-    return {
+    out: dict = {
         "query":         query,
         "total_matches": len(candidates),
         "returned":      len(results),
@@ -3216,6 +3299,10 @@ async def sec_edgar_resolve_xbrl_concept(
             "'instant' for balance-sheet snapshots."
         ),
     }
+    derivation_note = _DERIVED_HINTS.get(query.strip().lower())
+    if derivation_note:
+        out["derivation_note"] = derivation_note
+    return out
 
 
 if __name__ == "__main__":

@@ -25,6 +25,7 @@ from server import (
     sec_edgar_full_text_search,
     sec_edgar_screen,
     sec_edgar_get_earnings_release,
+    sec_edgar_resolve_xbrl_concept,
     _strip_html,
     _find_section_offset,
     SEC_USER_AGENT,
@@ -970,6 +971,74 @@ async def test_earnings_release():
           str(r_period.get("period_of_report")))
 
 
+def test_xbrl_concept_resolver():
+    """Test sec_edgar_resolve_xbrl_concept (no network — in-process index)."""
+    print("\n[21] sec_edgar_resolve_xbrl_concept — canonical overrides + inverted index")
+
+    # Canonical override: exact key lookup
+    r = sec_edgar_resolve_xbrl_concept("operating cash flow")
+    check("operating cash flow: no error", "error" not in r, str(r))
+    names = [x["concept_name"] for x in r.get("results", [])]
+    check("operating cash flow: NetCashProvidedByUsedInOperatingActivities first",
+          names and names[0] == "NetCashProvidedByUsedInOperatingActivities", str(names[:3]))
+
+    # New canonical overrides — backlog additions
+    r = sec_edgar_resolve_xbrl_concept("deferred revenue")
+    check("deferred revenue: no error", "error" not in r, str(r))
+    names = [x["concept_name"] for x in r.get("results", [])]
+    check("deferred revenue: DeferredRevenueCurrent in top results",
+          "DeferredRevenueCurrent" in names or "DeferredRevenue" in names, str(names[:5]))
+
+    r = sec_edgar_resolve_xbrl_concept("stock based compensation")
+    check("stock based compensation: no error", "error" not in r, str(r))
+    names = [x["concept_name"] for x in r.get("results", [])]
+    check("stock based compensation: ShareBasedCompensation in top results",
+          "ShareBasedCompensation" in names or "AllocatedShareBasedCompensationExpense" in names,
+          str(names[:5]))
+
+    r = sec_edgar_resolve_xbrl_concept("restructuring charges")
+    check("restructuring charges: no error", "error" not in r, str(r))
+    names = [x["concept_name"] for x in r.get("results", [])]
+    check("restructuring charges: RestructuringCharges in top results",
+          "RestructuringCharges" in names, str(names[:5]))
+
+    r = sec_edgar_resolve_xbrl_concept("investing cash flow")
+    check("investing cash flow: no error", "error" not in r, str(r))
+    names = [x["concept_name"] for x in r.get("results", [])]
+    check("investing cash flow: NetCashProvidedByUsedInInvestingActivities first",
+          names and names[0] == "NetCashProvidedByUsedInInvestingActivities", str(names[:3]))
+
+    r = sec_edgar_resolve_xbrl_concept("retained earnings")
+    check("retained earnings: no error", "error" not in r, str(r))
+    names = [x["concept_name"] for x in r.get("results", [])]
+    check("retained earnings: RetainedEarningsAccumulatedDeficit in top results",
+          "RetainedEarningsAccumulatedDeficit" in names, str(names[:5]))
+
+    r = sec_edgar_resolve_xbrl_concept("pension liability")
+    check("pension liability: no error", "error" not in r, str(r))
+    names = [x["concept_name"] for x in r.get("results", [])]
+    check("pension liability: PensionAndOtherPostretirementDefinedBenefitPlansLiabilitiesNoncurrent in results",
+          "PensionAndOtherPostretirementDefinedBenefitPlansLiabilitiesNoncurrent" in names,
+          str(names[:5]))
+
+    # Exact concept name fast path
+    r = sec_edgar_resolve_xbrl_concept("NetIncomeLoss")
+    check("exact name fast path: no error", "error" not in r, str(r))
+    check("exact name fast path: exactly 1 result", r.get("returned") == 1, str(r.get("returned")))
+    check("exact name fast path: concept_name == NetIncomeLoss",
+          r["results"][0]["concept_name"] == "NetIncomeLoss" if r.get("results") else False, "")
+
+    # Inverted index fallback (not a canonical key)
+    r = sec_edgar_resolve_xbrl_concept("goodwill impairment")
+    check("goodwill impairment: no error", "error" not in r, str(r))
+    check("goodwill impairment: at least 1 result", len(r.get("results", [])) >= 1, "")
+
+    # Empty / nonsense query
+    r = sec_edgar_resolve_xbrl_concept("xyzzy_no_match_ever")
+    check("nonsense query: returns total_matches=0 or error",
+          r.get("total_matches", 1) == 0 or "error" in r, str(r))
+
+
 async def main():
     await test_synonym_tool()
     await test_filing_text()
@@ -1005,6 +1074,7 @@ if __name__ == "__main__":
     # asyncio.run() — that is precisely the scenario the loop-awareness fix covers.
     asyncio.run(main())
     test_multi_event_loop()
+    test_xbrl_concept_resolver()   # sync — no network calls
     # Re-evaluate exit code after the synchronous test.
     if failures:
         sys.exit(1)

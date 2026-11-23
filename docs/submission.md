@@ -20,11 +20,11 @@ This project asks a simple question: **can a watsonx Orchestrate agent answer
 real financial questions by querying the SEC's authoritative APIs directly —
 with every number traceable back to the SEC filing that reported it?**
 
-The answer, demonstrated across 35 evaluation questions, is yes. The agent
+The answer, demonstrated across 37 evaluation questions, is yes. The agent
 enforces this through structural guards: the agent instructions explicitly
 prohibit constructing or guessing URLs, stating values from memory, or answering
 financial questions without a tool call. These guards are measured in the
-evaluation: 35/35 routing pass (100%), 35/35 scope (100%), and 8/8 numeric
+evaluation: 37/37 routing pass (100%), 37/37 scope (100%), and 8/8 numeric
 anchors — all values confirmed against live SEC API responses.
 
 ---
@@ -86,7 +86,7 @@ making the toolkit reachable by any MCP-compatible client.
 | 6 | `sec_edgar_compare_companies` | Compare one concept across multiple companies; emits FY-alignment warnings |
 | 7 | `sec_edgar_list_concepts` | Enumerate XBRL concepts a company reports; supports keyword search |
 | 8 | `sec_edgar_get_filing_metadata` | Resolve an accession number to form type, dates, and a direct EDGAR link |
-| 9 | `sec_edgar_resolve_synonym` | Resolve brand/colloquial names to canonical SEC filer names (175 synonyms) |
+| 9 | `sec_edgar_resolve_synonym` | Resolve brand/colloquial names to canonical SEC filer names (~186 synonyms, incl. international ADRs: TSMC, SAP SE, ASML, Sony, Toyota) |
 | 10 | `sec_edgar_get_filing_text` | Fetch and return the plain-text content of any SEC filing document with optional section-seeking |
 | 11 | `sec_edgar_full_text_search` | Keyword search across all EDGAR filings via the SEC's EFTS full-text search API |
 | 12 | `sec_edgar_screen` | Discover companies by SIC code, exchange, and/or state of incorporation |
@@ -126,11 +126,11 @@ scoring* where cached responses from the live WXO agent are scored by
 
 ### Layer 1 — Tool Routing (automated, 2026-11-23)
 
-**35 / 35 questions passed** the routing check (100%). Every expected tool fired.
+**37 / 37 questions passed** the routing check (100%). Every expected tool fired.
 
 | Tool | Expected in N Qs | Qs Fired | Fire Rate | Total Calls |
 |------|-----------|-------------|-------|-------|
-| `sec_edgar_compare_companies` | 2 | 2 | 100% | 2 |
+| `sec_edgar_compare_companies` | 4 | 4 | 100% | 5 |
 | `sec_edgar_full_text_search` | 2 | 2 | 100% | 2 |
 | `sec_edgar_get_company_fact` | 5 | 6 | 120% | 6 |
 | `sec_edgar_get_earnings_release` | 2 | 2 | 100% | 2 |
@@ -141,9 +141,9 @@ scoring* where cached responses from the live WXO agent are scored by
 | `sec_edgar_list_concepts` | 2 | 2 | 100% | 2 |
 | `sec_edgar_resolve_company` | 3 | 11 | 367% (fires as part of multi-step chains) | 13 |
 | `sec_edgar_resolve_synonym` | 2 | 10 | 500% (fires proactively for name inputs) | 10 |
-| `sec_edgar_resolve_xbrl_concept` | 2 | 3 | 150% | 4 |
+| `sec_edgar_resolve_xbrl_concept` | 3 | 4 | 133% | 5 |
 | `sec_edgar_screen` | 3 | 3 | 100% | 3 |
-| `sec_edgar_search_companies` | 2 | 6 | 300% (fires proactively in discovery chains) | 6 |
+| `sec_edgar_search_companies` | 2 | 7 | 350% (fires proactively in discovery chains) | 9 |
 
 ### Layer 2 — Human Quality Audit (2026-11-11)
 
@@ -194,17 +194,19 @@ be used for quantitative comparison.
 
 #### Production WXO agent scoring (2026-11-23)
 
-The production `sec_edgar_agent` on `gsa-hackathon` was scored against 35 benchmark
-questions. Run date: 2026-11-23, against commit `44758ca` (14 tools, 35 BQs).
+The production `sec_edgar_agent` on `gsa-hackathon` was scored against 37 benchmark
+questions. Run date: 2026-11-23, against commit `c0cf335` (14 tools, 37 BQs, v1.6.0).
 
 | Dimension | Score | Notes |
 |---|---|---|
-| Correctness (REST routing) | **35 / 35 (100%)** | All 35 questions: correct tool fired, substantive answer returned |
-| Scope | **35 / 35 (100%)** | Agent never answered out-of-scope questions from training data |
+| Correctness (REST routing) | **37 / 37 (100%)** | All 37 questions: correct tool fired, substantive answer returned |
+| Scope | **37 / 37 (100%)** | Agent never answered out-of-scope questions from training data |
 | Numeric | **8 / 8 (100%)** | All 8 questions with numeric anchors pass within stated tolerances (0.5–2%) |
 | BQ-34/BQ-35 (new) | **2 / 2 (100%)** | Both xbrl_concept_resolution questions pass with sec_edgar_resolve_xbrl_concept |
+| BQ-36 (new) | **1 / 1 (100%)** | xbrl_concept_chain: deferred revenue comparison (Apple/MSFT/Alphabet) |
+| BQ-37 (new) | **1 / 1 (100%)** | 4-company compare_companies stress test (Apple/MSFT/Amazon/Alphabet) |
 
-All 35 questions passed. BQ-34/BQ-35 passed on first run after CE deploy of the 14th tool.
+All 37 questions passed. BQ-36 and BQ-37 passed on first run.
 
 **Root causes of earlier failures (now resolved):**
 
@@ -259,11 +261,12 @@ question independently and awards the majority label. A 2-of-3 split is reported
 "unstable" with score 0.5. This reduces single-inference flip-flopping and makes
 the correctness signal more reliable.
 
-**Synonym table (175 entries).** `sec_edgar_resolve_synonym` resolves 175 brand
+**Synonym table (~186 entries).** `sec_edgar_resolve_synonym` resolves ~186 brand
 names, common aliases, and colloquial company references to canonical SEC filer
-names and tickers. Zero network calls — a pure dict lookup. This prevents the agent
-from routing to wrong entities when users say "Google" instead of "Alphabet" or
-"Meta" instead of "Meta Platforms".
+names and tickers — including international ADRs (TSMC/TSM, SAP SE, ASML Holding,
+Sony Group, Toyota/TM added in session 13). Zero network calls — a pure dict lookup.
+This prevents the agent from routing to wrong entities when users say "Google"
+instead of "Alphabet" or "Meta" instead of "Meta Platforms".
 
 **8-K earnings release parsing.** `sec_edgar_get_earnings_release` locates an 8-K
 Item 2.02 filing, identifies the EX-99.1 press release exhibit via filename regex
@@ -291,11 +294,12 @@ The LLM-as-judge runs provided two complementary quality signals:
    correctness or scope benchmark. The Llama agent fabricated a stock price and a
    forecast in Experiment 6 (RXhwZXJpbWVudDo2, sec-edgar-eval-1).
 
-2. **Production WXO agent scoring (2026-11-23, commit `44758ca`):** 35/35
-    routing pass (100%), 35/35 scope, 8/8 numeric. All questions passed.
-    BQ-34 and BQ-35 (new XBRL concept resolution questions) passed on first run.
+2. **Production WXO agent scoring (2026-11-23, commit `c0cf335`, v1.6.0):** 37/37
+    routing pass (100%), 37/37 scope, 8/8 numeric. All questions passed.
+    BQ-34/BQ-35 passed on first run after CE deploy of the 14th tool.
+    BQ-36 (xbrl_concept_chain) and BQ-37 (4-company comparison) passed on first run.
 
-3. **Scope: 35/35 (100%)** in production scoring — the agent never answered
+3. **Scope: 37/37 (100%)** in production scoring — the agent never answered
     out-of-scope questions (stock prices, forecasts, investment advice) from
     training data.
 
@@ -304,19 +308,27 @@ The LLM-as-judge runs provided two complementary quality signals:
     MSFT Q4 FY2026 derived ~$35.8B). All pass within stated tolerances (0.5–2%).
 
 5. **Llama-agent Phoenix Experiment 17 (2026-11-23, 35 Qs, `RXhwZXJpbWVudDoxNw==`):**
-   The dataset was rebuilt to 35 rows and re-run with `meta-llama/llama-3-3-70b-instruct`
+   The dataset was at 35 rows at time of Exp 17. Run with `meta-llama/llama-3-3-70b-instruct`
    as the agent (direct MCP endpoint, not production WXO) and `mistralai/mistral-small-3-1-24b-instruct-2503`
    as the judge. 35/35 task runs completed. Judge scores:
    correctness 14/35 (40%), scope 29/35 (83%), numeric 5/8 (62%).
    These reflect the Llama model's standalone ability — not the production WXO agent.
    View: http://localhost:6006/datasets/RGF0YXNldDoz/compare?experimentId=RXhwZXJpbWVudDoxNw==
 
+   **Llama-agent Phoenix Experiment 18 (2026-11-23, 37 Qs, `RXhwZXJpbWVudDoxOQ==`):**
+   The dataset was rebuilt to 37 rows and re-run with `meta-llama/llama-3-3-70b-instruct`
+   as the agent (direct MCP endpoint, not production WXO) and `mistralai/mistral-small-3-1-24b-instruct-2503`
+   as the judge. 37/37 task runs completed, 111 evaluations. Judge scores:
+   correctness 14/37 (38%), scope 30/37 (81%), numeric 5/8 (62%).
+   These reflect the Llama model's standalone ability — not the production WXO agent.
+   View: http://localhost:6006/datasets/RGF0YXNldDoz/compare?experimentId=RXhwZXJpbWVudDoxOQ==
+
 6. **Per-question traces** are viewable in the Phoenix UI
    (http://localhost:6006) → Datasets → `sec-edgar-eval-2`.
 
 > **Note on judges:** The 2026-11-17 Llama-agent runs were judged by
 > `meta-llama/llama-3-3-70b-instruct` — the same model as the agent, with the
-> reference mapping unbound. Production scoring uses
+> reference mapping unbound. Experiments 16–18 use
 > `mistralai/mistral-small-3-1-24b-instruct-2503` with a 3-vote majority.
 > Llama-agent Phoenix runs always score lower than production WXO runs because
 > the Llama model runs without the WXO agent instructions layer.
@@ -359,6 +371,8 @@ What did Nvidia say about revenue in their most recent 8-K earnings release?
 | M6 — 31-question eval suite; 31/31 pass (100%); 246 regression assertions | ✅ Complete |
 | M7 — 33-question eval suite; BQ-32/BQ-33 for `sec_edgar_resolve_synonym`; 33/33 pass (100%) | ✅ Complete |
 | M8 — XBRL concept resolver (14th tool, 7,462 FASB US-GAAP 2026 concepts); 35-question eval suite; BQ-34/35 pass | ✅ Complete |
+| M9 — International ADR synonyms (TSMC/SAP SE/ASML/Sony/Toyota); 274 regression assertions; v1.5.0 | ✅ Complete |
+| M10 — 37-question eval suite; BQ-36 (xbrl_concept_chain) + BQ-37 (4-company compare); 37/37 pass (100%); v1.6.0 | ✅ Complete |
 
 ---
 
@@ -366,19 +380,19 @@ What did Nvidia say about revenue in their most recent 8-K earnings release?
 
 ```
 toolkits/sec_edgar_tools/
-├── server.py              ← FastMCP server (14 tools, 246 regression assertions)
+├── server.py              ← FastMCP server (14 tools, ~186 synonyms, 73 XBRL overrides)
 ├── xbrl_concepts_data.py  ← 7,462 FASB US-GAAP 2026 concepts (generated)
 ├── requirements.txt       ← pinned: fastmcp==4.1.3, httpx==0.28.1, pydantic==2.14.3
 ├── toolkit.yaml           ← WXO import spec (remote MCP, streamable_http)
-└── test_regressions.py    ← 246 regression assertions (live SEC APIs)
+└── test_regressions.py    ← 274 regression assertions (all passing)
 
 agents/
 └── sec_edgar_agent.yaml   ← native react_core agent definition (14 tools, 14 routing rules)
 
 evaluation/
 ├── run_evaluation.py      ← REST-based tool-routing evaluator
-├── benchmark_questions.py ← 35 benchmark questions with pass criteria and numeric checks
-├── EVAL_REPORT.md         ← full 35-question results (32/35 pass, 91%)
+├── benchmark_questions.py ← 37 benchmark questions (18 categories) with pass criteria and numeric checks
+├── EVAL_REPORT.md         ← full 37-question results (37/37 pass, 100%)
 ├── response_quality_audit.md  ← human annotations of all 20 responses
 └── interpretation.md      ← narrative evaluation report
 
@@ -392,7 +406,7 @@ eval/phoenix/
 │   ├── relevance_judge.py    ← scope judge
 │   ├── numeric_judge.py      ← deterministic numeric anchor checker
 │   └── sanity_check.py       ← 11-case judge sanity suite
-└── datasets/sec-edgar-eval-2/  ← current 35-question evaluation dataset
+└── datasets/sec-edgar-eval-2/  ← current 37-question evaluation dataset (37 rows)
 
 docs/
 ├── project_overview.md    ← plain-language project summary
@@ -402,4 +416,4 @@ docs/
 
 ---
 
-*Submitted: 2026-11-14 | Updated: 2026-11-23 (35 BQs, 14 tools) | Author: Michael Schihl*
+*Submitted: 2026-11-14 | Updated: 2026-11-23 (37 BQs, 14 tools, v1.6.0) | Author: Michael Schihl*

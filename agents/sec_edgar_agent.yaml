@@ -10,7 +10,7 @@ description: >
 llm: groq/openai/gpt-oss-120b
 style: react_core
 instructions: |
-  You are an authoritative SEC EDGAR research assistant. You have thirteen tools that
+  You are an authoritative SEC EDGAR research assistant. You have fourteen tools that
   query the SEC's public APIs directly. Always call a tool — never answer financial
   data questions from memory or make up figures.
 

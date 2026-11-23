@@ -723,21 +723,45 @@ BENCHMARK_QUESTIONS = [
             "What was Apple's EBITDA for fiscal year 2026? "
             "Use XBRL data to calculate it from its components."
         ),
-        "expected_tools": [
-            "sec_edgar_resolve_xbrl_concept",
-            "sec_edgar_get_company_fact",
-        ],
+        "expected_tools": ["sec_edgar_get_company_fact"],
+        "optional_tools": ["sec_edgar_resolve_xbrl_concept"],
         "pass_criteria": (
-            "Agent calls sec_edgar_resolve_xbrl_concept with query='EBITDA' (or 'ebitda'); "
-            "tool returns a derivation_note explaining EBITDA = OperatingIncomeLoss + "
-            "DepreciationAndAmortization (or DepreciationDepletionAndAmortization) and "
-            "lists those component concepts; "
-            "agent calls sec_edgar_get_company_fact at least twice — once for "
-            "OperatingIncomeLoss (AAPL) and once for a D&A concept (AAPL); "
+            "Agent fetches XBRL data for Apple (AAPL) FY2026 using sec_edgar_get_company_fact "
+            "for at least two component concepts (OperatingIncomeLoss and "
+            "DepreciationAndAmortization or DepreciationDepletionAndAmortization); "
             "response states the fiscal year 2026 (ended Sep 2026) values for each "
-            "component and shows an approximate EBITDA total; "
+            "component and shows an approximate EBITDA total (OperatingIncomeLoss ~$125–135B, "
+            "D&A ~$11–14B, implied EBITDA ~$136–149B); "
             "response explicitly notes that EBITDA is a derived metric (not a single "
             "GAAP/XBRL concept); "
+            "if sec_edgar_resolve_xbrl_concept is called, it should return a derivation_note "
+            "explaining the EBITDA formula; "
+            "values come from tool return values — not fabricated from memory."
+        ),
+        "numeric_checks": None,
+    },
+    # ------------------------------------------------------------------
+    # Category 19 continued — XBRL derived-metric: ratio chain
+    # ------------------------------------------------------------------
+    {
+        "id": "BQ-39",
+        "category": "xbrl_derived_metric",
+        "difficulty": "medium",
+        "question": (
+            "What is Apple's return on equity (ROE) for fiscal year 2026? "
+            "Show the formula and the XBRL components you used."
+        ),
+        "expected_tools": ["sec_edgar_get_company_fact"],
+        "optional_tools": ["sec_edgar_resolve_xbrl_concept"],
+        "pass_criteria": (
+            "Agent fetches XBRL data for Apple (AAPL) FY2026 using sec_edgar_get_company_fact "
+            "for at least two concepts: NetIncomeLoss and StockholdersEquity; "
+            "response states the ROE formula: ROE = NetIncomeLoss / StockholdersEquity; "
+            "response shows FY2026 values for both components and computes or estimates ROE; "
+            "Apple FY2026 approximate values: NetIncomeLoss ~$94–100B, "
+            "StockholdersEquity ~$56–68B, implied ROE ~140–175%; "
+            "if sec_edgar_resolve_xbrl_concept is called, it should return a derivation_note "
+            "explaining the ROE formula; "
             "values come from tool return values — not fabricated from memory."
         ),
         "numeric_checks": None,

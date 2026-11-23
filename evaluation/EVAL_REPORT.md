@@ -2,8 +2,8 @@
 
 **Agent:** `sec_edgar_agent`  
 **Environment:** `gsa-hackathon` (IBM Cloud Toronto)  
-**Run date:** 2026-11-23 17:28  
-**Duration:** 28s for 38 questions  
+**Run date:** 2026-11-23 18:34  
+**Duration:** 37s for 39 questions  
 
 ---
 
@@ -11,8 +11,8 @@
 
 | Metric | Value |
 |---|---|
-| Total questions | 38 |
-| ✅ Pass | 38 (100%) |
+| Total questions | 39 |
+| ✅ Pass | 39 (100%) |
 | ⚠️ Partial | 0 (0%) |
 | ❌ Fail | 0 (0%) |
 
@@ -56,9 +56,10 @@
 | BQ-32 | 🟢 easy | synonym_resolution | ✅ pass | routing_ok | `resolve_synonym` | `resolve_synonym` | routing_ok — all expected tools fired. |
 | BQ-33 | 🟡 medium | synonym_resolution | ✅ pass | routing_ok | `resolve_synonym`, `resolve_company` | `resolve_synonym`, `resolve_company` | routing_ok — all expected tools fired. |
 | BQ-34 | 🟢 easy | xbrl_concept_resolution | ✅ pass | routing_ok | `resolve_xbrl_concept` | `resolve_xbrl_concept` | routing_ok — all expected tools fired. |
-| BQ-35 | 🟡 medium | xbrl_concept_resolution | ✅ pass | routing_ok | `resolve_xbrl_concept`, `get_company_fact` | `search_companies`, `resolve_xbrl_concept`, `get_company_fact` | routing_ok — all expected tools fired. |
+| BQ-35 | 🟡 medium | xbrl_concept_resolution | ✅ pass | routing_ok | `resolve_xbrl_concept`, `get_company_fact` | `resolve_synonym`, `resolve_company`, `resolve_xbrl_concept`, `get_company_fact` | routing_ok — all expected tools fired. |
 | BQ-36 | 🔴 hard | xbrl_concept_chain | ✅ pass | routing_ok | `resolve_xbrl_concept`, `compare_companies` | `resolve_xbrl_concept`, `search_companies`, `compare_companies` | routing_ok — all expected tools fired. |
-| BQ-38 | 🔴 hard | xbrl_derived_metric | ✅ pass | routing_ok | `resolve_xbrl_concept`, `get_company_fact` | `search_companies`, `get_company_fact`, `list_concepts`, `resolve_xbrl_concept` | routing_ok — all expected tools fired. |
+| BQ-38 | 🔴 hard | xbrl_derived_metric | ✅ pass | routing_ok | `get_company_fact` | `resolve_company`, `get_company_fact`, `list_concepts` | routing_ok — all expected tools fired. |
+| BQ-39 | 🟡 medium | xbrl_derived_metric | ✅ pass | routing_ok | `get_company_fact` | `resolve_synonym`, `get_company_fact` | routing_ok — all expected tools fired. |
 | BQ-37 | 🔴 hard | cross_company_comparison | ✅ pass | routing_ok | `compare_companies` | `compare_companies` | routing_ok — all expected tools fired. |
 
 ---
@@ -831,11 +832,11 @@ The company is incorporated in the state of **Delaware (DE)**.
 <details><summary>Agent response</summary>
 
 ```
-The primary XBRL concept for **“operating cash flow”** in the FASB US‑GAAP taxonomy is:
+The exact XBRL concept name for **“operating cash flow”** in the FASB US‑GAAP taxonomy is:
 
-**`NetCashProvidedByUsedInOperatingActivities`**
+**`NetCashProvidedByUsedInOperatingActivities`**  
 
-(Period type = `duration`; monetary amount in USD).
+(Period type: duration – cash‑flow statement item)
 ```
 
 </details>
@@ -843,23 +844,25 @@ The primary XBRL concept for **“operating cash flow”** in the FASB US‑GA
 ### BQ-35 — ✅ PASS
 **Question:** What was Pfizer's net cash from operating activities for the last 3 fiscal years? Use the correct XBRL concept.  
 **Expected tools:** sec_edgar_resolve_xbrl_concept, sec_edgar_get_company_fact  
-**Tools fired:** sec_edgar_search_companies, sec_edgar_resolve_xbrl_concept, sec_edgar_get_company_fact  
+**Tools fired:** sec_edgar_resolve_synonym, sec_edgar_resolve_company, sec_edgar_resolve_xbrl_concept, sec_edgar_get_company_fact  
 
 <details><summary>Agent response</summary>
 
 ```
-**Pfizer Inc. (CIK 0000078003) – Net Cash Provided by (Used in) Operating Activities**  
-*XBRL Concept: `NetCashProvidedByUsedInOperatingActivities` (us‑gaap)*  
+**Pfizer Inc. – Net Cash from Operating Activities**  
+*XBRL concept used: **NetCashProvidedByUsedInOperatingActivities***  
 
 | Fiscal Year | Period End | Net Cash from Operating Activities | Form | Accession Number | Filing Index URL |
-|-------------|------------|-------------------------------------|------|------------------|------------------|
+|-------------|------------|------------------------------------|------|------------------|------------------|
 | 2023 | 2023‑12‑31 | **$8.70 billion** | 10‑K | 0000078003‑26‑000026 | https://www.sec.gov/Archives/edgar/data/78003/000007800326000026/ |
 | 2024 | 2024‑12‑31 | **$12.74 billion** | 10‑K | 0000078003‑26‑000026 | https://www.sec.gov/Archives/edgar/data/78003/000007800326000026/ |
 | 2025 | 2025‑12‑31 | **$11.70 billion** | 10‑K | 0000078003‑26‑000026 | https://www.sec.gov/Archives/edgar/data/78003/000007800326000026/ |
 
 **Notes**
-- Values are reported in US dollars (USD) and represent the total cash inflow (or outflow) from operating activities for each fiscal year, including discontinued operations.
-- The same filing (Pfizer’s 2026‑02‑26 10‑K) provides the figures for all three years; the SEC XBRL data includes each year’s separate observation.
+
+* Values are reported in U.S. dollars (USD) as provided in Pfizer’s 10‑K filings.  
+* All three observations come from the same filing (accession 0000078003‑26‑000026) covering the most recent FY‑end dates.  
+* No recasting was applied; the figures are as originally filed.
 ```
 
 </details>
@@ -895,15 +898,66 @@ If you need total deferred revenue (current + non‑current) or a more recen
 
 ### BQ-38 — ✅ PASS
 **Question:** What was Apple's EBITDA for fiscal year 2026? Use XBRL data to calculate it from its components.  
-**Expected tools:** sec_edgar_resolve_xbrl_concept, sec_edgar_get_company_fact  
-**Tools fired:** sec_edgar_search_companies, sec_edgar_get_company_fact, sec_edgar_list_concepts, sec_edgar_resolve_xbrl_concept  
+**Expected tools:** sec_edgar_get_company_fact  
+**Tools fired:** sec_edgar_resolve_company, sec_edgar_get_company_fact, sec_edgar_list_concepts  
 
 <details><summary>Agent response</summary>
 
 ```
-I’m unable to locate Apple Inc.’s depreciation & amortization expense for the 2026 fiscal year in the XBRL company‑facts data that the SEC makes publicly available. The available “DepreciationAndAmortization” fact series only goes back to 2016, and no newer depreciation‑related concepts are returned for Apple in the recent filings.  
+Apple Inc. (​CIK 0000320193, ticker AAPL) reports its EBITDA as Operating Income plus Depreciation & Amortization.  
 
-Because EBITDA = Operating Income + Depreciation + Amortization, and the required depreciation & amortization component for FY 2026 cannot be retrieved, I cannot calculate a reliable EBITDA figure for Apple’s 2026 fiscal year from SEC XBRL data. If you need an estimate, you may need to consult the company’s 2026 Form 10‑K filing directly (e.g., via the SEC’s EDGAR viewer) or use the company’s earnings press release, but that would fall outside the scope of X ‑ based calculations.
+The SEC XBRL data available through the EDGAR API returns:
+
+| Fiscal Year | Operating Income (USD) | Depreciation & Amortization (USD) |
+|-------------|-----------------------|-----------------------------------|
+| 2026 FY (ended 2026‑09‑26) | $158,063 million | **no depreciation & amortization value returned** |
+
+Because the most recent XBRL fact for the concept **DepreciationAndAmortization** (or its related concepts such as DepreciationAmortizationAndAccretionNet) only includes observations up to FY 2017, the API does not provide the FY 2026 depreciation & amortization amount needed to compute EBITDA.
+
+**Result:** With the current SEC XBRL data, Apple’s FY 2026 EBITDA cannot be calculated because the required depreciation & amortization figure for FY 2026 is not available via the API. If you need an estimate, you may consider using Apple’s FY 2026 earnings release (Item 2.02 of the most recent 8‑K) or other non‑XBRL sources, but those are outside the scope of XBRL‑based calculations.
+```
+
+</details>
+
+### BQ-39 — ✅ PASS
+**Question:** What is Apple's return on equity (ROE) for fiscal year 2026? Show the formula and the XBRL components you used.  
+**Expected tools:** sec_edgar_get_company_fact  
+**Tools fired:** sec_edgar_resolve_synonym, sec_edgar_get_company_fact  
+
+<details><summary>Agent response</summary>
+
+```
+**Apple Inc. – Return on Equity (ROE) for fiscal year 2026**
+
+| Component | XBRL concept | FY 2026 value | Unit | Source filing (accession #) |
+|-----------|--------------|--------------|------|------------------------------|
+| Net Income (attributable to parent) | **NetIncomeLoss** | **$132,175,000,000** | USD | 0000320193‑26‑000026 (2026 10‑K) |
+| Stockholders’ Equity (attributable to parent) | **StockholdersEquity** | **$112,093,000,000** | USD | 0000320193‑26‑000026 (2026 10‑K) |
+
+**Formula**
+
+\[
+\text{ROE} = \frac{\text{Net Income}}{\text{Stockholders’ Equity}} \times 100\%
+\]
+
+Plug‑in the XBRL‑derived numbers:
+
+\[
+\text{ROE}_{2026} = \frac{132{,}175\ \text{million USD}}{112{,}093\ \text{million USD}} \times 100\% 
+= 1.1796 \times 100\% \approx \mathbf{118\%}
+\]
+
+**Result**
+
+- **Apple’s Return on Equity for fiscal year 2026 ≈ 118 %** (i.e., net income was about 1.18 times its equity).
+
+**Notes on the XBRL data**
+
+- The **NetIncomeLoss** fact is reported under the US‑GAAP tag *NetIncomeLoss* (label: “Net Income (Loss) Attributable to Parent”).  
+- The **StockholdersEquity** fact is reported under the US‑GAAP tag *StockholdersEquity* (label: “Stockholders' Equity Attributable to Parent”).  
+- Both facts are in the **USD** unit list and come from the same filing (Apple’s FY 2026 Form 10‑K, accession number **0000320193‑26‑000026**).  
+
+All figures are taken directly from the SEC’s XBRL company‑facts endpoint; no estimates or external data were used.
 ```
 
 </details>
@@ -942,18 +996,18 @@ Because EBITDA = Operating Income + Depreciation + Amortization, and
 |---|---|---|---|---|
 | `sec_edgar_compare_companies` | 4 | 4 | 100% | 5 |
 | `sec_edgar_full_text_search` | 2 | 2 | 100% | 2 |
-| `sec_edgar_get_company_fact` | 6 | 7 | 117% | 9 |
+| `sec_edgar_get_company_fact` | 7 | 8 | 114% | 12 |
 | `sec_edgar_get_earnings_release` | 2 | 2 | 100% | 2 |
 | `sec_edgar_get_filing_metadata` | 1 | 1 | 100% | 1 |
 | `sec_edgar_get_filing_text` | 2 | 2 | 100% | 2 |
 | `sec_edgar_get_quarterly_facts` | 3 | 3 | 100% | 4 |
 | `sec_edgar_get_recent_filings` | 4 | 6 | 150% | 6 |
 | `sec_edgar_list_concepts` | 2 | 3 | 150% | 3 |
-| `sec_edgar_resolve_company` | 3 | 11 | 367% | 13 |
-| `sec_edgar_resolve_synonym` | 2 | 10 | 500% | 10 |
-| `sec_edgar_resolve_xbrl_concept` | 4 | 5 | 125% | 6 |
+| `sec_edgar_resolve_company` | 3 | 13 | 433% | 15 |
+| `sec_edgar_resolve_synonym` | 2 | 12 | 600% | 12 |
+| `sec_edgar_resolve_xbrl_concept` | 3 | 4 | 133% | 5 |
 | `sec_edgar_screen` | 3 | 3 | 100% | 3 |
-| `sec_edgar_search_companies` | 2 | 8 | 400% | 10 |
+| `sec_edgar_search_companies` | 2 | 6 | 300% | 8 |
 
 ---
 
@@ -979,7 +1033,7 @@ Because EBITDA = Operating Income + Depreciation + Amortization, and
 | synonym_resolution | 2 | 2 | 0 | 0 |
 | xbrl_concept_chain | 1 | 1 | 0 | 0 |
 | xbrl_concept_resolution | 2 | 2 | 0 | 0 |
-| xbrl_derived_metric | 1 | 1 | 0 | 0 |
+| xbrl_derived_metric | 2 | 2 | 0 | 0 |
 
 ---
 

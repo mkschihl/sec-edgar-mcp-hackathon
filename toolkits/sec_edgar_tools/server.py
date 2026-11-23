@@ -66,7 +66,7 @@ REVENUE_CANDIDATES = [
 mcp = FastMCP(
     "sec_edgar_tools",
     instructions=(
-        "SEC EDGAR toolkit with thirteen tools for authoritative SEC filing data.\n\n"
+        "SEC EDGAR toolkit with fourteen tools for authoritative SEC filing data.\n\n"
         "TOOL SELECTION GUIDE:\n"
         "- Resolve a common nickname/alias to canonical name + ticker → sec_edgar_resolve_synonym\n"
         "- Find companies by partial name → sec_edgar_search_companies\n"
@@ -80,7 +80,8 @@ mcp = FastMCP(
         "- Search EDGAR full-text for any keyword across all filings → sec_edgar_full_text_search\n"
         "- Discover what XBRL concepts a company reports → sec_edgar_list_concepts\n"
         "- Screen/discover companies by exchange, SIC industry code, or state → sec_edgar_screen\n"
-        "- Fetch the 8-K earnings press release for a company → sec_edgar_get_earnings_release\n\n"
+        "- Fetch the 8-K earnings press release for a company → sec_edgar_get_earnings_release\n"
+        "- Resolve a plain-English financial term to a FASB US-GAAP XBRL concept → sec_edgar_resolve_xbrl_concept\n\n"
         "No authentication required. All tools return dicts; errors include "
         "an 'error' key and a 'hint' key with recovery guidance."
     ),

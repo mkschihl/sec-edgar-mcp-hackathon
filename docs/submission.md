@@ -303,13 +303,23 @@ The LLM-as-judge runs provided two complementary quality signals:
     as must-include checks (e.g. AAPL revenue ~$478.8B, MSFT net income ~$133.7B,
     MSFT Q4 FY2026 derived ~$35.8B). All pass within stated tolerances (0.5–2%).
 
-5. **Per-question traces** are viewable in the Phoenix UI
+5. **Llama-agent Phoenix Experiment 17 (2026-11-23, 35 Qs, `RXhwZXJpbWVudDoxNw==`):**
+   The dataset was rebuilt to 35 rows and re-run with `meta-llama/llama-3-3-70b-instruct`
+   as the agent (direct MCP endpoint, not production WXO) and `mistralai/mistral-small-3-1-24b-instruct-2503`
+   as the judge. 35/35 task runs completed. Judge scores:
+   correctness 14/35 (40%), scope 29/35 (83%), numeric 5/8 (62%).
+   These reflect the Llama model's standalone ability — not the production WXO agent.
+   View: http://localhost:6006/datasets/RGF0YXNldDoz/compare?experimentId=RXhwZXJpbWVudDoxNw==
+
+6. **Per-question traces** are viewable in the Phoenix UI
    (http://localhost:6006) → Datasets → `sec-edgar-eval-2`.
 
 > **Note on judges:** The 2026-11-17 Llama-agent runs were judged by
 > `meta-llama/llama-3-3-70b-instruct` — the same model as the agent, with the
-> reference mapping unbound. The 2026-11-21 production scoring used
+> reference mapping unbound. Production scoring uses
 > `mistralai/mistral-small-3-1-24b-instruct-2503` with a 3-vote majority.
+> Llama-agent Phoenix runs always score lower than production WXO runs because
+> the Llama model runs without the WXO agent instructions layer.
 
 ---
 

@@ -257,26 +257,29 @@ measurement gap that LLM-as-judge scoring is designed to close.
 
 ## 6. LLM-as-Judge results (Layer 3)
 
-### 6a. Llama-agent Phoenix experiments (2026-11-17) — superseded
+### 6a. Llama-agent Phoenix experiments — history
 
-These experiments used `meta-llama/llama-3-3-70b-instruct` as **both the agent and
-the judge model**, and the judge's reference-answer mapping was not wired up. The
-agent was driven directly from the Phoenix harness via the Code Engine MCP endpoint
-— **not** via the production WXO environment. Results reflect the Llama model's
-behaviour as an agent, not the production `gsa-hackathon` WXO agent. **These runs
-are superseded by the production WXO scoring (§6b) and should not be used as a
-quantitative benchmark.**
+These experiments used `meta-llama/llama-3-3-70b-instruct` as the agent, driven
+directly via the Code Engine MCP endpoint (**not** via the production WXO
+environment). Results reflect the Llama model's standalone ability, not the
+production `gsa-hackathon` WXO agent. The judge model is
+`mistralai/mistral-small-3-1-24b-instruct-2503` (Experiment 16+); earlier runs used
+Llama as both agent and judge with the reference mapping unbound. **These runs
+should not be used as a correctness benchmark for the production agent.**
 
-| Experiment | System Prompt | Dataset | Correctness | Scope |
-|---|---|---|---|---|
-| Experiment 2 | v1 (baseline) | sec-edgar-eval-0 (20 Qs) | **17 / 20 = 85%** | — |
-| Experiment 3 | v2 (scope-bounded) | sec-edgar-eval-0 (20 Qs) | **18 / 20 = 90%** | — |
+| Experiment | Dataset | Qs | Correctness | Scope | Numeric | Notes |
+|---|---|---|---|---|---|---|
+| Exp 2 (2026-11-17) | sec-edgar-eval-0 | 20 | 17/20 (85%) | — | — | Llama judge, ref unbound |
+| Exp 3 (2026-11-17) | sec-edgar-eval-0 | 20 | 18/20 (90%) | — | — | Llama judge, ref unbound |
+| Exp 16 (2026-11-21) | sec-edgar-eval-2 | 33 | 12/33 (36%) | 28/33 (85%) | 5/8 (62%) | Mistral judge, ref wired |
+| **Exp 17 (2026-11-23)** | sec-edgar-eval-2 | **35** | **14/35 (40%)** | **29/35 (83%)** | **5/8 (62%)** | Mistral judge; BQ-34/35 added |
+
+Experiment 17 (`RXhwZXJpbWVudDoxNw==`): 35/35 task runs completed, 105 evaluations.
+View: http://localhost:6006/datasets/RGF0YXNldDoz/compare?experimentId=RXhwZXJpbWVudDoxNw==
 
 In Experiment 6 (RXhwZXJpbWVudDo2, sec-edgar-eval-1), the Llama agent fabricated a stock price and a
-forecast for out-of-scope questions before refusal rules were added. Scope is not
-shown for these runs because the judge's reference mapping was unbound and the
-datasets predate the refusal rules. Remaining correctness failures (Apple quarterly
-concept retry, Exxon entity disambiguation) have since been fixed.
+forecast for out-of-scope questions before refusal rules were added. Those issues
+are now fixed in the production agent.
 
 ### 6b. Production WXO agent scoring (2026-11-23)
 
@@ -333,7 +336,7 @@ The evaluation harness evolved significantly across three dataset generations:
 ---
 
 *Human audit: Michael Schihl, 2026-11-11*
-*Llama-agent Phoenix experiments: 2026-11-17*
+*Llama-agent Phoenix experiments: 2026-11-17 (Exp 2/3), 2026-11-21 (Exp 16), 2026-11-23 (Exp 17)*
 *Production WXO scoring (33 Qs): 2026-11-21*
-*Production WXO scoring (35 Qs): 2026-11-23*
-*Report updated: 2026-11-23 (35 BQs, 14 tools)*
+*Production WXO scoring (35 Qs, 35/35): 2026-11-23*
+*Report updated: 2026-11-23 (35 BQs, 14 tools, Exp 17)*

@@ -3000,6 +3000,67 @@ async def sec_edgar_resolve_xbrl_concept(
             "then add. Some companies disclose Adjusted EBITDA in earnings releases "
             "(use sec_edgar_get_earnings_release for press-release figures)."
         ),
+        "return on equity": (
+            "Return on Equity (ROE) is not a single XBRL concept — it is a derived ratio: "
+            "ROE = NetIncomeLoss / StockholdersEquity. "
+            "Retrieve each component separately using sec_edgar_get_company_fact "
+            "(NetIncomeLoss for the income period, StockholdersEquity for the period-end balance), "
+            "then divide."
+        ),
+        "roe": (
+            "Return on Equity (ROE) is not a single XBRL concept — it is a derived ratio: "
+            "ROE = NetIncomeLoss / StockholdersEquity. "
+            "Retrieve each component separately using sec_edgar_get_company_fact "
+            "(NetIncomeLoss for the income period, StockholdersEquity for the period-end balance), "
+            "then divide."
+        ),
+        "debt to equity": (
+            "Debt-to-Equity ratio is not a single XBRL concept — it is a derived ratio: "
+            "D/E = Liabilities / StockholdersEquity. "
+            "Retrieve each component separately using sec_edgar_get_company_fact, "
+            "then divide."
+        ),
+        "debt-to-equity": (
+            "Debt-to-Equity ratio is not a single XBRL concept — it is a derived ratio: "
+            "D/E = Liabilities / StockholdersEquity. "
+            "Retrieve each component separately using sec_edgar_get_company_fact, "
+            "then divide."
+        ),
+        "price to earnings": (
+            "Price-to-Earnings (P/E) ratio is not an XBRL concept — it is a market-data "
+            "derived ratio: P/E = Share Price / EarningsPerShareDiluted. "
+            "Share price is NOT available via SEC EDGAR XBRL. "
+            "Use sec_edgar_get_company_fact to retrieve EarningsPerShareDiluted, "
+            "then combine with a real-time market data source for the share price."
+        ),
+        "pe ratio": (
+            "Price-to-Earnings (P/E) ratio is not an XBRL concept — it is a market-data "
+            "derived ratio: P/E = Share Price / EarningsPerShareDiluted. "
+            "Share price is NOT available via SEC EDGAR XBRL. "
+            "Use sec_edgar_get_company_fact to retrieve EarningsPerShareDiluted, "
+            "then combine with a real-time market data source for the share price."
+        ),
+        "p/e ratio": (
+            "Price-to-Earnings (P/E) ratio is not an XBRL concept — it is a market-data "
+            "derived ratio: P/E = Share Price / EarningsPerShareDiluted. "
+            "Share price is NOT available via SEC EDGAR XBRL. "
+            "Use sec_edgar_get_company_fact to retrieve EarningsPerShareDiluted, "
+            "then combine with a real-time market data source for the share price."
+        ),
+        "asset turnover": (
+            "Asset Turnover is not a single XBRL concept — it is a derived ratio: "
+            "Asset Turnover = Revenues / Assets. "
+            "Retrieve each component separately using sec_edgar_get_company_fact "
+            "(Revenues for the period, Assets for the period-end balance), "
+            "then divide."
+        ),
+        "book value per share": (
+            "Book Value Per Share is not a single XBRL concept — it is a derived metric: "
+            "BVPS = StockholdersEquity / CommonStockSharesOutstanding. "
+            "Retrieve each component separately using sec_edgar_get_company_fact "
+            "(StockholdersEquity and CommonStockSharesOutstanding for the same period end), "
+            "then divide."
+        ),
     }
 
     # Canonical concept overrides: when the normalised query exactly matches a key,
@@ -3063,6 +3124,15 @@ async def sec_edgar_resolve_xbrl_concept(
         "net debt":                        ["LongTermDebt", "ShortTermBorrowings", "DebtCurrent", "CashAndCashEquivalentsAtCarryingValue"],
         "working capital":                 ["AssetsCurrent", "LiabilitiesCurrent"],
         "ebitda":                          ["OperatingIncomeLoss", "DepreciationAndAmortization", "DepreciationDepletionAndAmortization"],
+        "return on equity":                ["NetIncomeLoss", "StockholdersEquity"],
+        "roe":                             ["NetIncomeLoss", "StockholdersEquity"],
+        "debt to equity":                  ["Liabilities", "StockholdersEquity"],
+        "debt-to-equity":                  ["Liabilities", "StockholdersEquity"],
+        "price to earnings":               ["EarningsPerShareDiluted", "EarningsPerShareBasic"],
+        "pe ratio":                        ["EarningsPerShareDiluted", "EarningsPerShareBasic"],
+        "p/e ratio":                       ["EarningsPerShareDiluted", "EarningsPerShareBasic"],
+        "asset turnover":                  ["Revenues", "Assets"],
+        "book value per share":            ["StockholdersEquity", "CommonStockSharesOutstanding"],
         # -- Balance sheet: equity --------------------------------------------
         "stockholders equity":             ["StockholdersEquity"],
         "shareholders equity":             ["StockholdersEquity"],

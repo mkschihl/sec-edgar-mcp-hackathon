@@ -307,6 +307,21 @@ _REFERENCE_ANSWERS: dict[str, str] = {
         "(Exact ordering may vary slightly by fiscal year alignment.) "
         "Values come from tool return values — not fabricated from memory."
     ),
+    "BQ-38": (
+        "Agent calls sec_edgar_resolve_xbrl_concept with query 'EBITDA' (or 'ebitda'). "
+        "Tool returns a derivation_note stating EBITDA = OperatingIncomeLoss + "
+        "DepreciationAndAmortization (or DepreciationDepletionAndAmortization), "
+        "along with those component concept names. "
+        "Agent then calls sec_edgar_get_company_fact at least twice for Apple (AAPL): "
+        "once for OperatingIncomeLoss and once for DepreciationAndAmortization "
+        "(or DepreciationDepletionAndAmortization). "
+        "Response states the fiscal year 2026 (ended approximately Sep 2026) value for "
+        "each component and computes or estimates the EBITDA total. "
+        "Apple FY2026 approximate values: OperatingIncomeLoss ~$125–135B, "
+        "D&A ~$11–14B, implied EBITDA ~$136–149B. "
+        "Response explicitly notes that EBITDA is a derived metric, not a single GAAP concept. "
+        "Values are drawn from tool responses — not fabricated from memory."
+    ),
 }
 
 

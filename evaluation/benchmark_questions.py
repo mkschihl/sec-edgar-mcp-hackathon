@@ -36,6 +36,7 @@ Difficulty rubric:
 #  16  synonym_resolution      BQ-32, BQ-33
 #  17  xbrl_concept_resolution BQ-34, BQ-35
 #  18  xbrl_concept_chain      BQ-36          ← new (resolve_xbrl_concept → compare_companies)
+#  19  xbrl_derived_metric     BQ-38          ← new (resolve_xbrl_concept derivation_note → get_company_fact ×2)
 
 BENCHMARK_QUESTIONS = [
     # ------------------------------------------------------------------
@@ -707,6 +708,36 @@ BENCHMARK_QUESTIONS = [
             "Microsoft (MSFT), and Alphabet (GOOGL or GOOG) using the resolved concept; "
             "response shows deferred revenue values for all three companies with period "
             "end dates; response names the company with the highest deferred revenue; "
+            "values come from tool return values — not fabricated from memory."
+        ),
+        "numeric_checks": None,
+    },
+    # ------------------------------------------------------------------
+    # Category 19 — XBRL derived-metric handling (derivation_note path)
+    # ------------------------------------------------------------------
+    {
+        "id": "BQ-38",
+        "category": "xbrl_derived_metric",
+        "difficulty": "hard",
+        "question": (
+            "What was Apple's EBITDA for fiscal year 2026? "
+            "Use XBRL data to calculate it from its components."
+        ),
+        "expected_tools": [
+            "sec_edgar_resolve_xbrl_concept",
+            "sec_edgar_get_company_fact",
+        ],
+        "pass_criteria": (
+            "Agent calls sec_edgar_resolve_xbrl_concept with query='EBITDA' (or 'ebitda'); "
+            "tool returns a derivation_note explaining EBITDA = OperatingIncomeLoss + "
+            "DepreciationAndAmortization (or DepreciationDepletionAndAmortization) and "
+            "lists those component concepts; "
+            "agent calls sec_edgar_get_company_fact at least twice — once for "
+            "OperatingIncomeLoss (AAPL) and once for a D&A concept (AAPL); "
+            "response states the fiscal year 2026 (ended Sep 2026) values for each "
+            "component and shows an approximate EBITDA total; "
+            "response explicitly notes that EBITDA is a derived metric (not a single "
+            "GAAP/XBRL concept); "
             "values come from tool return values — not fabricated from memory."
         ),
         "numeric_checks": None,

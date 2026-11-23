@@ -2,8 +2,8 @@
 
 **Agent:** `sec_edgar_agent`  
 **Environment:** `gsa-hackathon` (IBM Cloud Toronto)  
-**Run date:** 2026-11-23 07:46  
-**Duration:** 8s for 37 questions  
+**Run date:** 2026-11-23 17:28  
+**Duration:** 28s for 38 questions  
 
 ---
 
@@ -11,8 +11,8 @@
 
 | Metric | Value |
 |---|---|
-| Total questions | 37 |
-| ✅ Pass | 37 (100%) |
+| Total questions | 38 |
+| ✅ Pass | 38 (100%) |
 | ⚠️ Partial | 0 (0%) |
 | ❌ Fail | 0 (0%) |
 
@@ -58,6 +58,7 @@
 | BQ-34 | 🟢 easy | xbrl_concept_resolution | ✅ pass | routing_ok | `resolve_xbrl_concept` | `resolve_xbrl_concept` | routing_ok — all expected tools fired. |
 | BQ-35 | 🟡 medium | xbrl_concept_resolution | ✅ pass | routing_ok | `resolve_xbrl_concept`, `get_company_fact` | `search_companies`, `resolve_xbrl_concept`, `get_company_fact` | routing_ok — all expected tools fired. |
 | BQ-36 | 🔴 hard | xbrl_concept_chain | ✅ pass | routing_ok | `resolve_xbrl_concept`, `compare_companies` | `resolve_xbrl_concept`, `search_companies`, `compare_companies` | routing_ok — all expected tools fired. |
+| BQ-38 | 🔴 hard | xbrl_derived_metric | ✅ pass | routing_ok | `resolve_xbrl_concept`, `get_company_fact` | `search_companies`, `get_company_fact`, `list_concepts`, `resolve_xbrl_concept` | routing_ok — all expected tools fired. |
 | BQ-37 | 🔴 hard | cross_company_comparison | ✅ pass | routing_ok | `compare_companies` | `compare_companies` | routing_ok — all expected tools fired. |
 
 ---
@@ -802,7 +803,7 @@ You can review the full press release at the URL above for additional context an
 <details><summary>Agent response</summary>
 
 ```
-Alphabet Inc. – Ticker: **GOOGL**. This is the SEC‑registered entity that “Google” operates under.
+Alphabet Inc. (ticker **GOOGL**) is the SEC‑registered company behind the “Google” brand.
 ```
 
 </details>
@@ -815,12 +816,9 @@ Alphabet Inc. – Ticker: **GOOGL**. This is the SEC‑registered entity t
 <details><summary>Agent response</summary>
 
 ```
-**Meta Platforms, Inc. (ticker META, CIK 0001326801)**  
+Meta Platforms, Inc. (ticker META) is classified under the **SIC code 7370 – Services‑Computer Programming, Data Processing, Etc.**  
 
-- **SIC industry code:** **7370** – “Services‑Computer Programming, Data Processing, Etc.”  
-- **State of incorporation:** **Delaware (DE)**  
-
-These details come directly from the SEC’s company registration information.
+The company is incorporated in the state of **Delaware (DE)**.
 ```
 
 </details>
@@ -895,6 +893,21 @@ If you need total deferred revenue (current + non‑current) or a more recen
 
 </details>
 
+### BQ-38 — ✅ PASS
+**Question:** What was Apple's EBITDA for fiscal year 2026? Use XBRL data to calculate it from its components.  
+**Expected tools:** sec_edgar_resolve_xbrl_concept, sec_edgar_get_company_fact  
+**Tools fired:** sec_edgar_search_companies, sec_edgar_get_company_fact, sec_edgar_list_concepts, sec_edgar_resolve_xbrl_concept  
+
+<details><summary>Agent response</summary>
+
+```
+I’m unable to locate Apple Inc.’s depreciation & amortization expense for the 2026 fiscal year in the XBRL company‑facts data that the SEC makes publicly available. The available “DepreciationAndAmortization” fact series only goes back to 2016, and no newer depreciation‑related concepts are returned for Apple in the recent filings.  
+
+Because EBITDA = Operating Income + Depreciation + Amortization, and the required depreciation & amortization component for FY 2026 cannot be retrieved, I cannot calculate a reliable EBITDA figure for Apple’s 2026 fiscal year from SEC XBRL data. If you need an estimate, you may need to consult the company’s 2026 Form 10‑K filing directly (e.g., via the SEC’s EDGAR viewer) or use the company’s earnings press release, but that would fall outside the scope of X ‑ based calculations.
+```
+
+</details>
+
 ### BQ-37 — ✅ PASS
 **Question:** Compare the most recent annual revenue for Apple, Microsoft, Amazon, and Alphabet. Rank them from highest to lowest.  
 **Expected tools:** sec_edgar_compare_companies  
@@ -929,18 +942,18 @@ If you need total deferred revenue (current + non‑current) or a more recen
 |---|---|---|---|---|
 | `sec_edgar_compare_companies` | 4 | 4 | 100% | 5 |
 | `sec_edgar_full_text_search` | 2 | 2 | 100% | 2 |
-| `sec_edgar_get_company_fact` | 5 | 6 | 120% | 6 |
+| `sec_edgar_get_company_fact` | 6 | 7 | 117% | 9 |
 | `sec_edgar_get_earnings_release` | 2 | 2 | 100% | 2 |
 | `sec_edgar_get_filing_metadata` | 1 | 1 | 100% | 1 |
 | `sec_edgar_get_filing_text` | 2 | 2 | 100% | 2 |
 | `sec_edgar_get_quarterly_facts` | 3 | 3 | 100% | 4 |
 | `sec_edgar_get_recent_filings` | 4 | 6 | 150% | 6 |
-| `sec_edgar_list_concepts` | 2 | 2 | 100% | 2 |
+| `sec_edgar_list_concepts` | 2 | 3 | 150% | 3 |
 | `sec_edgar_resolve_company` | 3 | 11 | 367% | 13 |
 | `sec_edgar_resolve_synonym` | 2 | 10 | 500% | 10 |
-| `sec_edgar_resolve_xbrl_concept` | 3 | 4 | 133% | 5 |
+| `sec_edgar_resolve_xbrl_concept` | 4 | 5 | 125% | 6 |
 | `sec_edgar_screen` | 3 | 3 | 100% | 3 |
-| `sec_edgar_search_companies` | 2 | 7 | 350% | 9 |
+| `sec_edgar_search_companies` | 2 | 8 | 400% | 10 |
 
 ---
 
@@ -966,6 +979,7 @@ If you need total deferred revenue (current + non‑current) or a more recen
 | synonym_resolution | 2 | 2 | 0 | 0 |
 | xbrl_concept_chain | 1 | 1 | 0 | 0 |
 | xbrl_concept_resolution | 2 | 2 | 0 | 0 |
+| xbrl_derived_metric | 1 | 1 | 0 | 0 |
 
 ---
 

@@ -1060,50 +1060,50 @@ async def test_earnings_release():
           str(r_period.get("period_of_report")))
 
 
-def test_xbrl_concept_resolver():
+async def test_xbrl_concept_resolver():
     """Test sec_edgar_resolve_xbrl_concept (no network — in-process index)."""
     print("\n[21] sec_edgar_resolve_xbrl_concept — canonical overrides + inverted index")
 
     # Canonical override: exact key lookup
-    r = sec_edgar_resolve_xbrl_concept("operating cash flow")
+    r = await sec_edgar_resolve_xbrl_concept("operating cash flow")
     check("operating cash flow: no error", "error" not in r, str(r))
     names = [x["concept_name"] for x in r.get("results", [])]
     check("operating cash flow: NetCashProvidedByUsedInOperatingActivities first",
           names and names[0] == "NetCashProvidedByUsedInOperatingActivities", str(names[:3]))
 
     # New canonical overrides — backlog additions
-    r = sec_edgar_resolve_xbrl_concept("deferred revenue")
+    r = await sec_edgar_resolve_xbrl_concept("deferred revenue")
     check("deferred revenue: no error", "error" not in r, str(r))
     names = [x["concept_name"] for x in r.get("results", [])]
     check("deferred revenue: DeferredRevenueCurrent in top results",
           "DeferredRevenueCurrent" in names or "DeferredRevenue" in names, str(names[:5]))
 
-    r = sec_edgar_resolve_xbrl_concept("stock based compensation")
+    r = await sec_edgar_resolve_xbrl_concept("stock based compensation")
     check("stock based compensation: no error", "error" not in r, str(r))
     names = [x["concept_name"] for x in r.get("results", [])]
     check("stock based compensation: ShareBasedCompensation in top results",
           "ShareBasedCompensation" in names or "AllocatedShareBasedCompensationExpense" in names,
           str(names[:5]))
 
-    r = sec_edgar_resolve_xbrl_concept("restructuring charges")
+    r = await sec_edgar_resolve_xbrl_concept("restructuring charges")
     check("restructuring charges: no error", "error" not in r, str(r))
     names = [x["concept_name"] for x in r.get("results", [])]
     check("restructuring charges: RestructuringCharges in top results",
           "RestructuringCharges" in names, str(names[:5]))
 
-    r = sec_edgar_resolve_xbrl_concept("investing cash flow")
+    r = await sec_edgar_resolve_xbrl_concept("investing cash flow")
     check("investing cash flow: no error", "error" not in r, str(r))
     names = [x["concept_name"] for x in r.get("results", [])]
     check("investing cash flow: NetCashProvidedByUsedInInvestingActivities first",
           names and names[0] == "NetCashProvidedByUsedInInvestingActivities", str(names[:3]))
 
-    r = sec_edgar_resolve_xbrl_concept("retained earnings")
+    r = await sec_edgar_resolve_xbrl_concept("retained earnings")
     check("retained earnings: no error", "error" not in r, str(r))
     names = [x["concept_name"] for x in r.get("results", [])]
     check("retained earnings: RetainedEarningsAccumulatedDeficit in top results",
           "RetainedEarningsAccumulatedDeficit" in names, str(names[:5]))
 
-    r = sec_edgar_resolve_xbrl_concept("pension liability")
+    r = await sec_edgar_resolve_xbrl_concept("pension liability")
     check("pension liability: no error", "error" not in r, str(r))
     names = [x["concept_name"] for x in r.get("results", [])]
     check("pension liability: PensionAndOtherPostretirementDefinedBenefitPlansLiabilitiesNoncurrent in results",
@@ -1111,19 +1111,19 @@ def test_xbrl_concept_resolver():
           str(names[:5]))
 
     # Exact concept name fast path
-    r = sec_edgar_resolve_xbrl_concept("NetIncomeLoss")
+    r = await sec_edgar_resolve_xbrl_concept("NetIncomeLoss")
     check("exact name fast path: no error", "error" not in r, str(r))
     check("exact name fast path: exactly 1 result", r.get("returned") == 1, str(r.get("returned")))
     check("exact name fast path: concept_name == NetIncomeLoss",
           r["results"][0]["concept_name"] == "NetIncomeLoss" if r.get("results") else False, "")
 
     # Inverted index fallback (not a canonical key)
-    r = sec_edgar_resolve_xbrl_concept("goodwill impairment")
+    r = await sec_edgar_resolve_xbrl_concept("goodwill impairment")
     check("goodwill impairment: no error", "error" not in r, str(r))
     check("goodwill impairment: at least 1 result", len(r.get("results", [])) >= 1, "")
 
     # Derived-metric entries — derivation_note + component concepts returned
-    r = sec_edgar_resolve_xbrl_concept("net debt")
+    r = await sec_edgar_resolve_xbrl_concept("net debt")
     check("net debt: no error", "error" not in r, str(r))
     check("net debt: has derivation_note", "derivation_note" in r, str(list(r.keys())))
     names = [x["concept_name"] for x in r.get("results", [])]
@@ -1131,14 +1131,14 @@ def test_xbrl_concept_resolver():
     check("net debt: CashAndCashEquivalentsAtCarryingValue in results",
           "CashAndCashEquivalentsAtCarryingValue" in names, str(names[:5]))
 
-    r = sec_edgar_resolve_xbrl_concept("working capital")
+    r = await sec_edgar_resolve_xbrl_concept("working capital")
     check("working capital: no error", "error" not in r, str(r))
     check("working capital: has derivation_note", "derivation_note" in r, str(list(r.keys())))
     names = [x["concept_name"] for x in r.get("results", [])]
     check("working capital: AssetsCurrent in results", "AssetsCurrent" in names, str(names[:5]))
     check("working capital: LiabilitiesCurrent in results", "LiabilitiesCurrent" in names, str(names[:5]))
 
-    r = sec_edgar_resolve_xbrl_concept("ebitda")
+    r = await sec_edgar_resolve_xbrl_concept("ebitda")
     check("ebitda: no error", "error" not in r, str(r))
     check("ebitda: has derivation_note", "derivation_note" in r, str(list(r.keys())))
     names = [x["concept_name"] for x in r.get("results", [])]
@@ -1148,40 +1148,95 @@ def test_xbrl_concept_resolver():
           str(names[:5]))
 
     # Minority / noncontrolling interest
-    r = sec_edgar_resolve_xbrl_concept("minority interest")
+    r = await sec_edgar_resolve_xbrl_concept("minority interest")
     check("minority interest: no error", "error" not in r, str(r))
     names = [x["concept_name"] for x in r.get("results", [])]
     check("minority interest: MinorityInterest first",
           names and names[0] == "MinorityInterest", str(names[:3]))
     check("minority interest: no spurious derivation_note", "derivation_note" not in r, "")
 
-    r = sec_edgar_resolve_xbrl_concept("noncontrolling interest")
+    r = await sec_edgar_resolve_xbrl_concept("noncontrolling interest")
     check("noncontrolling interest: no error", "error" not in r, str(r))
     names = [x["concept_name"] for x in r.get("results", [])]
     check("noncontrolling interest: MinorityInterest in results",
           "MinorityInterest" in names, str(names[:5]))
 
     # Other comprehensive income
-    r = sec_edgar_resolve_xbrl_concept("other comprehensive income")
+    r = await sec_edgar_resolve_xbrl_concept("other comprehensive income")
     check("other comprehensive income: no error", "error" not in r, str(r))
     names = [x["concept_name"] for x in r.get("results", [])]
     check("other comprehensive income: OtherComprehensiveIncomeLossNetOfTax first",
           names and names[0] == "OtherComprehensiveIncomeLossNetOfTax", str(names[:3]))
 
-    r = sec_edgar_resolve_xbrl_concept("oci")
+    r = await sec_edgar_resolve_xbrl_concept("oci")
     check("oci: no error", "error" not in r, str(r))
     names = [x["concept_name"] for x in r.get("results", [])]
     check("oci: OtherComprehensiveIncomeLossNetOfTax in results",
           "OtherComprehensiveIncomeLossNetOfTax" in names, str(names[:5]))
 
-    r = sec_edgar_resolve_xbrl_concept("aoci")
+    r = await sec_edgar_resolve_xbrl_concept("aoci")
     check("aoci: no error", "error" not in r, str(r))
     names = [x["concept_name"] for x in r.get("results", [])]
     check("aoci: AccumulatedOtherComprehensiveIncomeLossNetOfTax first",
           names and names[0] == "AccumulatedOtherComprehensiveIncomeLossNetOfTax", str(names[:3]))
 
+    # Return on Equity (ROE) — derived ratio
+    r = await sec_edgar_resolve_xbrl_concept("return on equity")
+    check("return on equity: no error", "error" not in r, str(r))
+    check("return on equity: has derivation_note", "derivation_note" in r, str(list(r.keys())))
+    names = [x["concept_name"] for x in r.get("results", [])]
+    check("return on equity: NetIncomeLoss in results", "NetIncomeLoss" in names, str(names[:5]))
+    check("return on equity: StockholdersEquity in results", "StockholdersEquity" in names, str(names[:5]))
+
+    r = await sec_edgar_resolve_xbrl_concept("roe")
+    check("roe: no error", "error" not in r, str(r))
+    check("roe: has derivation_note", "derivation_note" in r, str(list(r.keys())))
+    names = [x["concept_name"] for x in r.get("results", [])]
+    check("roe: NetIncomeLoss in results", "NetIncomeLoss" in names, str(names[:5]))
+
+    # Debt-to-Equity — derived ratio
+    r = await sec_edgar_resolve_xbrl_concept("debt to equity")
+    check("debt to equity: no error", "error" not in r, str(r))
+    check("debt to equity: has derivation_note", "derivation_note" in r, str(list(r.keys())))
+    names = [x["concept_name"] for x in r.get("results", [])]
+    check("debt to equity: Liabilities in results", "Liabilities" in names, str(names[:5]))
+    check("debt to equity: StockholdersEquity in results", "StockholdersEquity" in names, str(names[:5]))
+
+    r = await sec_edgar_resolve_xbrl_concept("debt-to-equity")
+    check("debt-to-equity: no error", "error" not in r, str(r))
+    check("debt-to-equity: has derivation_note", "derivation_note" in r, str(list(r.keys())))
+
+    # Price-to-Earnings — market-data derived ratio (no GAAP concept for price)
+    r = await sec_edgar_resolve_xbrl_concept("price to earnings")
+    check("price to earnings: no error", "error" not in r, str(r))
+    check("price to earnings: has derivation_note", "derivation_note" in r, str(list(r.keys())))
+    names = [x["concept_name"] for x in r.get("results", [])]
+    check("price to earnings: EarningsPerShareDiluted in results",
+          "EarningsPerShareDiluted" in names or "EarningsPerShareBasic" in names, str(names[:5]))
+
+    r = await sec_edgar_resolve_xbrl_concept("pe ratio")
+    check("pe ratio: no error", "error" not in r, str(r))
+    check("pe ratio: has derivation_note", "derivation_note" in r, str(list(r.keys())))
+
+    # Asset Turnover — derived ratio
+    r = await sec_edgar_resolve_xbrl_concept("asset turnover")
+    check("asset turnover: no error", "error" not in r, str(r))
+    check("asset turnover: has derivation_note", "derivation_note" in r, str(list(r.keys())))
+    names = [x["concept_name"] for x in r.get("results", [])]
+    check("asset turnover: Revenues in results", "Revenues" in names, str(names[:5]))
+    check("asset turnover: Assets in results", "Assets" in names, str(names[:5]))
+
+    # Book Value Per Share — derived metric
+    r = await sec_edgar_resolve_xbrl_concept("book value per share")
+    check("book value per share: no error", "error" not in r, str(r))
+    check("book value per share: has derivation_note", "derivation_note" in r, str(list(r.keys())))
+    names = [x["concept_name"] for x in r.get("results", [])]
+    check("book value per share: StockholdersEquity in results", "StockholdersEquity" in names, str(names[:5]))
+    check("book value per share: CommonStockSharesOutstanding in results",
+          "CommonStockSharesOutstanding" in names, str(names[:5]))
+
     # Empty / nonsense query
-    r = sec_edgar_resolve_xbrl_concept("xyzzy_no_match_ever")
+    r = await sec_edgar_resolve_xbrl_concept("xyzzy_no_match_ever")
     check("nonsense query: returns total_matches=0 or error",
           r.get("total_matches", 1) == 0 or "error" in r, str(r))
 
@@ -1206,6 +1261,7 @@ async def main():
     await test_msft_net_income_q4_derived()
     await test_aapl_revenues_q4_sum()
     await test_aapl_eps_no_derived()
+    await test_xbrl_concept_resolver()   # no network — in-process index
 
     print(f"\n{'=' * 50}")
     if failures == 0:
@@ -1216,12 +1272,10 @@ async def main():
 
 
 if __name__ == "__main__":
-    # Tests 1–5 run inside a single asyncio.run() call (the normal path).
-    # Test 6 is called synchronously after main() so it exercises a *second*
-    # asyncio.run() — that is precisely the scenario the loop-awareness fix covers.
+    # Tests 1–20 are async (network).  Test 21 (xbrl_concept_resolver) is
+    # also async but makes no network calls — it exercises the in-process index.
+    # test_multi_event_loop exercises a second asyncio.run() after the first.
     asyncio.run(main())
     test_multi_event_loop()
-    test_xbrl_concept_resolver()   # sync — no network calls
-    # Re-evaluate exit code after the synchronous test.
     if failures:
         sys.exit(1)

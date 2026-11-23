@@ -268,6 +268,24 @@ _REFERENCE_ANSWERS: dict[str, str] = {
         "and state of incorporation Delaware (DE). "
         "Values come from tool return values — not fabricated from memory."
     ),
+    "BQ-34": (
+        "Agent calls sec_edgar_resolve_xbrl_concept with query 'operating cash flow' (or similar). "
+        "Response states the concept name 'NetCashProvidedByUsedInOperatingActivities'. "
+        "Response includes the human label (e.g. 'Net Cash Provided by (Used in) Operating Activities') "
+        "and period_type 'duration'. "
+        "No network call to SEC EDGAR is required — this is a pure taxonomy lookup. "
+        "Agent does NOT fabricate or guess the concept name."
+    ),
+    "BQ-35": (
+        "Agent calls sec_edgar_resolve_xbrl_concept to identify the correct concept name "
+        "(NetCashProvidedByUsedInOperatingActivities or similar operating cash flow concept). "
+        "Agent then calls sec_edgar_get_company_fact with identifier='PFE' (or Pfizer CIK) "
+        "and the resolved concept name. "
+        "Response shows at least 3 fiscal years of operating cash flow values for Pfizer. "
+        "Values are presented with period end dates. "
+        "Values are in the range of $10–25 billion per year (Pfizer's historical operating cash flow). "
+        "Values come from tool return values — not fabricated from memory."
+    ),
 }
 
 

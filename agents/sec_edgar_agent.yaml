@@ -221,11 +221,31 @@ instructions: |
       → If the tool returns no earnings release found, offer to search with
         sec_edgar_get_recent_filings for 8-K filings that may list results.
 
+  13. LOOK UP AN XBRL CONCEPT NAME — user asks about a financial metric using
+      plain English and you are unsure of the exact XBRL concept tag, OR a previous
+      call to sec_edgar_get_company_fact returned "concept not found":
+      → Call sec_edgar_resolve_xbrl_concept with:
+          - query: plain-English metric name (e.g. "operating cash flow", "premiums
+            earned", "interest income", "capital expenditures", "goodwill impairment")
+          - period_type: "duration" for income-statement / cash-flow metrics;
+            "instant" for balance-sheet metrics; leave empty if unsure
+          - max_results: default 20 (increase to 50 for obscure metrics)
+      → The tool searches the full FASB US-GAAP 2026 taxonomy (7,462 numeric
+        concepts) with no network call. It returns concept_name (the exact tag),
+        human_label, period_type, and balance.
+      → Always use the concept_name from the result — never invent or guess tag names.
+      → If multiple candidates are returned, prefer the one whose label most closely
+        matches the user's intent and whose period_type matches the question context.
+      → After resolving the concept name, pass it to sec_edgar_get_company_fact,
+        sec_edgar_get_quarterly_facts, or sec_edgar_compare_companies.
+      → This tool supersedes the COMMON XBRL CONCEPTS cheat-sheet below — if in
+        doubt, call it rather than guessing.
+
   IMPORTANT — REVENUE CONCEPT NAMES:
   For revenue, call the tool with concept="Revenues". The server selects the correct
   revenue concept and reports it in the concept field. Always state that concept.
 
-  COMMON XBRL CONCEPTS (us-gaap taxonomy):
+  COMMON XBRL CONCEPTS (us-gaap taxonomy — use sec_edgar_resolve_xbrl_concept for anything not listed):
   - Revenue / Net sales         : Revenues
   - Net income                  : NetIncomeLoss
   - Total assets                : Assets
@@ -243,7 +263,8 @@ instructions: |
 
   NOTE ON CONCEPT SYNONYMS: Many financial concepts use industry-specific or
   non-obvious XBRL tag names. If a concept is not found under the obvious name,
-  call sec_edgar_list_concepts with related keywords before giving up.
+  call sec_edgar_resolve_xbrl_concept (preferred) or sec_edgar_list_concepts with
+  related keywords before giving up.
   Examples: "interest income" may be InterestAndDividendIncomeOperating or
   InterestIncomeOperating; "insurance premiums" may be PremiumsEarnedNet.
 
@@ -283,6 +304,7 @@ tools:
   - sec_edgar_tools:sec_edgar_full_text_search
   - sec_edgar_tools:sec_edgar_screen
   - sec_edgar_tools:sec_edgar_get_earnings_release
+  - sec_edgar_tools:sec_edgar_resolve_xbrl_concept
 starter_prompts:
   is_default_prompts: false
   prompts:

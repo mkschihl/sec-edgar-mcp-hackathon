@@ -624,6 +624,48 @@ BENCHMARK_QUESTIONS = [
         ),
         "numeric_checks": None,
     },
+    # ------------------------------------------------------------------
+    # Category 17 — XBRL concept resolution (sec_edgar_resolve_xbrl_concept)
+    # ------------------------------------------------------------------
+    {
+        "id": "BQ-34",
+        "category": "xbrl_concept_resolution",
+        "difficulty": "easy",
+        "question": (
+            "What is the exact XBRL concept name for 'operating cash flow' in "
+            "the FASB US-GAAP taxonomy?"
+        ),
+        "expected_tools": ["sec_edgar_resolve_xbrl_concept"],
+        "pass_criteria": (
+            "Agent calls sec_edgar_resolve_xbrl_concept with query='operating cash flow' "
+            "(or similar); response states the concept name "
+            "'NetCashProvidedByUsedInOperatingActivities'; "
+            "response includes the human label and period_type='duration'; "
+            "no SEC API call is needed — this is a pure taxonomy lookup."
+        ),
+        "numeric_checks": None,
+    },
+    {
+        "id": "BQ-35",
+        "category": "xbrl_concept_resolution",
+        "difficulty": "medium",
+        "question": (
+            "What was Pfizer's net cash from operating activities for the last 3 "
+            "fiscal years? Use the correct XBRL concept."
+        ),
+        "expected_tools": [
+            "sec_edgar_resolve_xbrl_concept",
+            "sec_edgar_get_company_fact",
+        ],
+        "pass_criteria": (
+            "Agent calls sec_edgar_resolve_xbrl_concept to find the correct concept name "
+            "(NetCashProvidedByUsedInOperatingActivities); "
+            "agent calls sec_edgar_get_company_fact with identifier='PFE' and that concept; "
+            "response shows at least 3 fiscal years of operating cash flow values for Pfizer "
+            "(PFE); values are in billions USD and include the period end date."
+        ),
+        "numeric_checks": None,
+    },
 ]
 
 # Quick summary when run directly

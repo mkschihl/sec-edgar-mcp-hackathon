@@ -228,6 +228,7 @@ ALL_TOOL_NAMES = [
     "sec_edgar_full_text_search",
     "sec_edgar_screen",
     "sec_edgar_get_earnings_release",
+    "sec_edgar_resolve_xbrl_concept",
 ]
 
 REFUSAL_PATTERNS = [

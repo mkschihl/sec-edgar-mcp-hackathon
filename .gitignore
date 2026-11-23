@@ -29,3 +29,6 @@ Thumbs.db
 
 # Generated flow specs
 generated/
+
+# FASB US-GAAP taxonomy source files (large, non-redistributable, regenerate with build_xbrl_concepts.py)
+.bob/artifacts/us-gaap-*/

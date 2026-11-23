@@ -1,17 +1,20 @@
 """SEC EDGAR MCP Toolkit — stdio transport.
 
-Eleven tools exposed to watsonx Orchestrate:
-  - sec_edgar_resolve_synonym       : map a common company nickname/alias to canonical EDGAR name + ticker
-  - sec_edgar_search_companies      : search all SEC-registered companies by partial name
-  - sec_edgar_resolve_company       : resolve ticker or CIK to canonical company info
-  - sec_edgar_get_recent_filings    : recent filing history with optional form-type filter
-  - sec_edgar_get_company_fact      : XBRL concept time series for one company
-  - sec_edgar_compare_companies     : compare one XBRL concept across multiple companies
-  - sec_edgar_get_filing_metadata   : filing doc list and EDGAR URL for an accession number
-  - sec_edgar_get_filing_text       : extract readable text from an SEC filing document
-  - sec_edgar_full_text_search      : search EDGAR full-text index by keyword across all filings
-  - sec_edgar_list_concepts         : discover available XBRL concepts for a company
-  - sec_edgar_get_quarterly_facts   : quarterly XBRL observations (Q1/Q2/Q3/Q4) for one company
+Fourteen tools exposed to watsonx Orchestrate:
+  - sec_edgar_resolve_synonym         : map a common company nickname/alias to canonical EDGAR name + ticker
+  - sec_edgar_search_companies        : search all SEC-registered companies by partial name
+  - sec_edgar_resolve_company         : resolve ticker or CIK to canonical company info
+  - sec_edgar_get_recent_filings      : recent filing history with optional form-type filter
+  - sec_edgar_get_company_fact        : XBRL concept time series for one company
+  - sec_edgar_compare_companies       : compare one XBRL concept across multiple companies
+  - sec_edgar_get_filing_metadata     : filing doc list and EDGAR URL for an accession number
+  - sec_edgar_get_filing_text         : extract readable text from an SEC filing document
+  - sec_edgar_full_text_search        : search EDGAR full-text index by keyword across all filings
+  - sec_edgar_list_concepts           : discover available XBRL concepts for a company
+  - sec_edgar_get_quarterly_facts     : quarterly XBRL observations (Q1/Q2/Q3/Q4) for one company
+  - sec_edgar_screen                  : discover companies by SIC, exchange, or state
+  - sec_edgar_get_earnings_release    : fetch EX-99.1 press release from an 8-K filing
+  - sec_edgar_resolve_xbrl_concept    : search the full FASB US-GAAP taxonomy by plain-English keyword
 
 Orchestrate starts this file as a subprocess and communicates over stdin/stdout.
 SEC APIs require no API key. Rate limit: 10 req/s per IP.
@@ -29,6 +32,7 @@ from urllib.parse import quote as _url_quote
 
 import httpx
 from fastmcp import FastMCP
+from xbrl_concepts_data import XBRL_CONCEPTS
 
 # ---------------------------------------------------------------------------
 # Module-level constants and shared state
@@ -2884,6 +2888,286 @@ async def sec_edgar_get_earnings_release(
             "error": f"Unexpected error: {type(exc).__name__}: {exc}",
             "hint": "Report this to the toolkit maintainer; do not retry with the same arguments.",
         }
+
+
+# ---------------------------------------------------------------------------
+# XBRL concept search index (built once at import time from XBRL_CONCEPTS)
+# ---------------------------------------------------------------------------
+# Maps each lowercase word found in a concept name or its human label to the
+# list of concept rows that contain it.  Enables O(len(terms)) lookup.
+
+def _build_xbrl_index() -> dict[str, list[int]]:
+    index: dict[str, list[int]] = {}
+    for i, (name, label, _pt, _bal, _typ) in enumerate(XBRL_CONCEPTS):
+        # tokenise both the CamelCase name and the human label
+        words: set[str] = set()
+        # split CamelCase → lower words
+        for w in re.sub(r"([A-Z])", r" \1", name).lower().split():
+            words.add(w)
+        # split label on non-alphanumeric chars
+        for w in re.split(r"[^a-z0-9]+", label.lower()):
+            if w:
+                words.add(w)
+        for w in words:
+            index.setdefault(w, []).append(i)
+    return index
+
+
+_XBRL_INDEX: dict[str, list[int]] = _build_xbrl_index()
+
+
+@mcp.tool(
+    name="sec_edgar_resolve_xbrl_concept",
+    description=(
+        "Search the full FASB US-GAAP 2026 taxonomy (7,462 numeric concepts) by one or "
+        "more plain-English keywords and return matching XBRL concept names with metadata. "
+        "Use this tool BEFORE sec_edgar_get_company_fact, sec_edgar_get_quarterly_facts, or "
+        "sec_edgar_compare_companies when you are unsure of the exact XBRL tag name. "
+        "Returns each match with: concept_name (pass to other tools), human_label, "
+        "period_type ('duration'=income-stmt/cash-flow, 'instant'=balance-sheet), "
+        "balance ('debit'/'credit'), and xbrl_type. Results are sorted by relevance "
+        "(exact-name match first, then most keyword overlaps). No network call required."
+    ),
+)
+async def sec_edgar_resolve_xbrl_concept(
+    query: Annotated[
+        str,
+        "Plain-English search term(s) for the financial metric, e.g. 'revenue', "
+        "'net income', 'total assets', 'operating cash flow', 'earnings per share', "
+        "'long term debt'. Multiple words are ANDed: all must appear in the concept name "
+        "or label. Case-insensitive.",
+    ],
+    max_results: Annotated[
+        int,
+        "Maximum number of results to return (default 20, max 100).",
+    ] = 20,
+    period_type: Annotated[
+        str,
+        "Optional filter: 'duration' (income statement / cash flow concepts) or "
+        "'instant' (balance sheet concepts). Leave blank to return both.",
+    ] = "",
+    balance: Annotated[
+        str,
+        "Optional filter: 'debit' or 'credit'. Leave blank to return both.",
+    ] = "",
+) -> dict:
+    # Canonical concept overrides: when the normalised query exactly matches a key,
+    # the listed concept(s) are boosted to the top of results regardless of score.
+    # These cover the most common financial metrics where the taxonomy has many
+    # near-synonyms that would otherwise score higher.
+    _CANONICAL: dict[str, list[str]] = {
+        "revenue":                    ["Revenues", "RevenueFromContractWithCustomerExcludingAssessedTax"],
+        "revenues":                   ["Revenues", "RevenueFromContractWithCustomerExcludingAssessedTax"],
+        "net income":                 ["NetIncomeLoss", "NetIncomeLossAvailableToCommonStockholdersBasic"],
+        "net income loss":            ["NetIncomeLoss"],
+        "total assets":               ["Assets"],
+        "assets":                     ["Assets"],
+        "total liabilities":          ["Liabilities"],
+        "liabilities":                ["Liabilities"],
+        "stockholders equity":        ["StockholdersEquity"],
+        "shareholders equity":        ["StockholdersEquity"],
+        "operating income":           ["OperatingIncomeLoss"],
+        "operating income loss":      ["OperatingIncomeLoss"],
+        "gross profit":               ["GrossProfit"],
+        "long term debt":             ["LongTermDebt"],
+        "cash":                       ["CashAndCashEquivalentsAtCarryingValue"],
+        "cash equivalents":           ["CashAndCashEquivalentsAtCarryingValue"],
+        "cash and cash equivalents":  ["CashAndCashEquivalentsAtCarryingValue"],
+        "eps":                        ["EarningsPerShareBasic", "EarningsPerShareDiluted"],
+        "earnings per share":         ["EarningsPerShareBasic", "EarningsPerShareDiluted"],
+        "cost of revenue":            ["CostOfRevenue", "CostOfGoodsAndServicesSold"],
+        "cost of goods sold":         ["CostOfGoodsAndServicesSold", "CostOfRevenue"],
+        "operating expenses":         ["OperatingExpenses"],
+        "research and development":   ["ResearchAndDevelopmentExpense"],
+        "depreciation amortization":  ["DepreciationAndAmortization", "DepreciationDepletionAndAmortization"],
+        "interest expense":           ["InterestExpense"],
+        "income tax":                 ["IncomeTaxExpenseBenefit"],
+        "income tax expense":         ["IncomeTaxExpenseBenefit"],
+        "goodwill":                   ["Goodwill"],
+        "intangible assets":          ["IntangibleAssetsNetExcludingGoodwill", "FiniteLivedIntangibleAssetsNet"],
+        "capital expenditures":       ["PaymentsToAcquirePropertyPlantAndEquipment"],
+        "capex":                      ["PaymentsToAcquirePropertyPlantAndEquipment"],
+        "free cash flow":             ["NetCashProvidedByUsedInOperatingActivities"],
+        "operating cash flow":        ["NetCashProvidedByUsedInOperatingActivities"],
+        "net cash operating":         ["NetCashProvidedByUsedInOperatingActivities"],
+        "inventory":                  ["InventoryNet"],
+        "accounts receivable":        ["AccountsReceivableNetCurrent"],
+        "accounts payable":           ["AccountsPayableCurrent"],
+        "shares outstanding":         ["CommonStockSharesOutstanding"],
+        "market capitalization":      ["MarketCapitalization"],
+    }
+    max_results = min(max(1, max_results), 100)
+    period_type = period_type.strip().lower()
+    balance_filter = balance.strip().lower()
+
+    # Fast path: if the query is itself an exact XBRL concept name, return it directly.
+    _full_name_idx = {row[0]: i for i, row in enumerate(XBRL_CONCEPTS)}
+    if query.strip() in _full_name_idx:
+        idx = _full_name_idx[query.strip()]
+        name, label, pt, bal, xbrl_type = XBRL_CONCEPTS[idx]
+        if not (period_type and pt != period_type) and not (balance_filter and bal != balance_filter):
+            return {
+                "query": query,
+                "total_matches": 1,
+                "returned": 1,
+                "results": [{"concept_name": name, "label": label,
+                              "period_type": pt, "balance": bal, "xbrl_type": xbrl_type}],
+                "usage_hint": (
+                    "Pass 'concept_name' directly to sec_edgar_get_company_fact, "
+                    "sec_edgar_get_quarterly_facts, or sec_edgar_compare_companies."
+                ),
+            }
+
+    # Tokenise the query the same way the index was built
+    raw_terms = re.split(r"[^a-z0-9]+", query.lower())
+    terms = [t for t in raw_terms if t]
+    if not terms:
+        return {"error": "Query is empty after tokenisation.", "results": []}
+
+    # Build per-term hit sets (exact + prefix for terms ≥ 4 chars)
+    per_term_hits: list[set[int]] = []
+    for t in terms:
+        hits = set(_XBRL_INDEX.get(t, []))
+        if len(t) >= 4:
+            for key, idxs in _XBRL_INDEX.items():
+                if key.startswith(t) and key != t:
+                    hits.update(idxs)
+        per_term_hits.append(hits)
+
+    if not per_term_hits:
+        return {"query": query, "results": []}
+
+    # AND: concepts that match every term
+    candidates: set[int] = per_term_hits[0].copy()
+    for s in per_term_hits[1:]:
+        candidates &= s
+
+    # If AND yields nothing, fall back to concepts that match the most terms (OR ranked).
+    # Ignore common stop-words when counting — they would otherwise dominate.
+    _STOP = {"a", "an", "the", "of", "and", "or", "in", "at", "to", "for", "by", "on"}
+    if not candidates:
+        from collections import Counter
+        counts: Counter[int] = Counter()
+        meaningful_sets = [s for t, s in zip(terms, per_term_hits) if t not in _STOP and len(t) > 1]
+        for s in meaningful_sets:
+            for idx in s:
+                counts[idx] += 1
+        if not counts:
+            return {
+                "query": query,
+                "total_matches": 0,
+                "results": [],
+                "hint": (
+                    "No concepts matched. Try fewer or broader keywords, "
+                    "e.g. 'assets' instead of 'total assets'."
+                ),
+            }
+        # If the best match count is very low relative to query length,
+        # the query likely has no meaningful hits — return empty rather than noise.
+        best_count = max(counts.values())
+        if best_count == 0 or (len(meaningful_sets) > 1 and best_count < len(meaningful_sets) // 2):
+            return {
+                "query": query,
+                "total_matches": 0,
+                "results": [],
+                "hint": "No concepts matched. Try simpler keywords.",
+            }
+        # Keep only those matching at least half the meaningful terms
+        min_hits = max(1, (len(meaningful_sets) + 1) // 2)
+        candidates = {idx for idx, cnt in counts.items() if cnt >= min_hits}
+        if not candidates:
+            candidates = {idx for idx, cnt in counts.items()}
+
+    # Heuristic: income-statement keywords → prefer duration over instant
+    _income_stmt_terms = {"revenue", "income", "profit", "loss", "expense",
+                          "earnings", "sales", "cost", "gain", "margin"}
+    prefer_duration = any(t in _income_stmt_terms for t in terms)
+    query_lower = query.strip().lower()
+
+    # Score: exact concept-name or exact label match ranks highest;
+    # shorter names (simpler/more canonical) preferred over long specific ones.
+    def _score(idx: int) -> int:
+        name, label, period, _bal, _typ = XBRL_CONCEPTS[idx]
+        s = 0
+        name_lower = name.lower()
+        label_lower = label.lower()
+        for t in terms:
+            if t == name_lower:
+                s += 20          # exact name match
+            elif name_lower.startswith(t) or name_lower.endswith(t):
+                s += 4
+            elif t in name_lower:
+                s += 2
+            if t == label_lower.split(",")[0].strip():
+                s += 15          # first word of label matches term exactly
+            elif t in label_lower:
+                s += 1
+        # Exact label == query
+        if label_lower == query_lower:
+            s += 30
+        # Bonus for matching more terms (matters in OR-fallback mode)
+        matched_terms = sum(1 for t in terms if t in name_lower or t in label_lower)
+        s += matched_terms * 3
+        # Heuristic: income-statement keywords → prefer duration over instant
+        if prefer_duration:
+            if period == "duration":
+                s += 5
+            elif period == "instant":
+                s -= 3
+        # Prefer shorter (more canonical) names — penalise length
+        s -= len(name) // 10
+        return s
+
+    ranked = sorted(candidates, key=_score, reverse=True)
+
+    # Build a name→index lookup for canonical overrides (full list, not just candidates)
+    _name_to_idx = {row[0]: i for i, row in enumerate(XBRL_CONCEPTS)}
+
+    def _make_result(idx: int) -> dict | None:
+        name, label, pt, bal, xbrl_type = XBRL_CONCEPTS[idx]
+        if period_type and pt != period_type:
+            return None
+        if balance_filter and bal != balance_filter and balance_filter != "":
+            return None
+        return {"concept_name": name, "label": label,
+                "period_type": pt, "balance": bal, "xbrl_type": xbrl_type}
+
+    results: list[dict] = []
+    seen: set[int] = set()
+
+    # Prepend canonical overrides (if query matches exactly)
+    canonical_names = _CANONICAL.get(query.strip().lower(), [])
+    for cname in canonical_names:
+        idx = _name_to_idx.get(cname)
+        if idx is not None and idx not in seen:
+            r = _make_result(idx)
+            if r:
+                results.append(r)
+                seen.add(idx)
+
+    # Then append scored results, skipping already-added canonical ones
+    for idx in ranked:
+        if idx in seen:
+            continue
+        r = _make_result(idx)
+        if r:
+            results.append(r)
+            seen.add(idx)
+        if len(results) >= max_results:
+            break
+
+    return {
+        "query":         query,
+        "total_matches": len(candidates),
+        "returned":      len(results),
+        "results":       results,
+        "usage_hint": (
+            "Pass 'concept_name' directly to sec_edgar_get_company_fact, "
+            "sec_edgar_get_quarterly_facts, or sec_edgar_compare_companies. "
+            "Use period_type='duration' for income-statement metrics, "
+            "'instant' for balance-sheet snapshots."
+        ),
+    }
 
 
 if __name__ == "__main__":

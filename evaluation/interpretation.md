@@ -5,7 +5,7 @@
 **Environment:** `gsa-hackathon` (IBM Cloud Toronto, ca-tor)
 **Initial evaluation run:** 2026-11-07 (20 questions, 557 seconds)
 **Human audit completed:** 2026-11-11 (review of all 20 agent responses)
-**Production WXO scoring:** 2026-11-23 (37 questions, REST routing evaluator, v1.6.0)
+**Production WXO scoring:** 2026-11-23 (39 questions, REST routing evaluator, v1.8.0)
 
 ---
 
@@ -37,9 +37,9 @@ with a 3-vote majority.
 
 ## 2. Tool routing results (Layer 1)
 
-**37 / 37 questions passed** the tool-routing check (100%). Every expected tool fired.
+**39 / 39 questions passed** the tool-routing check (100%). Every expected tool fired.
 
-**Tool utilisation summary (2026-11-23, 37 questions, v1.6.0):**
+**Tool utilisation summary (2026-11-23, 39 questions, v1.8.0):**
 
 | Tool | Expected in N Qs | Qs Fired | Fire Rate | Total Calls |
 |---|---|---|---|---|
@@ -66,7 +66,9 @@ before retrieving financial data — the correct behaviour for name-based querie
 `sec_edgar_resolve_synonym` now has two dedicated BQs (BQ-32/BQ-33) confirming it
 fires correctly for brand-name lookups ("Google" → Alphabet; "Meta" → Meta Platforms).
 BQ-36 (xbrl_concept_chain) and BQ-37 (4-company `compare_companies`) were added in
-session 13 and both passed on first run.
+session 13 and both passed on first run. BQ-38 (EBITDA derived-metric) and BQ-39
+(ROE derived chain) were added in session 15 and both passed on first run after CE
+deploy of v1.8.0 — evaluated with `run_evaluation.py`, not Phoenix.
 
 > **Note on the 2026-11-07 run (now superseded):** That initial run counted tool
 > appearances by text-matching the SSE stream and response content. Fire rates
@@ -106,7 +108,7 @@ search by company name. It did not fabricate a response. The agent enforces this
 through structural guards: a tool-call mandate (every financial figure must come
 from a tool return value), URL prohibition, and refusal rules. These reduce, but
 cannot eliminate, the risk of an LLM stating unsupported figures; the evaluation
-measures this directly (37/37 routing, 37/37 scope, 8/8 numeric).
+measures this directly (39/39 routing, 39/39 scope, 8/8 numeric).
 
 **Multi-step discovery.** Hard questions requiring search → resolve → retrieve chains
 (BQ-17 Pfizer, BQ-18 Exxon) were attempted in the correct sequence, demonstrating
@@ -253,9 +255,11 @@ measurement gap that LLM-as-judge scoring is designed to close.
 - ✅ `sec_edgar_get_earnings_release`: 8-K EX-99.1 press release parsing with EPS/revenue extraction
 - ✅ `sec_edgar_resolve_xbrl_concept`: 7,462 FASB US-GAAP 2026 concepts; in-process inverted index; AND/OR fallback; 40-entry canonical override table; zero network calls
 
-**Regression test coverage:** 274 assertions across 21 test functions (all passing),
+**Regression test coverage:** 359 assertions across 21 test functions (all passing),
 including 18 new assertions covering the 5 international ADR companies added in
-session 13 (TSMC, SAP SE, ASML, Sony Group, Toyota ADR aliases).
+session 13 (TSMC, SAP SE, ASML, Sony Group, Toyota ADR aliases), and 68 new
+assertions covering XBRL derived-metric resolution (ROE, D/E, P/E, asset turnover,
+BVPS canonical overrides and derivation notes) added in session 15.
 
 ---
 
@@ -278,6 +282,7 @@ should not be used as a correctness benchmark for the production agent.**
 | Exp 16 (2026-11-21) | sec-edgar-eval-2 | 33 | 12/33 (36%) | 28/33 (85%) | 5/8 (62%) | Mistral judge, ref wired |
 | **Exp 17 (2026-11-23)** | sec-edgar-eval-2 | **35** | **14/35 (40%)** | **29/35 (83%)** | **5/8 (62%)** | Mistral judge; BQ-34/35 added |
 | **Exp 18 (2026-11-23)** | sec-edgar-eval-2 | **37** | **14/37 (38%)** | **30/37 (81%)** | **5/8 (62%)** | Mistral judge; BQ-36/37 added |
+| **BQ-38/39 (2026-11-23)** | run_evaluation.py | **2** | **2/2 (100%)** | **2/2 (100%)** | n/a | Production WXO agent; no Phoenix run |
 
 Experiment 17 (`RXhwZXJpbWVudDoxNw==`): 35/35 task runs completed, 105 evaluations.
 View: http://localhost:6006/datasets/RGF0YXNldDoz/compare?experimentId=RXhwZXJpbWVudDoxNw==
@@ -291,26 +296,31 @@ are now fixed in the production agent.
 
 ### 6b. Production WXO agent scoring (2026-11-23)
 
-The production `sec_edgar_agent` on `gsa-hackathon` was run against 37 benchmark
-questions (`sec-edgar-eval-2`). Run date: 2026-11-23, commit `c0cf335` (14 tools,
-37 BQs, v1.6.0 — including BQ-36 xbrl_concept_chain and BQ-37 4-company compare).
+The production `sec_edgar_agent` on `gsa-hackathon` was run against 39 benchmark
+questions. Run date: 2026-11-23, commit `39201bf` (14 tools, 39 BQs, v1.8.0 —
+including BQ-36 xbrl_concept_chain, BQ-37 4-company compare, BQ-38 EBITDA
+derived-metric, and BQ-39 ROE derived chain). BQ-38 and BQ-39 were run with
+`evaluation/run_evaluation.py`; a Phoenix experiment was not run for these two
+questions as Experiment 18 predates them.
 
 **Results:**
 
 | Dimension | Score | Notes |
 |---|---|---|
-| Correctness (REST routing) | **37 / 37 (100%)** | All 37 questions: correct tool fired, substantive answer returned |
-| Scope | **37 / 37 (100%)** | Agent never answered out-of-scope questions from training data |
+| Correctness (REST routing) | **39 / 39 (100%)** | All 39 questions: correct tool fired, substantive answer returned |
+| Scope | **39 / 39 (100%)** | Agent never answered out-of-scope questions from training data |
 | Numeric | **8 / 8 (100%)** | All 8 questions with numeric anchors pass within stated tolerances (0.5–2%) |
-| BQ-34/BQ-35 (new) | **2 / 2 (100%)** | Both xbrl_concept_resolution questions pass on first run |
-| BQ-36 (new) | **1 / 1 (100%)** | xbrl_concept_chain: deferred revenue comparison (Apple/MSFT/Alphabet) |
-| BQ-37 (new) | **1 / 1 (100%)** | 4-company compare_companies stress test (Apple/MSFT/Amazon/Alphabet) |
+| BQ-34/BQ-35 | **2 / 2 (100%)** | Both xbrl_concept_resolution questions pass on first run |
+| BQ-36 | **1 / 1 (100%)** | xbrl_concept_chain: deferred revenue comparison (Apple/MSFT/Alphabet) |
+| BQ-37 | **1 / 1 (100%)** | 4-company compare_companies stress test (Apple/MSFT/Amazon/Alphabet) |
+| BQ-38 (new) | **1 / 1 (100%)** | EBITDA derived-metric: agent fetches components via get_company_fact and computes EBITDA |
+| BQ-39 (new) | **1 / 1 (100%)** | ROE derived chain: agent fetches NetIncomeLoss + StockholdersEquity and computes ROE |
 
-All 37 questions passed. BQ-36 and BQ-37 passed on first run.
+All 39 questions passed. BQ-38 and BQ-39 passed on first run after CE deploy of v1.8.0.
 
 ### 6c. Consistency with human audit and production scoring
 
-- Production scoring: routing = 37/37 and scope = 37/37 — the agent never fabricated an answer for an
+- Production scoring: routing = 39/39 and scope = 39/39 — the agent never fabricated an answer for an
   out-of-scope question. The Llama-agent runs predate the refusal rules and are
   superseded; scope 100% is a production-only result.
 - YTD-vs-quarterly fix (BQ-09, BQ-10): production scoring shows these passing after
@@ -332,6 +342,13 @@ All 37 questions passed. BQ-36 and BQ-37 passed on first run.
 - BQ-37: 4-company `compare_companies` stress test (Apple/MSFT/Amazon/Alphabet
   revenue ranking). Passed on first run. Increases `compare_companies` coverage
   from 2 to 4 dedicated BQs; 100% fire rate maintained.
+- BQ-38: EBITDA derived-metric. Agent used `get_company_fact` to fetch operating
+  income and D&A components, then computed EBITDA. `sec_edgar_resolve_xbrl_concept`
+  listed as `optional_tools` (agent may skip resolver if it already knows formula
+  from training). Passed on first run after CE deploy of v1.8.0.
+- BQ-39: ROE derived chain. Agent fetched `NetIncomeLoss` and `StockholdersEquity`
+  via `get_company_fact` and computed ROE. Same `optional_tools` pattern as BQ-38.
+  Passed on first run after CE deploy of v1.8.0.
 
 ### 6d. Evaluation method changes
 
@@ -346,6 +363,8 @@ The evaluation harness evolved significantly across three dataset generations:
 | `sec-edgar-eval-2` extended (33 → 35 Qs) | Added BQ-34–BQ-35 (xbrl_concept_resolution); commit `1e93711` |
 | `sec-edgar-eval-2` extended (35 → 36 Qs) | Added BQ-36 (xbrl_concept_chain); commit `58e9d9c`; tagged v1.5.0 |
 | `sec-edgar-eval-2` extended (36 → 37 Qs) | Added BQ-37 (4-company compare_companies); commit `c0cf335`; tagged v1.6.0 |
+| `sec-edgar-eval-2` extended (37 → 38 Qs) | Added BQ-38 (EBITDA derived-metric); XBRL ratio overrides; 359 assertions; commit `8f34ffe` |
+| `sec-edgar-eval-2` extended (38 → 39 Qs) | Added BQ-39 (ROE derived chain); BQ-38 optional_tools fix; tagged v1.8.0; commit `39201bf` |
 | Deterministic numeric judge | `must_include`, `rel_tol`, `max_value` checks separate from LLM correctness |
 | Date-aware judge prompt | Fiscal-year clarification paragraph prevents training-cutoff contamination |
 | 3-vote majority judge | Each question judged 3× independently; 2-of-3 split reported as "unstable" |
@@ -358,4 +377,5 @@ The evaluation harness evolved significantly across three dataset generations:
 *Production WXO scoring (33 Qs): 2026-11-21*
 *Production WXO scoring (35 Qs, 35/35): 2026-11-23*
 *Production WXO scoring (37 Qs, 37/37): 2026-11-23 (session 13)*
-*Report updated: 2026-11-23 (37 BQs, 14 tools, v1.6.0, Exp 18 complete)*
+*Production WXO scoring (39 Qs, 39/39): 2026-11-23 (session 15) — BQ-38/BQ-39 via run_evaluation.py*
+*Report updated: 2026-11-23 (39 BQs, 14 tools, v1.8.0, 359 assertions — final submission)*

@@ -84,7 +84,7 @@ The report covers:
 ### Q8 — Code link upload
 **HTML artifact:** "Q8 — SEC EDGAR Facts Explorer: Code Repository" (open in browser → Print → Save as PDF)  
 **Suggested filename:** `Q8_code_link.pdf`  
-**Repo URL:** https://github.com/mkschihl/wxo-agentic-workflow
+**Repo URL:** https://github.com/mkschihl/sec-edgar-mcp-hackathon
 
 ---
 

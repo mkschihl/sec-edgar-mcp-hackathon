@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SEC EDGAR Agent — Evaluation Report</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, "Segoe UI", system-ui, sans-serif;
+    font-size: 13px;
+    line-height: 1.6;
+    color: #1f2328;
+    background: #ffffff;
+    padding: 32px 24px;
+  }
+  .page { max-width: 760px; margin: 0 auto; }
+
+  .report-header { border-bottom: 2px solid #1f2328; padding-bottom: 16px; margin-bottom: 24px; }
+  .report-header h1 { font-size: 22px; font-weight: 700; color: #1f2328; margin-bottom: 4px; }
+  .report-header .subtitle { font-size: 13px; color: #57606a; }
+  .meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 24px; margin-top: 12px; font-size: 12px; }
+  .meta-grid span { color: #57606a; }
+  .meta-grid strong { color: #1f2328; }
+
+  h2 { font-size: 15px; font-weight: 700; color: #1f2328; border-bottom: 1px solid #e5e7eb; padding-bottom: 6px; margin: 28px 0 14px; }
+  h3 { font-size: 13px; font-weight: 700; color: #1f2328; margin: 18px 0 8px; }
+
+  .score-banner {
+    display: flex; gap: 16px; flex-wrap: wrap;
+    background: #f7f8fa; border: 1px solid #e5e7eb; border-radius: 6px;
+    padding: 16px 20px; margin-bottom: 20px;
+  }
+  .score-card { text-align: center; min-width: 100px; }
+  .score-card .num { font-size: 28px; font-weight: 800; color: #3b82d4; }
+  .score-card .pass { color: #16a34a; }
+  .score-card .label { font-size: 11px; color: #57606a; text-transform: uppercase; letter-spacing: 0.04em; margin-top: 2px; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 12px; margin: 10px 0 20px; }
+  th { background: #f7f8fa; border: 1px solid #e5e7eb; padding: 7px 10px; text-align: left; font-weight: 600; color: #57606a; text-transform: uppercase; font-size: 10.5px; letter-spacing: 0.04em; }
+  td { border: 1px solid #e5e7eb; padding: 6px 10px; vertical-align: top; }
+  tr:nth-child(even) td { background: #fafafa; }
+
+  .pass-badge { display: inline-block; background: #dcfce7; color: #15803d; border-radius: 3px; padding: 1px 6px; font-size: 10.5px; font-weight: 600; }
+  .diff-easy { color: #15803d; font-weight: 600; }
+  .diff-medium { color: #b45309; font-weight: 600; }
+  .diff-hard { color: #dc2626; font-weight: 600; }
+  .pct-high { color: #57606a; font-size: 11px; }
+  .cat { display: inline-block; background: #e8f0fe; color: #3b82d4; border-radius: 3px; padding: 1px 5px; font-size: 10px; }
+  .sev-high { color: #dc2626; font-weight: 600; }
+  .sev-med { color: #b45309; font-weight: 600; }
+
+  .finding-box {
+    background: #f7f8fa; border-left: 3px solid #3b82d4;
+    padding: 10px 14px; margin: 10px 0; border-radius: 0 4px 4px 0; font-size: 12.5px;
+  }
+  .finding-box ul { margin: 6px 0 0 16px; }
+  .finding-box li { margin-bottom: 3px; }
+
+  .tick-list { list-style: none; margin: 8px 0 16px; }
+  .tick-list li { padding: 2px 0 2px 20px; position: relative; font-size: 12.5px; }
+  .tick-list li::before { content: "✓"; position: absolute; left: 0; color: #16a34a; font-weight: 700; }
+
+  p { margin-bottom: 10px; font-size: 12.5px; }
+  .note { font-size: 11.5px; color: #57606a; font-style: italic; margin-top: 6px; }
+  code { font-family: "SFMono-Regular", Consolas, monospace; background: #f3f4f6; padding: 1px 4px; border-radius: 3px; font-size: 11px; color: #1f2328; }
+
+  .footer { margin-top: 40px; padding-top: 14px; border-top: 1px solid #e5e7eb; text-align: center; font-size: 11px; color: #57606a; }
+  @media print { body { padding: 20px; } }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="report-header">
+    <h1>SEC EDGAR Agent — Evaluation Report</h1>
+    <div class="subtitle">GSA MCP Hackathon Submission — Final Evaluation</div>
+    <div class="meta-grid">
+      <div><span>Agent: </span><strong>sec_edgar_agent</strong></div>
+      <div><span>Environment: </span><strong>gsa-hackathon (IBM Cloud Toronto, ca-tor)</strong></div>
+      <div><span>Server version: </span><strong>v1.8.0 — commit 39201bf</strong></div>
+      <div><span>Run date: </span><strong>2026-11-23 18:34</strong></div>
+      <div><span>Duration: </span><strong>37 seconds for 39 questions</strong></div>
+      <div><span>Author: </span><strong>Michael Schihl</strong></div>
+    </div>
+  </div>
+
+  <div class="score-banner">
+    <div class="score-card"><div class="num pass">39/39</div><div class="label">Tool Routing</div></div>
+    <div class="score-card"><div class="num pass">100%</div><div class="label">Pass Rate</div></div>
+    <div class="score-card"><div class="num pass">39/39</div><div class="label">Scope</div></div>
+    <div class="score-card"><div class="num pass">8/8</div><div class="label">Numeric Anchors</div></div>
+    <div class="score-card"><div class="num">359</div><div class="label">Regression Assertions</div></div>
+    <div class="score-card"><div class="num">14</div><div class="label">MCP Tools</div></div>
+  </div>
+
+  <h2>1. Executive Summary</h2>
+  <p>The <code>sec_edgar_agent</code> was evaluated against 39 benchmark questions spanning 19 categories — from simple company lookup to derived financial ratios. Every question passed on the production run of 2026-11-23 against server version v1.8.0 (commit <code>39201bf</code>). The evaluation used three complementary layers: automated tool-routing checks, human response-quality audit, and LLM-as-judge scoring. All issues found in earlier layers have been addressed in the production server.</p>
+
+  <table>
+    <thead><tr><th>Metric</th><th>Value</th></tr></thead>
+    <tbody>
+      <tr><td>Total benchmark questions</td><td>39</td></tr>
+      <tr><td>Pass</td><td><span class="pass-badge">39 (100%)</span></td></tr>
+      <tr><td>Partial / Fail</td><td>0 / 0</td></tr>
+      <tr><td>Evaluation run time</td><td>37 seconds</td></tr>
+      <tr><td>Regression assertions</td><td>359 (all passing)</td></tr>
+    </tbody>
+  </table>
+
+  <h2>2. Results by Benchmark Question</h2>
+  <table>
+    <thead>
+      <tr><th>ID</th><th>Diff</th><th>Category</th><th>Result</th><th>Tools Fired (key)</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>BQ-01</td><td class="diff-easy">Easy</td><td><span class="cat">company_search</span></td><td><span class="pass-badge">PASS</span></td><td><code>screen</code></td></tr>
+      <tr><td>BQ-02</td><td class="diff-easy">Easy</td><td><span class="cat">company_search</span></td><td><span class="pass-badge">PASS</span></td><td><code>resolve_synonym</code></td></tr>
+      <tr><td>BQ-03</td><td class="diff-easy">Easy</td><td><span class="cat">company_resolution</span></td><td><span class="pass-badge">PASS</span></td><td><code>resolve_synonym</code> → <code>resolve_company</code></td></tr>
+      <tr><td>BQ-04</td><td class="diff-easy">Easy</td><td><span class="cat">company_resolution</span></td><td><span class="pass-badge">PASS</span></td><td><code>resolve_synonym</code> → <code>resolve_company</code></td></tr>
+      <tr><td>BQ-05</td><td class="diff-easy">Easy</td><td><span class="cat">recent_filings</span></td><td><span class="pass-badge">PASS</span></td><td><code>resolve_synonym</code> → <code>get_recent_filings</code></td></tr>
+      <tr><td>BQ-06</td><td class="diff-easy">Easy</td><td><span class="cat">recent_filings</span></td><td><span class="pass-badge">PASS</span></td><td><code>search_companies</code> → <code>get_recent_filings</code></td></tr>
+      <tr><td>BQ-07</td><td class="diff-medium">Medium</td><td><span class="cat">annual_facts</span></td><td><span class="pass-badge">PASS</span></td><td><code>resolve_company</code> → <code>get_company_fact</code></td></tr>
+      <tr><td>BQ-08</td><td class="diff-medium">Medium</td><td><span class="cat">annual_facts</span></td><td><span class="pass-badge">PASS</span></td><td><code>resolve_synonym</code> → <code>get_company_fact</code></td></tr>
+      <tr><td>BQ-09</td><td class="diff-medium">Medium</td><td><span class="cat">quarterly_facts</span></td><td><span class="pass-badge">PASS</span></td><td><code>resolve_synonym</code> → <code>get_quarterly_facts</code></td></tr>
+      <tr><td>BQ-10</td><td class="diff-medium">Medium</td><td><span class="cat">quarterly_facts</span></td><td><span class="pass-badge">PASS</span></td><td><code>resolve_company</code> → <code>get_quarterly_facts</code></td></tr>
+      <tr><td>BQ-11</td><td class="diff-medium">Medium</td><td><span class="cat">concept_discovery</span></td><td><span class="pass-badge">PASS</span></td><td><code>search_companies</code> → <code>list_concepts</code></td></tr>
+      <tr><td>BQ-12</td><td class="diff-medium">Medium</td><td><span class="cat">concept_discovery</span></td><td><span class="pass-badge">PASS</span></td><td><code>list_concepts</code></td></tr>
+      <tr><td>BQ-13</td><td class="diff-hard">Hard</td><td><span class="cat">cross_company</span></td><td><span class="pass-badge">PASS</span></td><td><code>resolve_company</code> → <code>compare_companies</code></td></tr>
+      <tr><td>BQ-14</td><td class="diff-hard">Hard</td><td><span class="cat">cross_company</span></td><td><span class="pass-badge">PASS</span></td><td><code>compare_companies</code></td></tr>
+      <tr><td>BQ-15</td><td class="diff-hard">Hard</td><td><span class="cat">filing_attribution</span></td><td><span class="pass-badge">PASS</span></td><td><code>get_company_fact</code> → <code>get_filing_metadata</code></td></tr>
+      <tr><td>BQ-16</td><td class="diff-hard">Hard</td><td><span class="cat">filing_attribution</span></td><td><span class="pass-badge">PASS</span></td><td><code>resolve_synonym</code> → <code>get_recent_filings</code> → <code>get_company_fact</code></td></tr>
+      <tr><td>BQ-17</td><td class="diff-hard">Hard</td><td><span class="cat">multi_step</span></td><td><span class="pass-badge">PASS</span></td><td><code>search_companies</code> → <code>get_company_fact</code></td></tr>
+      <tr><td>BQ-18</td><td class="diff-hard">Hard</td><td><span class="cat">multi_step</span></td><td><span class="pass-badge">PASS</span></td><td><code>search_companies</code> → <code>get_recent_filings</code></td></tr>
+      <tr><td>BQ-19</td><td class="diff-easy">Easy</td><td><span class="cat">edge_cases</span></td><td><span class="pass-badge">PASS</span></td><td><code>resolve_company</code> (graceful no-result)</td></tr>
+      <tr><td>BQ-20</td><td class="diff-medium">Medium</td><td><span class="cat">edge_cases</span></td><td><span class="pass-badge">PASS</span></td><td><code>resolve_xbrl_concept</code> → <code>get_quarterly_facts</code></td></tr>
+      <tr><td>BQ-21</td><td class="diff-easy">Easy</td><td><span class="cat">out_of_scope</span></td><td><span class="pass-badge">PASS</span></td><td>(none — correctly declined)</td></tr>
+      <tr><td>BQ-22</td><td class="diff-easy">Easy</td><td><span class="cat">out_of_scope</span></td><td><span class="pass-badge">PASS</span></td><td>(none — correctly declined)</td></tr>
+      <tr><td>BQ-23</td><td class="diff-medium">Medium</td><td><span class="cat">out_of_scope</span></td><td><span class="pass-badge">PASS</span></td><td>(none — correctly declined)</td></tr>
+      <tr><td>BQ-24</td><td class="diff-medium">Medium</td><td><span class="cat">filing_text</span></td><td><span class="pass-badge">PASS</span></td><td><code>get_recent_filings</code> → <code>get_filing_text</code></td></tr>
+      <tr><td>BQ-25</td><td class="diff-hard">Hard</td><td><span class="cat">filing_text</span></td><td><span class="pass-badge">PASS</span></td><td><code>resolve_synonym</code> → <code>get_recent_filings</code> → <code>get_filing_text</code></td></tr>
+      <tr><td>BQ-26</td><td class="diff-easy">Easy</td><td><span class="cat">full_text_search</span></td><td><span class="pass-badge">PASS</span></td><td><code>full_text_search</code></td></tr>
+      <tr><td>BQ-27</td><td class="diff-medium">Medium</td><td><span class="cat">full_text_search</span></td><td><span class="pass-badge">PASS</span></td><td><code>full_text_search</code></td></tr>
+      <tr><td>BQ-28</td><td class="diff-easy">Easy</td><td><span class="cat">screen</span></td><td><span class="pass-badge">PASS</span></td><td><code>screen</code></td></tr>
+      <tr><td>BQ-29</td><td class="diff-medium">Medium</td><td><span class="cat">screen</span></td><td><span class="pass-badge">PASS</span></td><td><code>screen</code></td></tr>
+      <tr><td>BQ-30</td><td class="diff-easy">Easy</td><td><span class="cat">earnings_release</span></td><td><span class="pass-badge">PASS</span></td><td><code>get_earnings_release</code></td></tr>
+      <tr><td>BQ-31</td><td class="diff-medium">Medium</td><td><span class="cat">earnings_release</span></td><td><span class="pass-badge">PASS</span></td><td><code>resolve_company</code> → <code>get_earnings_release</code></td></tr>
+      <tr><td>BQ-32</td><td class="diff-easy">Easy</td><td><span class="cat">synonym_resolution</span></td><td><span class="pass-badge">PASS</span></td><td><code>resolve_synonym</code></td></tr>
+      <tr><td>BQ-33</td><td class="diff-medium">Medium</td><td><span class="cat">synonym_resolution</span></td><td><span class="pass-badge">PASS</span></td><td><code>resolve_synonym</code> → <code>resolve_company</code></td></tr>
+      <tr><td>BQ-34</td><td class="diff-easy">Easy</td><td><span class="cat">xbrl_concept_res.</span></td><td><span class="pass-badge">PASS</span></td><td><code>resolve_xbrl_concept</code></td></tr>
+      <tr><td>BQ-35</td><td class="diff-medium">Medium</td><td><span class="cat">xbrl_concept_res.</span></td><td><span class="pass-badge">PASS</span></td><td><code>resolve_xbrl_concept</code> → <code>get_company_fact</code></td></tr>
+      <tr><td>BQ-36</td><td class="diff-hard">Hard</td><td><span class="cat">xbrl_concept_chain</span></td><td><span class="pass-badge">PASS</span></td><td><code>resolve_xbrl_concept</code> → <code>compare_companies</code></td></tr>
+      <tr><td>BQ-37</td><td class="diff-hard">Hard</td><td><span class="cat">cross_company</span></td><td><span class="pass-badge">PASS</span></td><td><code>compare_companies</code> (4 companies)</td></tr>
+      <tr><td>BQ-38</td><td class="diff-hard">Hard</td><td><span class="cat">xbrl_derived_metric</span></td><td><span class="pass-badge">PASS</span></td><td><code>resolve_company</code> → <code>get_company_fact</code> → <code>list_concepts</code></td></tr>
+      <tr><td>BQ-39</td><td class="diff-medium">Medium</td><td><span class="cat">xbrl_derived_metric</span></td><td><span class="pass-badge">PASS</span></td><td><code>resolve_synonym</code> → <code>get_company_fact</code></td></tr>
+    </tbody>
+  </table>
+
+  <h2>3. Tool Utilisation</h2>
+  <p>Fire rates above 100% mean the agent proactively called a tool as part of a multi-step chain. This is correct behaviour — <code>resolve_company</code> fires at 367% because the agent resolves company identity before retrieving any financial fact.</p>
+  <table>
+    <thead><tr><th>Tool</th><th>Expected in N Qs</th><th>Qs Fired</th><th>Fire Rate</th><th>Total Calls</th></tr></thead>
+    <tbody>
+      <tr><td><code>sec_edgar_compare_companies</code></td><td>4</td><td>4</td><td>100%</td><td>5</td></tr>
+      <tr><td><code>sec_edgar_full_text_search</code></td><td>2</td><td>2</td><td>100%</td><td>2</td></tr>
+      <tr><td><code>sec_edgar_get_company_fact</code></td><td>5</td><td>6</td><td class="pct-high">120%</td><td>6</td></tr>
+      <tr><td><code>sec_edgar_get_earnings_release</code></td><td>2</td><td>2</td><td>100%</td><td>2</td></tr>
+      <tr><td><code>sec_edgar_get_filing_metadata</code></td><td>1</td><td>1</td><td>100%</td><td>1</td></tr>
+      <tr><td><code>sec_edgar_get_filing_text</code></td><td>2</td><td>2</td><td>100%</td><td>2</td></tr>
+      <tr><td><code>sec_edgar_get_quarterly_facts</code></td><td>3</td><td>3</td><td>100%</td><td>4</td></tr>
+      <tr><td><code>sec_edgar_get_recent_filings</code></td><td>4</td><td>6</td><td class="pct-high">150%</td><td>6</td></tr>
+      <tr><td><code>sec_edgar_list_concepts</code></td><td>2</td><td>2</td><td>100%</td><td>2</td></tr>
+      <tr><td><code>sec_edgar_resolve_company</code></td><td>3</td><td>11</td><td class="pct-high">367% — multi-step chains</td><td>13</td></tr>
+      <tr><td><code>sec_edgar_resolve_synonym</code></td><td>2</td><td>10</td><td class="pct-high">500% — proactive name resolution</td><td>10</td></tr>
+      <tr><td><code>sec_edgar_resolve_xbrl_concept</code></td><td>3</td><td>4</td><td class="pct-high">133%</td><td>5</td></tr>
+      <tr><td><code>sec_edgar_screen</code></td><td>3</td><td>3</td><td>100%</td><td>3</td></tr>
+      <tr><td><code>sec_edgar_search_companies</code></td><td>2</td><td>7</td><td class="pct-high">350% — proactive discovery</td><td>9</td></tr>
+    </tbody>
+  </table>
+
+  <h2>4. Results by Category</h2>
+  <table>
+    <thead><tr><th>Category</th><th>Questions</th><th>Pass</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td>company_search</td><td>2</td><td><span class="pass-badge">2/2</span></td><td>Name search and screen tool</td></tr>
+      <tr><td>company_resolution</td><td>2</td><td><span class="pass-badge">2/2</span></td><td>Ticker/name → CIK, SIC, state</td></tr>
+      <tr><td>recent_filings</td><td>2</td><td><span class="pass-badge">2/2</span></td><td>10-K, 10-Q, 8-K listing</td></tr>
+      <tr><td>annual_facts</td><td>2</td><td><span class="pass-badge">2/2</span></td><td>Multi-year XBRL fact series</td></tr>
+      <tr><td>quarterly_facts</td><td>2</td><td><span class="pass-badge">2/2</span></td><td>Single-quarter with YTD filter and Q4 derivation</td></tr>
+      <tr><td>concept_discovery</td><td>2</td><td><span class="pass-badge">2/2</span></td><td>XBRL tag enumeration</td></tr>
+      <tr><td>cross_company_comparison</td><td>4</td><td><span class="pass-badge">4/4</span></td><td>FY-alignment warnings; 4-company stress test</td></tr>
+      <tr><td>filing_attribution</td><td>2</td><td><span class="pass-badge">2/2</span></td><td>Accession number → EDGAR link</td></tr>
+      <tr><td>multi_step_discovery</td><td>2</td><td><span class="pass-badge">2/2</span></td><td>Search → resolve → retrieve chains</td></tr>
+      <tr><td>edge_cases</td><td>2</td><td><span class="pass-badge">2/2</span></td><td>Invalid ticker; edge quarterly period</td></tr>
+      <tr><td>out_of_scope</td><td>3</td><td><span class="pass-badge">3/3</span></td><td>Correctly declined stock prices, forecasts, advice</td></tr>
+      <tr><td>filing_text</td><td>2</td><td><span class="pass-badge">2/2</span></td><td>Plain-text extraction with section seeking</td></tr>
+      <tr><td>full_text_search</td><td>2</td><td><span class="pass-badge">2/2</span></td><td>EFTS cross-filing keyword search</td></tr>
+      <tr><td>screen</td><td>2</td><td><span class="pass-badge">2/2</span></td><td>Company discovery by SIC/exchange/state</td></tr>
+      <tr><td>earnings_release</td><td>2</td><td><span class="pass-badge">2/2</span></td><td>8-K EX-99.1 EPS/revenue extraction</td></tr>
+      <tr><td>synonym_resolution</td><td>2</td><td><span class="pass-badge">2/2</span></td><td>"Google" → Alphabet; "Meta" → Meta Platforms</td></tr>
+      <tr><td>xbrl_concept_resolution</td><td>2</td><td><span class="pass-badge">2/2</span></td><td>Plain-English → FASB US-GAAP 2026 tag</td></tr>
+      <tr><td>xbrl_concept_chain</td><td>1</td><td><span class="pass-badge">1/1</span></td><td>Resolve concept then compare across 3 companies</td></tr>
+      <tr><td>xbrl_derived_metric</td><td>2</td><td><span class="pass-badge">2/2</span></td><td>EBITDA and ROE derivation from components</td></tr>
+    </tbody>
+  </table>
+
+  <h2>5. Evaluation Methodology</h2>
+  <h3>Layer 1 — Automated Tool Routing</h3>
+  <p>The <code>evaluation/run_evaluation.py</code> script sends questions to the live agent over the WXO REST API and counts real <code>tool_calls</code> events from the SSE response stream. A question passes if every expected tool fired and the agent returned a substantive answer.</p>
+
+  <h3>Layer 2 — Human Response Quality Audit (2026-11-11)</h3>
+  <p>All 20 initial agent responses were reviewed against actual SEC EDGAR data across eight quality dimensions: accuracy, completeness, clarity, units, temporal labels, source traceability, hedging, and scope behaviour. This audit identified five issues that the automated Layer 1 scorer could not detect.</p>
+
+  <h3>Layer 3 — LLM-as-Judge (Arize Phoenix)</h3>
+  <p>An Arize Phoenix harness with two modes: (a) Llama-agent runs using <code>meta-llama/llama-3-3-70b-instruct</code> as agent via the Code Engine MCP endpoint directly (superseded); and (b) production scoring where cached responses from the live WXO agent are scored by <code>mistralai/mistral-small-3-1-24b-instruct-2503</code> with a 3-vote majority per question.</p>
+
+  <table>
+    <thead><tr><th>Experiment</th><th>Questions</th><th>Correctness</th><th>Scope</th><th>Numeric</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td>Exp 2 (2026-11-17)</td><td>20</td><td>17/20 (85%)</td><td>—</td><td>—</td><td>Llama judge, ref unbound — superseded</td></tr>
+      <tr><td>Exp 3 (2026-11-17)</td><td>20</td><td>18/20 (90%)</td><td>—</td><td>—</td><td>Llama judge, ref unbound — superseded</td></tr>
+      <tr><td>Exp 17 (2026-11-23)</td><td>35</td><td>14/35 (40%)</td><td>29/35 (83%)</td><td>5/8 (62%)</td><td>Mistral judge — Llama agent, not production WXO</td></tr>
+      <tr><td>Exp 18 (2026-11-23)</td><td>37</td><td>14/37 (38%)</td><td>30/37 (81%)</td><td>5/8 (62%)</td><td>Mistral judge — Llama agent, not production WXO</td></tr>
+      <tr><td><strong>Production WXO (2026-11-23)</strong></td><td><strong>39</strong></td><td><strong>39/39 (100%)</strong></td><td><strong>39/39 (100%)</strong></td><td><strong>8/8 (100%)</strong></td><td><strong>Live gsa-hackathon agent, v1.8.0 — primary result</strong></td></tr>
+    </tbody>
+  </table>
+  <p class="note">Llama-agent Phoenix experiments use meta-llama/llama-3-3-70b-instruct as agent driven directly against the Code Engine MCP endpoint — not via the production WXO environment. These reflect the Llama model's standalone ability, not the production gsa-hackathon agent. Production WXO scoring is the authoritative result.</p>
+
+  <h2>6. Issues Found and Addressed</h2>
+  <table>
+    <thead><tr><th>Issue</th><th>Severity</th><th>Root Cause</th><th>Resolution</th></tr></thead>
+    <tbody>
+      <tr><td>Wrong entity for multi-registrant corps (ExxonMobil shell vs. operating entity)</td><td class="sev-high">High</td><td>Search returned first alphabetical match — a shell company with no 10-K filings</td><td>Server ranks results by <code>has_recent_10k=true</code>; agent Rule 1: use chosen entity's CIK and retry if no 10-K found</td></tr>
+      <tr><td>Year-to-date values returned as quarterly figures (Apple Q3 ~$364B instead of ~$109B)</td><td class="sev-high">High</td><td>EDGAR stores 3-month and 9-month values under the same <code>fp=Q3</code> label</td><td>80–100 day duration filter; deduplicates per (start, end) pair</td></tr>
+      <tr><td>Q4 figures not separately filed in 10-Qs</td><td class="sev-med">Medium</td><td>No 10-Q for fiscal Q4</td><td>Server derives Q4 = annual FY − nine-month YTD for USD flow concepts; derived rows labelled <code>derived: true</code></td></tr>
+      <tr><td>Annual fact labelling (~$3B off for Apple FY2024)</td><td class="sev-med">Medium</td><td>SEC's <code>fy</code> field is the filing year, not the period year</td><td><code>fiscal_year</code> now derived from period-end date; one row per fiscal-year end</td></tr>
+      <tr><td>Revenue concept selection (Pfizer using wrong concept, ~15% off)</td><td class="sev-med">Medium</td><td><code>Revenues</code> vs. <code>RevenueFromContract...</code> selection not evaluated per company</td><td>Server evaluates <code>REVENUE_CANDIDATES</code> and picks concept with newest period-end date</td></tr>
+      <tr><td>Concept synonym gaps (revenue/debt tags not matching keywords)</td><td class="sev-med">Medium</td><td>Substring search misses tags like <code>PremiumsEarnedNet</code></td><td>Rule 7 updated; <code>sec_edgar_resolve_synonym</code> tool added (~198 entries)</td></tr>
+      <tr><td>Agent invented EDGAR URL in BQ-15 regression</td><td class="sev-med">Medium</td><td>Agent constructed URL from memory</td><td>Rule 6: URL construction prohibited; <code>filing_index_url</code> in every fact row</td></tr>
+    </tbody>
+  </table>
+
+  <h2>7. Interpretation</h2>
+  <h3>What the 100% routing score means</h3>
+  <p>Tool routing (39/39) confirms the agent instruction set is working: for every benchmark question, the correct tool chain fired. This is a necessary but not sufficient condition for correctness — a question can pass routing while returning wrong values. The human audit and numeric anchors close this gap.</p>
+
+  <h3>What the 100% scope score means</h3>
+  <p>The agent never answered out-of-scope questions (stock prices, analyst forecasts, investment advice) from training data. It correctly declined three benchmark scope questions (BQ-21/22/23) and the fictional-ticker question (BQ-19).</p>
+
+  <h3>What the 8/8 numeric anchors mean</h3>
+  <p>Eight benchmark questions include specific dollar values as must-include checks (e.g. AAPL FY2026 revenue ~$478.8B, MSFT net income ~$133.7B). All eight pass within stated tolerances (0.5–2%), confirming the values are live EDGAR data, not training-data confabulation.</p>
+
+  <div class="finding-box">
+    <strong>Key finding:</strong> All seven issues found by the human audit and Phoenix runs required server-side or instruction-set fixes — not just rephrasing the benchmark questions. The evaluation correctly identified meaningful quality gaps in a system that was already passing the automated routing check.
+    <ul>
+      <li>Issues 1–2 were high-severity (wrong entity, YTD-as-quarterly) and required server-side data fixes</li>
+      <li>Issues 3–7 were medium-severity and required either server-side fixes or instruction updates</li>
+      <li>All seven are resolved in v1.8.0</li>
+    </ul>
+  </div>
+
+  <h2>8. Completed Improvements (v1.8.0)</h2>
+  <ul class="tick-list">
+    <li>YTD filtering: <code>get_quarterly_facts</code> filters to 80–100 day duration window</li>
+    <li>Q4 derivation: annual minus nine-month YTD for USD flow concepts; derived rows labelled</li>
+    <li>Annual fact labelling: <code>fiscal_year</code> derived from period-end date; one row per fiscal-year end</li>
+    <li>Revenue concept selection: <code>REVENUE_CANDIDATES</code> evaluated server-side; newest period wins</li>
+    <li>Entity ranking: server ranks by <code>has_recent_10k=true</code></li>
+    <li>Concept synonym guidance: Rule 7 expanded; <code>sec_edgar_resolve_synonym</code> tool added (~198 entries)</li>
+    <li>Source filing mandate: Rule 6 requires value stated before filing details; URL construction prohibited</li>
+    <li><code>filing_index_url</code> in every fact row (computed from accession number and CIK)</li>
+    <li>Global SEC rate limiter: <code>asyncio.Semaphore(8)</code> via <code>_edgar_get()</code></li>
+    <li>14th tool: <code>sec_edgar_resolve_xbrl_concept</code> (7,462 FASB US-GAAP 2026 concepts; in-process inverted index)</li>
+    <li>XBRL derived-metric handling: canonical overrides for ROE, D/E, P/E, asset turnover, BVPS + EBITDA derivation</li>
+    <li>International ADR synonyms: TSMC/TSM, SAP SE, ASML Holding, Sony Group, Toyota/TM</li>
+    <li>359 regression assertions across 21 test functions — all passing</li>
+  </ul>
+
+  <div class="footer">
+    <p>SEC EDGAR Facts Explorer — GSA MCP Hackathon 2026 · Author: Michael Schihl · v1.8.0 · 2026-11-23</p>
+    <p style="margin-top:4px;">Made with IBM Bob</p>
+  </div>
+
+</div>
+</body>
+</html>
